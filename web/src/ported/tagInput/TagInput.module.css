@@ -1,0 +1,130 @@
+.tagInput {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.combobox {
+  max-width: 360px;
+}
+
+.readOnlyLabel {
+  font-weight: 500;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: 999px;
+}
+
+.chip[data-tone='type'] {
+  background: var(--hbui-color-success-subtle);
+}
+
+.chip[data-tone='system'] {
+  background: var(--hbui-color-accent-subtle);
+}
+
+.chip[data-tone='meta'] {
+  background: var(--hbui-color-info-subtle);
+}
+
+.chip[data-tone='group'] {
+  background: var(--hbui-color-surface-active);
+}
+
+.chip[data-tone='owner'] {
+  font-weight: 600;
+}
+
+.chipText {
+  min-width: 0;
+  max-width: 280px;
+  padding: 2px 4px 2px 10px;
+  margin: 0;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 999px 0 0 999px;
+}
+
+span.chipText {
+  padding-right: 10px;
+  border-radius: 999px;
+}
+
+button.chipText {
+  cursor: text;
+}
+
+button.chipText:hover {
+  text-decoration: underline;
+}
+
+button.chipText:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.remove {
+  margin-right: 2px;
+  border-radius: 999px;
+}
+
+.editing {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editInput {
+  box-sizing: border-box;
+  min-width: 120px;
+  min-height: var(--hbui-control-height-sm);
+  padding: 2px 8px;
+  font: inherit;
+  color: var(--hbui-color-text);
+  color-scheme: light dark;
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-focus);
+  border-radius: 999px;
+  outline: none;
+  box-shadow: 0 0 0 1px var(--hbui-color-focus);
+}
+
+.editInput[aria-invalid='true'] {
+  border-color: var(--hbui-color-danger);
+  box-shadow: 0 0 0 1px var(--hbui-color-danger);
+}
+
+.editError {
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-danger);
+}
+
+.none {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}

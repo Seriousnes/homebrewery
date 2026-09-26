@@ -1,0 +1,90 @@
+# Production with an external (managed) PostgreSQL: the app image and the backup service only; no local db, no
+# Caddy. Put your TLS proxy in front of the published port (docs/operations.md "Deploying").
+#
+#   cp deploy/external-db.env.example deploy/external-db.env     then edit it (never commit it)
+#   docker compose -f deploy/compose.external-db.yml --env-file deploy/external-db.env run --rm app migrate
+#   docker compose -f deploy/compose.external-db.yml --env-file deploy/external-db.env up -d --wait
+#
+# The app connects with HB_CONNECTION_STRING (an Npgsql connection string) and nothing else; the backup service with
+# the libpq variables HB_PG*. The database server's CA certificate goes in HB_DB_CERTS_DIR (default deploy/db-certs,
+# whose contents git ignores) as root.crt, mounted read-only at /etc/homebrewery/db-certs in both containers:
+# "SSL Mode=VerifyFull;Root Certificate=/etc/homebrewery/db-certs/root.crt" for the app, PGSSLROOTCERT for backups.
+#
+# deploy/scripts/backup-now.sh and restore.sh work with this file too: set COMPOSE_FILE=deploy/compose.external-db.yml
+# (and pass --env-file through COMPOSE_ENV_FILES=deploy/external-db.env). A managed database usually cannot be dropped
+# by the app's role, so restore with --clean.
+
+name: homebrewery
+
+# Docker keeps container logs (JSON lines from the app and the backup service) in rotated files.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  app:
+    image: ${HB_IMAGE:-homebrewery:local}
+    build: ..                  # `--build` builds the repository's Dockerfile; set HB_IMAGE to use a published image
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      ConnectionStrings__Homebrewery: ${HB_CONNECTION_STRING:?Set HB_CONNECTION_STRING (an Npgsql connection string)}
+      # false: pending migrations stop the app; run the one-off `migrate` command (above) as a release step.
+      # true: every start applies pending migrations itself (needs a role that may change the schema).
+      Database__MigrateOnStartup: ${HB_MIGRATE_ON_STARTUP:-false}
+      # Behind a proxy that sends X-Forwarded-For/-Proto (sign-in cookies get Secure on https).
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: ${HB_FORWARDED_HEADERS:-true}
+      # Restrict which proxies are trusted (CIDR / addresses, comma separated); empty trusts any peer.
+      ForwardedHeaders__KnownNetworks: ${HB_KNOWN_NETWORKS:-}
+      ForwardedHeaders__KnownProxies: ${HB_KNOWN_PROXIES:-}
+      Admin__Emails: ${HB_ADMIN_EMAILS:-}
+      Logging__LogLevel__Default: ${HB_LOG_LEVEL:-Information}
+    ports:
+      - ${HB_BIND:-127.0.0.1}:${HB_HTTP_PORT:-8080}:8080
+    volumes:
+      - app-keys:/var/lib/homebrewery/keys          # Data Protection key ring: keeps sign-ins across re-creation
+      - ${HB_DB_CERTS_DIR:-./db-certs}:/etc/homebrewery/db-certs:ro
+    healthcheck:
+      # The runtime image has no curl or wget; bash's /dev/tcp is enough for a status line.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+      start_interval: 2s
+
+  # pg_dump -Fc every HB_BACKUP_INTERVAL, keeping HB_BACKUP_KEEP dumps (deploy/backup/hb-backup.sh).
+  backup:
+    image: postgres:18          # pg_dump must be at least the server's major version
+    command: ["bash", "/opt/hb-backup/hb-backup.sh", "schedule"]
+    init: true
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      PGHOST: ${HB_PGHOST:?Set HB_PGHOST}
+      PGPORT: ${HB_PGPORT:-5432}
+      PGDATABASE: ${HB_PGDATABASE:-homebrewery}
+      PGUSER: ${HB_PGUSER:?Set HB_PGUSER}
+      PGPASSWORD: ${HB_PGPASSWORD:?Set HB_PGPASSWORD}
+      PGSSLMODE: ${HB_PGSSLMODE:-verify-full}
+      # The postgres image has no CA bundle, so verify-ca/verify-full need the provider's CA file here.
+      PGSSLROOTCERT: ${HB_PGSSLROOTCERT:-/etc/homebrewery/db-certs/root.crt}
+      BACKUP_INTERVAL: ${HB_BACKUP_INTERVAL:-1d}
+      BACKUP_KEEP: ${HB_BACKUP_KEEP:-7}
+    volumes:
+      - ./backup:/opt/hb-backup:ro
+      - ${HB_BACKUP_VOLUME:-backups}:/backups
+      - ${HB_DB_CERTS_DIR:-./db-certs}:/etc/homebrewery/db-certs:ro
+    healthcheck:
+      test: ["CMD", "bash", "/opt/hb-backup/hb-backup.sh", "health"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+      start_interval: 5s
+
+volumes:
+  app-keys:
+  backups:

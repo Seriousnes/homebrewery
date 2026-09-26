@@ -1,0 +1,93 @@
+# Production-image mode: the multi-stage Dockerfile's image (built SPA + ASP.NET Core API in one
+# container) behind the same Caddy, against the same db volume as the dev stack.
+#
+#   docker compose -f docker-compose.yml -f compose.prod.yml up -d --build     open http://localhost:8080
+#
+# This command also removes the dev api and web containers (scale 0 below; their volumes stay).
+# Back to dev: `docker compose up -d --remove-orphans` (removes the app and backup containers again).
+#
+# Operations (docs/operations.md): the app writes JSON log lines (`docker compose logs app`), /healthz
+# checks the database, and the backup service runs pg_dump on a schedule into the backups volume.
+#   deploy/scripts/backup-now.sh (or .ps1)          one backup right away
+#   deploy/scripts/restore.sh (or .ps1) <file|latest>  replace the database with a dump (stops and restarts app)
+#
+# Settings (environment or a .env file next to docker-compose.yml):
+#   HB_BACKUP_INTERVAL   time between backups: seconds or a number with s, m, h or d (default 1d)
+#   HB_BACKUP_KEEP       how many dumps to keep, newest first (default 7; 0 keeps all)
+#   HB_BACKUP_VOLUME     named volume or host directory for the dumps (default: the backups volume)
+
+services:
+  # No dev servers in this mode.
+  api:
+    scale: 0
+  web:
+    scale: 0
+
+  app:
+    build: .
+    image: homebrewery:local
+    environment:
+      ConnectionStrings__Homebrewery: Host=db;Port=5432;Database=homebrewery;Username=homebrewery;Password=homebrewery
+      Database__MigrateOnStartup: "true"
+      # Caddy sends X-Forwarded-For/-Proto. The built-in switch applies them from any peer, which is
+      # safe here because the app publishes no port and only Caddy reaches it.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    volumes:
+      # Data Protection key ring (DataProtection__KeysPath in the Dockerfile). Without it a re-created
+      # container (e.g. up --build) signs everyone out.
+      - app-keys:/var/lib/homebrewery/keys
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # The runtime image has no curl or wget; bash's /dev/tcp is enough for a status line.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+      start_interval: 2s
+
+  # pg_dump -Fc every HB_BACKUP_INTERVAL into /backups, keeping the newest HB_BACKUP_KEEP dumps
+  # (deploy/backup/hb-backup.sh). Logs JSON lines like the app. Healthy while the newest scheduled dump
+  # is at most one interval plus an hour old.
+  backup:
+    image: postgres:18          # pg_dump must be at least the server's major version
+    command: ["bash", "/opt/hb-backup/hb-backup.sh", "schedule"]
+    init: true
+    restart: unless-stopped
+    environment:
+      # libpq settings. A managed server would add PGSSLMODE (verify-full) and PGSSLROOTCERT.
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: homebrewery
+      PGUSER: homebrewery
+      PGPASSWORD: homebrewery
+      BACKUP_INTERVAL: ${HB_BACKUP_INTERVAL:-1d}
+      BACKUP_KEEP: ${HB_BACKUP_KEEP:-7}
+    volumes:
+      - ./deploy/backup:/opt/hb-backup:ro
+      - ${HB_BACKUP_VOLUME:-backups}:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "/opt/hb-backup/hb-backup.sh", "health"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5m          # the first dump runs right after the service starts
+      start_interval: 5s
+
+  # Same Caddyfile; both upstreams point at the one production container.
+  caddy:
+    environment:
+      HB_API_UPSTREAM: app:8080
+      HB_WEB_UPSTREAM: app:8080
+    depends_on: !override
+      app:
+        condition: service_started
+
+volumes:
+  app-keys:
+  backups:

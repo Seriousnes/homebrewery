@@ -1,0 +1,120 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+}
+
+.chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  min-height: var(--hbui-control-height);
+}
+
+.chosenLabel {
+  font-weight: 500;
+}
+
+.none {
+  color: var(--hbui-color-text-muted);
+  font-style: italic;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  padding: 0 2px 0 var(--hbui-space-2);
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-accent-text);
+  background: var(--hbui-color-accent-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.chipName {
+  overflow-wrap: anywhere;
+}
+
+.chipRemove {
+  min-height: 20px;
+  min-width: 20px;
+  padding: 0;
+}
+
+.listFrame {
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+  background: var(--hbui-color-surface);
+}
+
+.list {
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px var(--hbui-space-3);
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  cursor: pointer;
+}
+
+.option[data-active] {
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-active);
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.optionName {
+  overflow-wrap: anywhere;
+}
+
+.optionHint {
+  flex: none;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  color: var(--hbui-color-text-muted);
+}
+
+.count {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  width: 100%;
+}
+
+.spacer {
+  flex: 1;
+}

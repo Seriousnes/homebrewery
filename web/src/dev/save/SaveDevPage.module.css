@@ -1,0 +1,88 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+}
+
+.chrome {
+  flex: none;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.account {
+  display: inline-flex;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  margin-inline-start: auto;
+  font-size: var(--hbui-font-size-sm);
+}
+
+.message {
+  margin: var(--hbui-space-4);
+}
+
+.editorFrame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.title {
+  width: 16rem;
+}
+
+.info {
+  color: var(--hbui-color-text-muted);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.banner {
+  margin: var(--hbui-space-2) var(--hbui-space-3);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.side {
+  flex: none;
+  display: flex;
+  width: 220px;
+  border-inline-end: 1px solid var(--hbui-color-border);
+}
+
+.styleLabel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--hbui-space-1);
+  padding: var(--hbui-space-2);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.css {
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--hbui-space-2);
+  font:
+    12px/1.4 var(--hbui-font-mono);
+  resize: none;
+}
+
+.canvas {
+  flex: 1;
+  min-width: 0;
+}

@@ -1,0 +1,269 @@
+/* /import (P6.1, P6.3): source tabs, the report beside the preview, and the create bar. */
+.step {
+  margin: 0 0 var(--hbui-space-6);
+}
+
+.stepHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 var(--hbui-space-2);
+}
+
+.stepTitle {
+  margin: 0 0 var(--hbui-space-3);
+  font-size: var(--hbui-font-size-xl);
+  font-weight: 650;
+  outline: none;
+}
+
+.stepHeader .stepTitle {
+  margin: 0;
+}
+
+.stepTitle:focus-visible {
+  border-radius: var(--hbui-radius-sm);
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.tabs {
+  padding: var(--hbui-space-4);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  padding-top: var(--hbui-space-3);
+}
+
+.linkForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+}
+
+.code {
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-1);
+}
+
+.fieldLabel {
+  font-weight: 600;
+}
+
+.fieldHint {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.fileInput {
+  width: 100%;
+  max-width: 32rem;
+  padding: var(--hbui-space-2);
+  font: inherit;
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-bg);
+  border: 1px dashed var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius);
+}
+
+.fileInput:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: 2px;
+}
+
+.note {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.noteIcon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--hbui-color-info);
+}
+
+.problem {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  background: var(--hbui-color-danger-subtle);
+  border: 1px solid var(--hbui-color-danger);
+  border-radius: var(--hbui-radius);
+}
+
+.problemIcon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--hbui-color-danger);
+}
+
+.problemTitle {
+  margin: 0;
+  font-weight: 650;
+  color: var(--hbui-color-danger);
+}
+
+.problemText {
+  margin: var(--hbui-space-1) 0 0;
+  color: var(--hbui-color-text);
+}
+
+.sourceLine {
+  margin: 0 0 var(--hbui-space-4);
+  color: var(--hbui-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  font-weight: 600;
+  color: var(--hbui-color-accent);
+}
+
+.converting {
+  display: flex;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-4);
+  color: var(--hbui-color-text-muted);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+/* Report beside the preview; the preview stays in view while the report scrolls. */
+.checkGrid {
+  display: grid;
+  grid-template-columns: minmax(18rem, 25rem) minmax(0, 1fr);
+  gap: var(--hbui-space-5);
+  align-items: start;
+}
+
+.reportColumn {
+  min-width: 0;
+}
+
+.previewColumn {
+  position: sticky;
+  top: var(--hbui-space-3);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.previewTitle {
+  margin: 0 0 var(--hbui-space-3);
+  font-size: var(--hbui-font-size-lg);
+  font-weight: 650;
+}
+
+.previewBox {
+  height: min(72vh, 1000px);
+  min-height: 24rem;
+}
+
+@media (max-width: 900px) {
+  .checkGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewColumn {
+    position: static;
+  }
+
+  .previewBox {
+    height: 70vh;
+    min-height: 20rem;
+  }
+}
+
+/* Step 3 stays at the bottom of the page's scroll area while the report and preview scroll. */
+.createBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3) var(--hbui-space-5);
+  align-items: center;
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  margin: 0 calc(-1 * var(--hbui-space-2));
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+  box-shadow: var(--hbui-shadow-popover);
+}
+
+.createBar > .problem,
+.createBar > .note {
+  flex: 1 1 100%;
+}
+
+.facts {
+  display: flex;
+  flex: 1 1 24rem;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-1) var(--hbui-space-5);
+  margin: 0;
+}
+
+.facts > div {
+  min-width: 0;
+}
+
+.facts dt {
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.createActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  margin-inline-start: auto;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

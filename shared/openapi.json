@@ -1,0 +1,3875 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Homebrewery API",
+    "description": "The Homebrewery WYSIWYG back end (docs/wysiwyg-plan.md §8). Same origin as the SPA: cookie sign-in, and writes need an Origin header matching the site. Errors are problem+json.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "name": "useCookies",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "useSessionCookies",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/confirmEmail": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "MapIdentityApi-/api/auth/confirmEmail",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "changedEmail",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/resendConfirmationEmail": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendConfirmationEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/forgotPassword": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/resetPassword": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/manage/2fa": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/auth/manage/info": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InfoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InfoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/account/me": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "The signed-in account, or 204 when anonymous.",
+        "operationId": "GetAccount",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountInfo"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/account/logout": {
+      "post": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Sign out (clears the auth cookie).",
+        "operationId": "Logout",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account/handle": {
+      "put": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Set the public handle used in /user/{handle}.",
+        "description": "A handle is 3 to 32 characters: lower-case letters a-z, digits, '-' and '_'. Case-insensitive; stored in lower case. 409 when taken.",
+        "operationId": "SetHandle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHandleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews/edit/{editId}": {
+      "get": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "The full brew for the editor (authors only), including the version to save against.",
+        "operationId": "GetBrewForEdit",
+        "parameters": [
+          {
+            "name": "editId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewForEdit"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews/share/{shareId}": {
+      "get": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "The read-only brew. Counts a view unless the caller is an author.",
+        "description": "A locked brew answers 423 with the lock's share message as `detail` and its code as `code`.",
+        "operationId": "GetBrewForShare",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewForShare"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews": {
+      "post": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "Create a brew (new or imported); the caller becomes its owner.",
+        "description": "Optional `Idempotency-Key` header (1-128 visible ASCII characters, e.g. a UUID; surrounding quotes are stripped): within 24 hours, the same user sending the same key with the same request again gets 201 with the brew the first request created (as it is now) instead of a second brew; the same key with a different request is 422. A malformed key is 400 with errors['Idempotency-Key'].",
+        "operationId": "CreateBrew",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewForEdit"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews/{editId}": {
+      "put": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "Save the whole brew against baseVersion (409 with the server version when stale).",
+        "description": "Only doc, style, snippets and the metadata fields are written. An invited author becomes an author on their first save. Only the owner may change meta.authors.",
+        "operationId": "SaveBrew",
+        "parameters": [
+          {
+            "name": "editId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveBrewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveBrewResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveConflict"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "Leave the brew as an author; the brew is deleted when no owner or author remains.",
+        "operationId": "DeleteBrew",
+        "parameters": [
+          {
+            "name": "editId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteBrewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews/{shareId}/clone": {
+      "post": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "Copy a brew by share id into a new, unpublished brew owned by the caller.",
+        "operationId": "CloneBrew",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewForEdit"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brews/{editId}/lock/review": {
+      "post": {
+        "tags": [
+          "Brews"
+        ],
+        "summary": "Ask the moderators to review this brew's lock (authors only). Asking again keeps the first request time.",
+        "description": "409 when the brew is not locked. The admin review queue lists the brew until an admin unlocks it or dismisses the request.",
+        "operationId": "RequestLockReview",
+        "parameters": [
+          {
+            "name": "editId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrewLockInfo"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vault": {
+      "get": {
+        "tags": [
+          "Vault"
+        ],
+        "summary": "Search published brews (title, description and text), sorted and paged.",
+        "description": "`q` uses web search syntax with the `simple` text search configuration (no stemming, any language). `sort`: relevance (default with `q`), updated (default without), created, views, title. `dir`: asc or desc (default asc for title, desc otherwise). `pageSize` is clamped to 1-60 (default 20) and `page` to 1-10000. An unknown `sort` or `dir`, or a `q` over 256 characters, is a 400 validation problem.",
+        "operationId": "SearchVault",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "relevance",
+                "updated",
+                "created",
+                "views",
+                "title"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "dir",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{handle}/brews": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "A user's brews: published ones for everyone; all of them, with edit ids, for the user.",
+        "operationId": "ListUserBrews",
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserBrewList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/themes": {
+      "get": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Static themes, published user themes, and the caller's own user themes.",
+        "operationId": "ListThemes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/themes/{theme}/bundle": {
+      "get": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "A theme's inheritance chain, root first: stylesheets (URLs or raw user-theme CSS) and snippet sources.",
+        "description": "`theme` is a static theme key (e.g. `5ePHB`) or a user theme's share id. 404 when it is neither; 422 (problem+json with `chain`) for a cycle, a chain longer than 8 themes, or a base theme that is missing or not tagged `meta:theme`; 423 when a theme brew in the chain is locked.",
+        "operationId": "GetThemeBundle",
+        "parameters": [
+          {
+            "name": "theme",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeBundle"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/import/homebrewery/{shareId}": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "summary": "The Homebrewery markdown of a brew on homebrewery.naturalcrit.com, by its share id.",
+        "description": "Fetches `https://homebrewery.naturalcrit.com/download/{shareId}` and returns it as text/plain (the brew text with its ```metadata and ```css blocks). `shareId` must be 10-14 letters, digits, `_` or `-` (400 otherwise). 404 when the Homebrewery has no such brew, 413 when the text is over 2 MB, 502 when the Homebrewery fails, answers an error (then `upstreamStatus` holds its status; a locked brew answers its lock code), redirects or times out. Rate limited per user (429).",
+        "operationId": "ImportFromHomebrewery",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/active": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Notifications to show now (startsAt <= now < stopsAt), oldest start first.",
+        "operationId": "ListActiveNotifications",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/stats": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Site totals: brews, published brews, users, locked brews and pending lock reviews.",
+        "operationId": "AdminGetStats",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Accounts whose handle or email contains q (case-insensitive), or whose id is q; at most 50, exact matches first.",
+        "operationId": "AdminFindUsers",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserInfo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{handle}/brews": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Every brew of an account as the account itself sees them: unpublished, locked and invited ones included, with edit ids and roles.",
+        "operationId": "AdminListUserBrews",
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserBrewList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/brews/{id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "A brew (without its document) by internal id, share id or edit id.",
+        "operationId": "AdminGetBrew",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBrewInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/brews/{shareId}/lock": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Lock a brew: its share page shows shareMessage (423) and its editor shows editMessage. Replaces an existing lock.",
+        "operationId": "AdminLockBrew",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBrewInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Remove a brew's lock (a no-op when it is not locked).",
+        "operationId": "AdminUnlockBrew",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBrewInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/brews/{shareId}/lock/review": {
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Dismiss the authors' review request and keep the lock (409 when the brew is not locked).",
+        "operationId": "AdminDismissLockReview",
+        "parameters": [
+          {
+            "name": "shareId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBrewInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/locks": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Every locked brew, most recently locked first.",
+        "operationId": "AdminListLocks",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LockedBrewInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/locks/review-queue": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Locked brews whose authors asked for a review, oldest request first.",
+        "operationId": "AdminLockReviewQueue",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LockedBrewInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/notifications": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Every notification (past, current and future), newest start first.",
+        "operationId": "AdminListNotifications",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create a notification (409 when the dismiss key is taken).",
+        "operationId": "AdminCreateNotification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/notifications/{id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "One notification.",
+        "operationId": "AdminGetNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Replace a notification's fields.",
+        "operationId": "AdminUpdateNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInfo"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Delete a notification.",
+        "operationId": "AdminDeleteNotification",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccessTokenResponse": {
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "tokenType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "AccountInfo": {
+        "required": [
+          "id",
+          "handle",
+          "email",
+          "roles"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Role names, e.g. `[\"Admin\"]`; empty for regular users."
+          }
+        },
+        "description": "The signed-in account (`GET /api/account/me`)."
+      },
+      "AdminBrewInfo": {
+        "required": [
+          "id",
+          "shareId",
+          "editId",
+          "title",
+          "description",
+          "tags",
+          "lang",
+          "theme",
+          "published",
+          "thumbnailUrl",
+          "pageCount",
+          "views",
+          "version",
+          "docSchemaVersion",
+          "authors",
+          "lock",
+          "createdAt",
+          "updatedAt",
+          "lastViewedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The internal brew id.",
+            "format": "uuid"
+          },
+          "shareId": {
+            "type": "string"
+          },
+          "editId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lang": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string"
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "views": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "docSchemaVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrewAuthorInfo"
+            },
+            "description": "All authors in display order, owner first (invited users included)."
+          },
+          "lock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The moderation lock, or null.",
+                "$ref": "#/components/schemas/AdminLockInfo"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastViewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "A brew for the admin pages (`GET /api/admin/brews/{id}`, lock changes). Never contains the document."
+      },
+      "AdminLockInfo": {
+        "required": [
+          "code",
+          "editMessage",
+          "shareMessage",
+          "applied",
+          "reviewRequested"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Reason code (100-999), shown to authors and readers.",
+            "format": "int32"
+          },
+          "editMessage": {
+            "type": "string",
+            "description": "Shown to the authors in the editor."
+          },
+          "shareMessage": {
+            "type": "string",
+            "description": "Shown instead of the brew on its share page."
+          },
+          "applied": {
+            "type": "string",
+            "description": "When the lock was set.",
+            "format": "date-time"
+          },
+          "reviewRequested": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When an author asked for a review, or null.",
+            "format": "date-time"
+          }
+        },
+        "description": "A moderation lock as stored (both messages)."
+      },
+      "AdminStats": {
+        "required": [
+          "brews",
+          "publishedBrews",
+          "users",
+          "lockedBrews",
+          "pendingReviews"
+        ],
+        "type": "object",
+        "properties": {
+          "brews": {
+            "type": "integer",
+            "description": "All brews.",
+            "format": "int32"
+          },
+          "publishedBrews": {
+            "type": "integer",
+            "description": "Published brews (locked ones included).",
+            "format": "int32"
+          },
+          "users": {
+            "type": "integer",
+            "description": "Registered accounts.",
+            "format": "int32"
+          },
+          "lockedBrews": {
+            "type": "integer",
+            "description": "Brews with a moderation lock.",
+            "format": "int32"
+          },
+          "pendingReviews": {
+            "type": "integer",
+            "description": "Locked brews whose authors asked for a review.",
+            "format": "int32"
+          }
+        },
+        "description": "Site totals (`GET /api/admin/stats`)."
+      },
+      "AdminUserInfo": {
+        "required": [
+          "id",
+          "handle",
+          "email",
+          "emailConfirmed",
+          "roles",
+          "brewCount",
+          "lockoutEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "emailConfirmed": {
+            "type": "boolean"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Role names, e.g. `[\"Admin\"]`."
+          },
+          "brewCount": {
+            "type": "integer",
+            "description": "Brews the user is an author of, in any role.",
+            "format": "int32"
+          },
+          "lockoutEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Set while Identity's lockout (failed sign-ins) blocks the account.",
+            "format": "date-time"
+          }
+        },
+        "description": "An account found by `GET /api/admin/users?q=`."
+      },
+      "AuthorRole": {
+        "enum": [
+          "owner",
+          "author",
+          "invited"
+        ]
+      },
+      "BrewAuthorInfo": {
+        "required": [
+          "handle",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "description": "Public handle (`/user/{handle}`)."
+          },
+          "role": {
+            "description": "`owner`, `author`, or `invited` (can edit; becomes `author` on their first save).",
+            "$ref": "#/components/schemas/AuthorRole"
+          }
+        },
+        "description": "An author of a brew."
+      },
+      "BrewForEdit": {
+        "required": [
+          "editId",
+          "shareId",
+          "version",
+          "docSchemaVersion",
+          "doc",
+          "style",
+          "snippets",
+          "sourceMarkdown",
+          "meta",
+          "authors",
+          "role",
+          "pageCount",
+          "views",
+          "lock",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "editId": {
+            "type": "string"
+          },
+          "shareId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "description": "The version to send back as `baseVersion` on the next save.",
+            "format": "int32"
+          },
+          "docSchemaVersion": {
+            "type": "integer",
+            "description": "Schema version of Doc; the client migrates older documents on load.",
+            "format": "int32"
+          },
+          "doc": {
+            "description": "The document (plan §3.3): `{ \"type\": \"doc\", \"content\": [ page, … ] }`.",
+            "$ref": "#/components/schemas/RawJson"
+          },
+          "style": {
+            "type": "string",
+            "description": "User CSS."
+          },
+          "snippets": {
+            "description": "User snippets (JSON array), or null.",
+            "$ref": "#/components/schemas/RawJson"
+          },
+          "sourceMarkdown": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The original Homebrewery markdown when the brew was imported, or null."
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BrewMeta"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrewAuthorInfo"
+            },
+            "description": "All authors in display order, owner first."
+          },
+          "role": {
+            "description": "The caller's role.",
+            "$ref": "#/components/schemas/AuthorRole"
+          },
+          "pageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "views": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The moderation lock, or null. Saving still works while locked.",
+                "$ref": "#/components/schemas/BrewLockInfo"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Everything the editor needs (`GET /api/brews/edit/{editId}`, and the result of create and clone)."
+      },
+      "BrewForShare": {
+        "required": [
+          "shareId",
+          "editId",
+          "docSchemaVersion",
+          "doc",
+          "style",
+          "meta",
+          "authors",
+          "pageCount",
+          "views",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "shareId": {
+            "type": "string"
+          },
+          "editId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Only for the brew's own authors (so the share page can link to the editor); otherwise null."
+          },
+          "docSchemaVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "doc": {
+            "$ref": "#/components/schemas/RawJson"
+          },
+          "style": {
+            "type": "string"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/BrewMeta"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Author handles in display order (invited users excluded)."
+          },
+          "pageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "views": {
+            "type": "integer",
+            "description": "View count, including this view when it counted.",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "The read-only view (`GET /api/brews/share/{shareId}`)."
+      },
+      "BrewLockInfo": {
+        "required": [
+          "code",
+          "message",
+          "applied",
+          "reviewRequested"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Lock reason code.",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string",
+            "description": "The lock's edit message for the authors."
+          },
+          "applied": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewRequested": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "A moderation lock as the editor shows it."
+      },
+      "BrewMeta": {
+        "required": [
+          "title",
+          "description",
+          "tags",
+          "lang",
+          "theme",
+          "published",
+          "thumbnailUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "At most 100 characters. When saved blank, the first heading of the document is used."
+          },
+          "description": {
+            "type": "string",
+            "description": "At most 500 characters."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Free-form tags (e.g. `type:adventure`, `meta:theme`); at most 50 of 100 characters."
+          },
+          "lang": {
+            "type": "string",
+            "description": "Language code, e.g. `en`, `pt-BR`, `zh-Hant`."
+          },
+          "theme": {
+            "type": "string",
+            "description": "A static theme key (`5ePHB`, `5eDMG`, `Blank`, `Journal`, `UnearthedArcana`)\n    or the share id of a user theme."
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Listed in the vault and on the author's page."
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Absolute http(s) URL used for link previews, or null."
+          }
+        },
+        "description": "A brew's metadata, as stored."
+      },
+      "BrewMetaInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tags": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "lang": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "theme": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "published": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "authors": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The full author list as handles, in display order. Only the owner may change it on save\n    (403 otherwise, unless the list is unchanged): new handles become `invited`, missing ones are removed, the\n    owner always stays first. Unknown handles are a validation error. Null leaves the list unchanged."
+          }
+        },
+        "description": "Metadata in a create or save request. Every field is optional: null (or missing) keeps the current value on\nsave and uses the default on create. To clear a thumbnail send an empty string."
+      },
+      "BrewSummary": {
+        "required": [
+          "shareId",
+          "editId",
+          "title",
+          "description",
+          "tags",
+          "authors",
+          "theme",
+          "lang",
+          "pageCount",
+          "views",
+          "published",
+          "thumbnailUrl",
+          "createdAt",
+          "updatedAt",
+          "lastViewedAt",
+          "role",
+          "locked"
+        ],
+        "type": "object",
+        "properties": {
+          "shareId": {
+            "type": "string"
+          },
+          "editId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Only in the caller's own list (`GET /api/users/{handle}/brews` as that user); otherwise null."
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Handles of the owner and authors in display order (invited users excluded)."
+          },
+          "theme": {
+            "type": "string",
+            "description": "A static theme key or a user theme's share id."
+          },
+          "lang": {
+            "type": "string"
+          },
+          "pageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "views": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Always true in the vault and in other people's lists."
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastViewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the share page last counted a view, or null.",
+            "format": "date-time"
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The caller's role; only in the caller's own list, otherwise null.",
+                "$ref": "#/components/schemas/AuthorRole"
+              }
+            ]
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether a moderation lock blocks the share page. Locked brews appear only in their authors'\n    own lists."
+          }
+        },
+        "description": "A brew in a list (the vault, a user's page). Never contains the document."
+      },
+      "CreateBrewRequest": {
+        "type": "object",
+        "properties": {
+          "doc": {
+            "description": "The document; omitted = one empty page."
+          },
+          "style": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "User CSS."
+          },
+          "snippets": {
+            "description": "User snippets (JSON array), or null."
+          },
+          "meta": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Metadata; `meta.authors` invites other users (the caller is the owner).",
+                "$ref": "#/components/schemas/BrewMetaInput"
+              }
+            ]
+          },
+          "sourceMarkdown": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For imports: the original Homebrewery markdown (kept for reference)."
+          },
+          "docSchemaVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The document's schema version; must be the server's current one when given.",
+            "format": "int32"
+          }
+        },
+        "description": "Body of `POST /api/brews` (a new brew, or an import). May be sent gzip-compressed."
+      },
+      "DeleteBrewResponse": {
+        "required": [
+          "brewDeleted"
+        ],
+        "type": "object",
+        "properties": {
+          "brewDeleted": {
+            "type": "boolean",
+            "description": "True when the caller was the last author and the brew is gone; false when only the\n    caller was removed from the author list."
+          }
+        },
+        "description": "Result of `DELETE /api/brews/{editId}`."
+      },
+      "ForgotPasswordRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "InfoRequest": {
+        "type": "object",
+        "properties": {
+          "newEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "newPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "oldPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "InfoResponse": {
+        "required": [
+          "email",
+          "isEmailConfirmed"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "isEmailConfirmed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "JsonElement": {},
+      "LockedBrewInfo": {
+        "required": [
+          "shareId",
+          "editId",
+          "title",
+          "authors",
+          "lock"
+        ],
+        "type": "object",
+        "properties": {
+          "shareId": {
+            "type": "string"
+          },
+          "editId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Handles of the owner and authors in display order."
+          },
+          "lock": {
+            "$ref": "#/components/schemas/AdminLockInfo"
+          }
+        },
+        "description": "A locked brew in `GET /api/admin/locks` and the review queue."
+      },
+      "LockRequest": {
+        "required": [
+          "code",
+          "editMessage",
+          "shareMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Reason code, 100-999 (upstream's lock tool defaults to 455).",
+            "format": "int32"
+          },
+          "editMessage": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Required; shown to the authors in the editor. At most 1000 characters."
+          },
+          "shareMessage": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Required; shown instead of the brew on its share page. At most 1000 characters."
+          }
+        },
+        "description": "Body of `PUT /api/admin/brews/{shareId}/lock`. Replaces any existing lock (and clears its review request)."
+      },
+      "LoginRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "twoFactorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "twoFactorRecoveryCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "NotificationInfo": {
+        "required": [
+          "id",
+          "dismissKey",
+          "title",
+          "body",
+          "startsAt",
+          "stopsAt",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dismissKey": {
+            "type": "string",
+            "description": "Unique key; the client remembers it when the user dismisses the notification."
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Plain text (never markdown or HTML)."
+          },
+          "startsAt": {
+            "type": "string",
+            "description": "Shown from this time (inclusive).",
+            "format": "date-time"
+          },
+          "stopsAt": {
+            "type": "string",
+            "description": "Shown until this time (exclusive).",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A site notification (banner)."
+      },
+      "NotificationInput": {
+        "required": [
+          "dismissKey",
+          "title",
+          "body",
+          "startsAt",
+          "stopsAt"
+        ],
+        "type": "object",
+        "properties": {
+          "dismissKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Required, unique, at most 100 characters (409 when another notification uses it)."
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Required, at most 200 characters."
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Plain text, at most 10000 characters."
+          },
+          "startsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Default: now.",
+            "format": "date-time"
+          },
+          "stopsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Required; after StartsAt.",
+            "format": "date-time"
+          }
+        },
+        "description": "Body of `POST /api/admin/notifications` and `PUT /api/admin/notifications/{id}`."
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RawJson": {
+        "description": "JSON text written into a response as is: stored `jsonb` (a brew's doc and snippets) reaches the client\nwithout being parsed and re-serialized (plan §8.2). In the OpenAPI document it is an unconstrained value."
+      },
+      "RefreshRequest": {
+        "required": [
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "ResendConfirmationEmailRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "ResetPasswordRequest": {
+        "required": [
+          "email",
+          "resetCode",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "resetCode": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        }
+      },
+      "SaveBrewRequest": {
+        "required": [
+          "baseVersion",
+          "doc"
+        ],
+        "type": "object",
+        "properties": {
+          "baseVersion": {
+            "type": "integer",
+            "description": "The version the client last loaded or saved. A different server version gives 409.",
+            "format": "int32"
+          },
+          "doc": {
+            "description": "The whole document.",
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "style": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "User CSS (null = empty)."
+          },
+          "snippets": {
+            "description": "User snippets (JSON array); null clears them."
+          },
+          "meta": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Metadata changes; null keeps all metadata.",
+                "$ref": "#/components/schemas/BrewMetaInput"
+              }
+            ]
+          },
+          "docSchemaVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The document's schema version; must be the server's current one when given.",
+            "format": "int32"
+          }
+        },
+        "description": "Body of `PUT /api/brews/{editId}` (plan §8.4). May be sent gzip-compressed."
+      },
+      "SaveBrewResponse": {
+        "required": [
+          "version",
+          "updatedAt",
+          "title",
+          "pageCount",
+          "authors"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "description": "The new version; send it as the next `baseVersion`.",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string",
+            "description": "The stored title (the first heading when the title was blank)."
+          },
+          "pageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrewAuthorInfo"
+            },
+            "description": "The author list after the save."
+          }
+        },
+        "description": "A successful save."
+      },
+      "SaveConflict": {
+        "required": [
+          "serverVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "serverVersion": {
+            "type": "integer",
+            "description": "The version now stored.",
+            "format": "int32"
+          }
+        },
+        "description": "409 body: the brew changed since `baseVersion` (another tab, device or author saved)."
+      },
+      "SetHandleRequest": {
+        "required": [
+          "handle"
+        ],
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Body of `PUT /api/account/handle`."
+      },
+      "ThemeBundle": {
+        "required": [
+          "theme",
+          "name",
+          "author",
+          "styles",
+          "snippets"
+        ],
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "description": "The theme that was asked for."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of that theme (a static theme's name or a user theme's title)."
+          },
+          "author": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Owner handle of that theme when it is a user theme; otherwise null."
+          },
+          "styles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeStyle"
+            },
+            "description": "Stylesheets, root first: the scoped URL of each static theme, then each user theme's CSS\n    (raw: the client scopes it to the canvas, like user CSS). User themes without CSS add nothing."
+          },
+          "snippets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeSnippetRef"
+            },
+            "description": "Snippet sources, root first: a static theme's snippet group id (`V3_5ePHB`), or a user\n    theme's snippets as `{ name, snippets }`. User themes without snippets add nothing."
+          }
+        },
+        "description": "Response of `GET /api/themes/{theme}/bundle` (plan §8.7): the theme's inheritance chain, root first. Apply\n`styles` in order, then the brew's own CSS."
+      },
+      "ThemeCatalogEntry": {
+        "required": [
+          "key",
+          "name",
+          "renderer",
+          "baseTheme",
+          "baseSnippets",
+          "path",
+          "style",
+          "scopedStyle",
+          "preview",
+          "texture",
+          "hasSnippets"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Theme id, e.g. `5ePHB`; the value of a brew's `meta.theme`. Same as the folder name."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name, e.g. `5e PHB`."
+          },
+          "renderer": {
+            "type": "string",
+            "description": "Always `V3`."
+          },
+          "baseTheme": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Key of the theme whose CSS loads before this one, or null for a root theme."
+          },
+          "baseSnippets": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Key of the theme whose snippets upstream merged under this theme's, or null.\n    Informational: upstream no longer uses it and the bundle ignores it."
+          },
+          "path": {
+            "type": "string",
+            "description": "Folder name under `themes/V3` (legacy field)."
+          },
+          "style": {
+            "type": "string",
+            "description": "URL of the compiled, unscoped stylesheet (export)."
+          },
+          "scopedStyle": {
+            "type": "string",
+            "description": "URL of the stylesheet scoped under `.hb-canvas` (editor canvas)."
+          },
+          "preview": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "URL of the theme picker preview image, or null."
+          },
+          "texture": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "URL of the theme picker texture image, or null."
+          },
+          "hasSnippets": {
+            "type": "boolean",
+            "description": "Whether the theme has its own snippets (snippet group `V3_{key}`)."
+          }
+        },
+        "description": "A static (built-in) theme: one entry of `/themes/themes.json`, which the web build writes\n(`web/vite/generateAssetsPlugin.ts`, `ThemeCatalogEntry`). `GET /api/themes` returns these entries\nas they are."
+      },
+      "ThemeList": {
+        "required": [
+          "static",
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "static": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeCatalogEntry"
+            },
+            "description": "The built-in themes, as in `/themes/themes.json`."
+          },
+          "user": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserThemeInfo"
+            },
+            "description": "User themes (brews tagged `meta:theme`): the caller's own first (published or not), then\n    published ones, each group by name. At most 500."
+          }
+        },
+        "description": "Response of `GET /api/themes`: every theme the caller can pick."
+      },
+      "ThemeSnippetRef": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "required": [
+              "name",
+              "snippets"
+            ],
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "snippets": {
+                "description": "The user theme's snippets (JSON array)."
+              }
+            }
+          }
+        ],
+        "description": "A static theme's snippet group id (e.g. \"V3_5ePHB\"), or a user theme's name and snippets."
+      },
+      "ThemeStyle": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ThemeStyleThemeStyleUrl"
+          },
+          {
+            "$ref": "#/components/schemas/ThemeStyleThemeStyleCss"
+          }
+        ],
+        "description": "One stylesheet of a theme chain: `{ kind: 'url', href }` or `{ kind: 'css', css, shareId }`.",
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "url": "#/components/schemas/ThemeStyleThemeStyleUrl",
+            "css": "#/components/schemas/ThemeStyleThemeStyleCss"
+          }
+        }
+      },
+      "ThemeStyleThemeStyleCss": {
+        "required": [
+          "css",
+          "shareId",
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "css"
+            ],
+            "type": "string"
+          },
+          "css": {
+            "type": "string",
+            "description": "The theme brew's CSS as stored."
+          },
+          "shareId": {
+            "type": "string",
+            "description": "The user theme it came from."
+          }
+        },
+        "description": "A user theme's CSS, unscoped."
+      },
+      "ThemeStyleThemeStyleUrl": {
+        "required": [
+          "href",
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "url"
+            ],
+            "type": "string"
+          },
+          "href": {
+            "type": "string",
+            "description": "Site-relative URL, e.g. `/themes/V3/Blank/style.scoped.css`."
+          }
+        },
+        "description": "A static theme's stylesheet (already scoped under `.hb-canvas`)."
+      },
+      "TwoFactorRequest": {
+        "type": "object",
+        "properties": {
+          "enable": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "twoFactorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "resetSharedKey": {
+            "type": "boolean"
+          },
+          "resetRecoveryCodes": {
+            "type": "boolean"
+          },
+          "forgetMachine": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TwoFactorResponse": {
+        "required": [
+          "sharedKey",
+          "recoveryCodesLeft",
+          "isTwoFactorEnabled",
+          "isMachineRemembered"
+        ],
+        "type": "object",
+        "properties": {
+          "sharedKey": {
+            "type": "string"
+          },
+          "recoveryCodesLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recoveryCodes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "isTwoFactorEnabled": {
+            "type": "boolean"
+          },
+          "isMachineRemembered": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UserBrewList": {
+        "required": [
+          "handle",
+          "own",
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "handle": {
+            "type": "string",
+            "description": "The user's handle."
+          },
+          "own": {
+            "type": "boolean",
+            "description": "True when the caller is this user: the list then includes unpublished and locked brews and brews\n    the user is invited to, with edit ids and roles."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrewSummary"
+            },
+            "description": "At most 1000 brews. In the user's own list, brews they are only invited to come after the others."
+          },
+          "total": {
+            "type": "integer",
+            "description": "All brews the caller may see in this list (may exceed the items returned).",
+            "format": "int32"
+          }
+        },
+        "description": "A user's brews (`GET /api/users/{handle}/brews`), most recently updated first."
+      },
+      "UserThemeInfo": {
+        "required": [
+          "shareId",
+          "name",
+          "author",
+          "baseTheme",
+          "thumbnailUrl",
+          "published",
+          "mine",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "shareId": {
+            "type": "string",
+            "description": "The theme id to store in a brew's `meta.theme`."
+          },
+          "name": {
+            "type": "string",
+            "description": "The theme brew's title."
+          },
+          "author": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Handle of the theme brew's owner, or null."
+          },
+          "baseTheme": {
+            "type": "string",
+            "description": "The theme this one builds on (the theme brew's own `meta.theme`): a static key or\n    another user theme's share id."
+          },
+          "thumbnailUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The theme brew's thumbnail, or null."
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Whether the theme brew is published (listed for everyone)."
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "Whether the caller is an owner or author of the theme brew."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A user theme: a brew tagged `meta:theme`, used as a theme by its share id."
+      },
+      "VaultPage": {
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize",
+          "sort",
+          "dir"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrewSummary"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Matching brews over all pages.",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "description": "The page returned (after clamping).",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "The page size used (after clamping).",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "string",
+            "description": "The sort applied (`relevance` without `q` reports `updated`)."
+          },
+          "dir": {
+            "type": "string",
+            "description": "The direction applied."
+          }
+        },
+        "description": "A page of vault results (`GET /api/vault`)."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Account"
+    },
+    {
+      "name": "Brews"
+    },
+    {
+      "name": "Vault"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Themes"
+    },
+    {
+      "name": "Import"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
+      "name": "Admin"
+    }
+  ]
+}

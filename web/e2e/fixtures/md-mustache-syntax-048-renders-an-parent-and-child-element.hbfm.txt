@@ -1,0 +1,2 @@
+**bolded text**{color:red}
+{color:blue}

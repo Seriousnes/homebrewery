@@ -1,0 +1,46 @@
+/* The import preview's box: the canvas viewport fills it and scrolls; the page gives it a height. */
+.preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.canvas:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.error {
+  position: absolute;
+  inset: auto var(--hbui-space-3) var(--hbui-space-3);
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  margin: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-danger);
+  background: var(--hbui-color-danger-subtle);
+  border: 1px solid var(--hbui-color-danger);
+  border-radius: var(--hbui-radius);
+}
+
+.fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 12rem;
+  font-family: var(--hbui-font);
+  color: var(--hbui-color-text-muted);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}

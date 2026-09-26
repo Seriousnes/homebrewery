@@ -1,0 +1,37 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #585858;
+}
+
+.bar {
+  flex: none;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+  padding: 6px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #eee;
+  background: #222;
+}
+
+.header {
+  flex: 1 1 480px;
+  min-width: 0;
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+/* EditorCanvas fills its parent (it is the scroll container). */
+.canvasArea {
+  flex: 1;
+  min-height: 0;
+}

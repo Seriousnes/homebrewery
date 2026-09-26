@@ -1,0 +1,117 @@
+.card {
+  padding: var(--hbui-space-5);
+  margin: 0 0 var(--hbui-space-5);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.cardTitle {
+  margin: 0 0 var(--hbui-space-3);
+  font-size: var(--hbui-font-size-xl);
+}
+
+.cardText {
+  margin: 0 0 var(--hbui-space-4);
+  color: var(--hbui-color-text-muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--hbui-space-2) var(--hbui-space-5);
+  margin: 0 0 var(--hbui-space-5);
+}
+
+.facts > div {
+  display: contents;
+}
+
+.facts dt {
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.handleForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  max-width: 28rem;
+  margin: 0 0 var(--hbui-space-5);
+}
+
+.handleActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+}
+
+.status {
+  margin: 0;
+  color: var(--hbui-color-success);
+}
+
+.status:empty {
+  display: none;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2) var(--hbui-space-5);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.link {
+  color: var(--hbui-color-info);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:focus-visible {
+  border-radius: 2px;
+  outline: none;
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.welcome {
+  display: flex;
+  gap: var(--hbui-space-3);
+  align-items: flex-start;
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  margin: 0 0 var(--hbui-space-5);
+  background: var(--hbui-color-success-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.welcome > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--hbui-color-success);
+}
+
+.welcomeTitle {
+  margin: 0 0 var(--hbui-space-1);
+  font-weight: 650;
+}
+
+.welcomeText {
+  margin: 0;
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .link:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

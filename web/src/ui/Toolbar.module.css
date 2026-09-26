@@ -1,0 +1,47 @@
+.toolbar {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 8px;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface);
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.vertical {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  padding: 8px 4px;
+  border-right: 1px solid var(--hbui-color-border);
+  border-bottom: 0;
+}
+
+.group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.vertical .group {
+  flex-direction: column;
+}
+
+.separator {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 4px;
+  background: var(--hbui-color-border);
+}
+
+.vertical .separator {
+  width: auto;
+  height: 1px;
+  margin: 4px 4px;
+}

@@ -1,0 +1,66 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-4);
+}
+
+.formError {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  margin: 0;
+  color: var(--hbui-color-danger);
+  background: var(--hbui-color-danger-subtle);
+  border: 1px solid currentColor;
+  border-radius: var(--hbui-radius);
+  overflow-wrap: anywhere;
+}
+
+.formError > svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+}
+
+.footer {
+  margin: var(--hbui-space-5) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.link {
+  color: var(--hbui-color-info);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:focus-visible {
+  border-radius: 2px;
+  outline: none;
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.card {
+  padding: var(--hbui-space-5);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.note {
+  margin: 0 0 var(--hbui-space-4);
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .link:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

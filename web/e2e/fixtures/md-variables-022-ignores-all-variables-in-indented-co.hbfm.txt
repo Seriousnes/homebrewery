@@ -1,0 +1,7 @@
+test
+
+    [var]: string
+
+    $[var]
+
+    $[var](new string)

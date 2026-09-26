@@ -1,0 +1,47 @@
+/* /new page notices (sign in to save, the loaded draft), under the editor's toolbars. */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-2) var(--hbui-space-4);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-info-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-inline-start: 4px solid var(--hbui-color-info);
+  border-radius: var(--hbui-radius);
+}
+
+.icon {
+  flex: none;
+  color: var(--hbui-color-info);
+}
+
+.text {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.message {
+  margin: var(--hbui-space-1) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+}
+
+.link {
+  font-weight: 600;
+  color: var(--hbui-color-accent);
+}

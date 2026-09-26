@@ -1,0 +1,3 @@
+$[var](My name is $[name] Jones)
+
+[name]: Bob

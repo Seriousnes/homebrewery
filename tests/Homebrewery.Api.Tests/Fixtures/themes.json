@@ -1,0 +1,69 @@
+{
+  "themes": [
+    {
+      "key": "5eDMG",
+      "name": "5e DMG",
+      "renderer": "V3",
+      "baseTheme": "5ePHB",
+      "baseSnippets": "5ePHB",
+      "path": "5eDMG",
+      "style": "/themes/V3/5eDMG/style.css",
+      "scopedStyle": "/themes/V3/5eDMG/style.scoped.css",
+      "preview": "/themes/V3/5eDMG/dropdownPreview.png",
+      "texture": "/themes/V3/5eDMG/dropdownTexture.png",
+      "hasSnippets": true
+    },
+    {
+      "key": "5ePHB",
+      "name": "5e PHB",
+      "renderer": "V3",
+      "baseTheme": "Blank",
+      "baseSnippets": null,
+      "path": "5ePHB",
+      "style": "/themes/V3/5ePHB/style.css",
+      "scopedStyle": "/themes/V3/5ePHB/style.scoped.css",
+      "preview": "/themes/V3/5ePHB/dropdownPreview.png",
+      "texture": "/themes/V3/5ePHB/dropdownTexture.png",
+      "hasSnippets": true
+    },
+    {
+      "key": "Blank",
+      "name": "Blank",
+      "renderer": "V3",
+      "baseTheme": null,
+      "baseSnippets": null,
+      "path": "Blank",
+      "style": "/themes/V3/Blank/style.css",
+      "scopedStyle": "/themes/V3/Blank/style.scoped.css",
+      "preview": "/themes/V3/Blank/dropdownPreview.png",
+      "texture": "/themes/V3/Blank/dropdownTexture.png",
+      "hasSnippets": true
+    },
+    {
+      "key": "Journal",
+      "name": "Journal",
+      "renderer": "V3",
+      "baseTheme": "Blank",
+      "baseSnippets": "5ePHB",
+      "path": "Journal",
+      "style": "/themes/V3/Journal/style.css",
+      "scopedStyle": "/themes/V3/Journal/style.scoped.css",
+      "preview": "/themes/V3/Journal/dropdownPreview.png",
+      "texture": "/themes/V3/Journal/dropdownTexture.png",
+      "hasSnippets": true
+    },
+    {
+      "key": "UnearthedArcana",
+      "name": "UnearthedArcana",
+      "renderer": "V3",
+      "baseTheme": "Blank",
+      "baseSnippets": null,
+      "path": "UnearthedArcana",
+      "style": "/themes/V3/UnearthedArcana/style.css",
+      "scopedStyle": "/themes/V3/UnearthedArcana/style.scoped.css",
+      "preview": "/themes/V3/UnearthedArcana/dropdownPreview.png",
+      "texture": "/themes/V3/UnearthedArcana/dropdownTexture.png",
+      "hasSnippets": false
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+```css
+/* Removes Drop Caps */
+.page h1+p:first-letter {
+	all: unset;
+}
+
+
+/* Removes Small-Caps in first line */
+.page h1+p:first-line {
+	all: unset;
+}
+```
+
+# Chapter Title
+Drop caps, indents and colours come from the theme. This paragraph follows the heading, so it
+gets the drop cap; the next paragraph is indented.
+
+A second paragraph with **bold**, *italic* and a [link](#p1).
+
+{{note
+##### A Note
+Notes use the theme's note frame.
+}}
+
+| d6 | Result |
+|:--:|:-------|
+| 1  | Nothing happens |
+| 2  | Something happens |
+
+{{pageNumber,auto}}
+{{footnote PART 1 | FIXTURE}}

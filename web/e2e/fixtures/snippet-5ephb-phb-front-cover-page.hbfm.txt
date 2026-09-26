@@ -1,0 +1,17 @@
+{{frontCover}}
+
+{{logo ![](/assets/naturalCritLogoRed.svg)}}
+
+# Vyse's Skies
+## Ancient Prophecy
+___
+
+{{banner HOMEBREW}}
+
+{{footnote
+  In an amazing kingdom, a wizard and a secretary hope to prevent the destruction of mankind.
+}}
+
+![The Departure, 1837, by Thomas Cole](/assets/the_departure.webp){position:absolute,bottom:0,right:-400px,height:100%}
+
+\page

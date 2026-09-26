@@ -1,0 +1,7 @@
+[var]: one
+
+$[var]
+
+[var]: two
+
+$[var]

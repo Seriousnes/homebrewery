@@ -1,0 +1,1 @@
+Build scripts. schema-manifest.ts writes ../shared/schema-manifest.json (plan §3.7); wire it into package.json as the "schema" script and prebuild runs it.

@@ -1,0 +1,4 @@
+{{classA,classB
+text
+}}
+{classA,classC}

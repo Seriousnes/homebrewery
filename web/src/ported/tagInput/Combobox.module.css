@@ -1,0 +1,209 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.label {
+  font-weight: 500;
+}
+
+.control {
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  min-height: var(--hbui-control-height);
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius);
+}
+
+.control:focus-within {
+  border-color: var(--hbui-color-focus);
+  box-shadow: 0 0 0 1px var(--hbui-color-focus);
+}
+
+.invalid {
+  border-color: var(--hbui-color-danger);
+}
+
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 8px;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  color-scheme: light dark;
+  background: transparent;
+  border: 0;
+  border-radius: var(--hbui-radius);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--hbui-color-text-muted);
+  opacity: 1;
+}
+
+.toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  padding: 0;
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--hbui-color-border);
+  border-radius: 0 var(--hbui-radius) var(--hbui-radius) 0;
+}
+
+.toggle:hover {
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-hover);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.error {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-danger);
+}
+
+.list {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  max-height: 320px;
+  padding: 4px 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+  box-shadow: var(--hbui-shadow-popover);
+}
+
+.group + .group,
+.option + .group,
+.group + .option {
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.groupLabel {
+  padding: 6px 10px 2px;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.option {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.option[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.active {
+  background: var(--hbui-color-surface-hover);
+  box-shadow: inset 3px 0 0 var(--hbui-color-focus);
+}
+
+.option[data-tone='type'] .optionLabel {
+  color: var(--hbui-color-success);
+}
+
+.option[data-tone='system'] .optionLabel {
+  color: var(--hbui-color-accent);
+}
+
+.option[data-tone='meta'] .optionLabel {
+  color: var(--hbui-color-info);
+}
+
+.option[data-tone='group'] .optionLabel {
+  color: var(--hbui-color-text-muted);
+}
+
+.image {
+  flex: none;
+  width: 36px;
+  height: 20px;
+  object-fit: cover;
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.optionText {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionDetail {
+  flex: none;
+  margin-left: auto;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.empty {
+  padding: 6px 10px;
+  color: var(--hbui-color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .list {
+    border-color: CanvasText;
+  }
+}

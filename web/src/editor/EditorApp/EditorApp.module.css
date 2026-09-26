@@ -1,0 +1,131 @@
+/*
+ * The composed editor (plan §5, §9): chrome on top (toolbars, banners), then the panels around
+ * the canvas. It fills the shell's <main> (flex: 1; min-height: 0) and never scrolls itself: the
+ * canvas viewport and the drawers scroll. App chrome only; the canvas styles itself.
+ */
+.app {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.chrome {
+  position: relative;
+  z-index: 1;
+  flex: none;
+}
+
+.banners {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  padding: 0 var(--hbui-space-2);
+}
+
+.banners:not(:empty) {
+  padding-block: var(--hbui-space-2);
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.split {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  min-width: 0;
+}
+
+.canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The second toolbar: panels, pages, layout status, properties. */
+.bar {
+  row-gap: 2px;
+}
+
+.barEnd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.zoom {
+  justify-content: space-between;
+  min-width: 5.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.placeholderBar {
+  min-height: 40px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+/* The lock banner (BrewForEdit.lock). */
+.lock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-warning-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-inline-start: 4px solid var(--hbui-color-warning);
+  border-radius: var(--hbui-radius);
+}
+
+.lockIcon {
+  flex: none;
+  color: var(--hbui-color-warning);
+}
+
+.lockText {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.lockTitle {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.lockMessage {
+  margin: var(--hbui-space-1) 0 0;
+  white-space: pre-line;
+}
+
+.lockMeta {
+  margin: var(--hbui-space-1) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.lockError {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--hbui-color-danger);
+}
+
+/* The page's h1 for screen readers (the page itself is the editor). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

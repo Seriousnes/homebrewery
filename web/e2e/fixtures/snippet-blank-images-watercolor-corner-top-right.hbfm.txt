@@ -1,0 +1,7 @@
+{{imageMaskCorner35,--offsetX:50%,--offsetY:50%,--rotation:0
+  ![The Roman Theater at Taormina, 1828, by Louise-Joséphine sarazin de Belmont](/assets/roman_theatre.webp){height:100%}
+}}
+<!-- Use --offsetX to shift the mask left or right (can use cm instead of %)
+     Use --offsetY to shift the mask up or down
+     Use --rotation to set rotation angle in degrees. -->
+

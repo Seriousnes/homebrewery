@@ -1,0 +1,6 @@
+{{imageMaskEdge5,--offset:10%,--rotation:180
+  ![The Roman Theater at Taormina, 1828, by Louise-Joséphine sarazin de Belmont](/assets/roman_theatre.webp){width:100%,top:0%}
+}}
+<!-- Use --offset to shift the mask away from page center (can use cm instead of %)
+     Use --rotation to set rotation angle in degrees. -->
+

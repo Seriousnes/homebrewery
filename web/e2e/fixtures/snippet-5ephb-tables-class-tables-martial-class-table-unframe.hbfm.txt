@@ -1,0 +1,26 @@
+{{classTable
+##### The Ackerman
+| Level | Proficiency Bonus | Features | Pharmaceutical Outlaw |
+|:-----:|:-----------------:|:---------|:---------------------:|
+|  1st  |  +2  | Divinatory Mineralogy |          2            |
+|  2nd  |  +2  | Divinatory Mineralogy |          2            |
+|  3rd  |  +2  | Astrological Botany   |          3            |
+|  4th  |  +2  | Spell Analyst         |          3            |
+|  5th  |  +3  | Immunological Cultist |          3            |
+|  6th  |  +3  | Orbital Gravedigger   |          4            |
+|  7th  |  +3  | Exo Interfacer        |          4            |
+|  8th  |  +3  | Ritual Astronomy      |          4            |
+|  9th  |  +4  | Malefic Chemist       |          4            |
+| 10th  |  +4  | Exo Interfacer        |          4            |
+| 11th  |  +4  | Sixgun Poisoner       |          4            |
+| 12th  |  +4  | Astrological Botany   |          5            |
+| 13th  |  +5  | Mathematical Pharmacy |          5            |
+| 14th  |  +5  | Torque Interfacer     |          5            |
+| 15th  |  +5  | Biochemical Sorcery   |          5            |
+| 16th  |  +5  | Exo Interfacer        |          5            |
+| 17th  |  +6  | Police Necromancer    |          6            |
+| 18th  |  +6  | Spell Analyst         |          6            |
+| 19th  |  +6  | Hermetic Geography    |          6            |
+| 20th  |  +6  | Consecrated Augury    |      unlimited        |
+}}
+

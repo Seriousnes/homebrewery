@@ -1,0 +1,11 @@
+# Override for deploy/scripts/test-restore.sh: the production stack (docker-compose.yml + compose.prod.yml) in its own
+# compose project, so it never touches the dev database or its ports. Caddy listens on HB_HTTP_PORT (the script sets
+# it); the database publishes no port.
+services:
+  db:
+    ports: !reset []
+  app:
+    image: ${HB_TEST_IMAGE:-homebrewery:ops-test}
+  backup:
+    environment:
+      BACKUP_INTERVAL: 1h       # the test takes its own dumps; only the first scheduled one runs

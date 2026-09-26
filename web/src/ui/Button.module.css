@@ -1,0 +1,135 @@
+.button {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--hbui-control-height);
+  padding: 0 12px;
+  margin: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--hbui-color-text);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition:
+    background-color var(--hbui-duration),
+    border-color var(--hbui-duration),
+    color var(--hbui-duration);
+}
+
+.button:hover:not(:disabled, [aria-disabled='true']) {
+  background: var(--hbui-color-surface-hover);
+}
+
+.button:active:not(:disabled, [aria-disabled='true']) {
+  background: var(--hbui-color-surface-active);
+}
+
+.button:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button[aria-busy='true'] {
+  cursor: progress;
+  opacity: 1;
+}
+
+.sm {
+  gap: 4px;
+  min-height: var(--hbui-control-height-sm);
+  padding: 0 8px;
+  font-size: var(--hbui-font-size-sm);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.primary {
+  color: var(--hbui-color-accent-text);
+  background: var(--hbui-color-accent);
+  border-color: var(--hbui-color-accent);
+}
+
+.primary:hover:not(:disabled, [aria-disabled='true']),
+.primary:active:not(:disabled, [aria-disabled='true']) {
+  background: var(--hbui-color-accent-hover);
+  border-color: var(--hbui-color-accent-hover);
+}
+
+.danger {
+  color: var(--hbui-color-danger-text);
+  background: var(--hbui-color-danger);
+  border-color: var(--hbui-color-danger);
+}
+
+.danger:hover:not(:disabled, [aria-disabled='true']),
+.danger:active:not(:disabled, [aria-disabled='true']) {
+  background: var(--hbui-color-danger-hover);
+  border-color: var(--hbui-color-danger-hover);
+}
+
+.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Toggle buttons (aria-pressed), e.g. bold in the toolbar. */
+.button[aria-pressed='true'] {
+  color: var(--hbui-color-accent);
+  background: var(--hbui-color-accent-subtle);
+  border-color: var(--hbui-color-accent);
+}
+
+.iconOnly {
+  width: var(--hbui-control-height);
+  padding: 0;
+}
+
+.iconOnly.sm {
+  width: var(--hbui-control-height-sm);
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (forced-colors: active) {
+  .button {
+    border-color: ButtonText;
+  }
+
+  .button[aria-pressed='true'] {
+    border-width: 2px;
+  }
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .button {
+    outline-style: none;
+  }
+
+  .button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

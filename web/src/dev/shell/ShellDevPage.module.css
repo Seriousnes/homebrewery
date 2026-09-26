@@ -1,0 +1,49 @@
+.page {
+  min-height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+  padding-bottom: 64px;
+}
+
+.header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size-xl);
+}
+
+.lead {
+  margin: 4px 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.section > h2 {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+}
+
+.section > p {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  border: 1px dashed var(--hbui-color-border-strong);
+}

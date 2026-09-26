@@ -1,0 +1,12 @@
+# Override for deploy/scripts/test-external-db.sh: joins app and backup to the network of the simulated managed server
+# (a separate postgres:18 container that the script starts; host name pg.external.test, port 6543, TLS only).
+services:
+  app:
+    networks: [default, external-db]
+  backup:
+    networks: [default, external-db]
+
+networks:
+  external-db:
+    external: true
+    name: ${HB_EXTDB_NETWORK:-hb-ops-extdb-net}

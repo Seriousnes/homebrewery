@@ -1,0 +1,1 @@
+TipTap/ProseMirror schema: doc.ts, nodes/*, marks/*, attrs.ts, index.ts. No DOM imports (plan §3).

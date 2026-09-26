@@ -1,0 +1,97 @@
+/* The shell fills the viewport (no global CSS: this also sidesteps the body margin); <main>
+   scrolls. Print shows only the page content. */
+.shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--hbui-color-bg);
+}
+
+.skip {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 20;
+  padding: 8px 12px;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+  color: var(--hbui-color-accent-text);
+  text-decoration: none;
+  background: var(--hbui-color-accent);
+  border-radius: var(--hbui-radius);
+  outline: none;
+  box-shadow: var(--hbui-focus-ring);
+  transform: translateY(-200%);
+}
+
+.skip:focus {
+  transform: none;
+}
+
+.header {
+  position: relative;
+  z-index: 2;
+  flex: none;
+}
+
+.progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  background: linear-gradient(90deg, transparent, var(--hbui-color-focus), transparent) no-repeat;
+  background-size: 40% 100%;
+  animation: progress 1.1s ease-in-out infinite;
+}
+
+@keyframes progress {
+  from {
+    background-position: -40% 0;
+  }
+
+  to {
+    background-position: 140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    background: var(--hbui-color-focus);
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+}
+
+@media print {
+  .shell {
+    position: static;
+    display: block;
+    overflow: visible;
+    background: none;
+  }
+
+  .skip,
+  .header {
+    display: none;
+  }
+
+  .main {
+    display: block;
+    overflow: visible;
+  }
+}

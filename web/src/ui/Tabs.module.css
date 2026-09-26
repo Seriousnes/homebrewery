@@ -1,0 +1,110 @@
+.tabs {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  color: var(--hbui-color-text);
+}
+
+.vertical {
+  flex-direction: row;
+}
+
+.list {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.vertical .list {
+  flex-direction: column;
+  border-right: 1px solid var(--hbui-color-border);
+  border-bottom: 0;
+}
+
+.tab {
+  box-sizing: border-box;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: var(--hbui-control-height);
+  padding: 0 12px;
+  margin: 0 0 -1px;
+  font: inherit;
+  font-weight: 500;
+  color: var(--hbui-color-text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--hbui-radius-sm) var(--hbui-radius-sm) 0 0;
+  outline: 2px solid transparent;
+}
+
+.vertical .tab {
+  justify-content: flex-start;
+  margin: 0 -1px 0 0;
+  border-right: 2px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--hbui-radius-sm) 0 0 var(--hbui-radius-sm);
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-hover);
+}
+
+.tab:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--hbui-color-focus);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--hbui-color-accent);
+  border-bottom-color: var(--hbui-color-accent);
+}
+
+.vertical .tab[aria-selected='true'] {
+  border-right-color: var(--hbui-color-accent);
+}
+
+.tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.panel {
+  flex: 1;
+  min-height: 0;
+  padding: var(--hbui-space-3) 0;
+  overflow: auto;
+  outline: none;
+}
+
+.panel:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--hbui-color-focus);
+}
+
+@media (forced-colors: active) {
+  .tab[aria-selected='true'] {
+    border-bottom-color: Highlight;
+  }
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .tab {
+    outline-style: none;
+  }
+
+  .tab:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .panel:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

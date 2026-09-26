@@ -1,0 +1,332 @@
+/*
+ * Editor-side rules for the editing canvas: the layout assumptions pagination relies on (plan
+ * §4.2) and the parts of the CSS contract (§3.2) that the editor's DOM can't express by itself.
+ *
+ * Import it once where the canvas is mounted: `import '@/editor/canvas/canvas.css';`
+ *
+ * DOM: div.hb-canvas › div.pages.ProseMirror › div.page › (page chrome…, div.columnWrapper › flow)
+ *
+ * Cascade: theme stylesheets are <link>s that themeLoader.applyThemeStyles inserts at the start
+ * of <head>, so this file comes later and wins specificity ties with theme rules. Rules that
+ * must never lose use !important; rules the theme may still override on purpose (e.g.
+ * `.page:has(.frontCover) { columns: 1 }`) keep the theme's specificity via :where().
+ * User CSS (adoptedStyleSheets) comes after everything and wins ties.
+ */
+
+/* Upstream base styles ---------------------------------------------------------------------- */
+
+/* The legacy preview iframe loaded the app bundle, so every theme was written on top of its
+   reset (legacy/shared/naturalcrit/styles/reset.less) and core.less (`html, body { font-family:
+   'Open Sans', sans-serif }`, `* { box-sizing: border-box }`). Reproduced here with zero
+   specificity (:where), as upstream, so every theme rule still wins; .hb-canvas plays <body>.
+   (Open Sans itself is not served yet: see the P3.1 notes.) */
+:where(.hb-canvas) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: 400 16px/1 'Open Sans', sans-serif;
+  vertical-align: baseline;
+}
+:where(.hb-canvas, .hb-canvas *) {
+  box-sizing: border-box;
+}
+:where(.hb-canvas)
+  :where(
+    div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym,
+    address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub,
+    sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, button, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure,
+    figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio,
+    video
+  ) {
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 100%;
+  vertical-align: baseline;
+  border: 0;
+}
+:where(.hb-canvas) :where(article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section) {
+  display: block;
+}
+:where(.hb-canvas) :where(ol, ul) {
+  list-style: none;
+}
+:where(.hb-canvas) :where(blockquote, q) {
+  quotes: none;
+}
+/* (reset.less's `:where(blockquote::before, …)` rule is invalid CSS and never applied upstream.) */
+:where(.hb-canvas) :where(table) {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+:where(.hb-canvas) :where(button) {
+  color: unset;
+  text-transform: unset;
+  background-color: unset;
+}
+:where(.hb-canvas) :where(i) {
+  text-box-trim: trim-both;
+}
+
+/* Table cells: upstream cells hold inline content (`<td>text</td>`); the schema wraps it in one
+   paragraph. Let that paragraph generate no box, so the cell's own line-height and alignment apply
+   exactly as upstream. */
+.hb-canvas .page :is(td, th) > p:only-child {
+  display: contents;
+}
+
+/* ProseMirror root ------------------------------------------------------------------------- */
+
+.hb-canvas .ProseMirror {
+  /* TipTap sets white-space: break-spaces, which wraps lines differently from the theme's
+     normal text; pre-wrap keeps ProseMirror's whitespace handling and wraps like upstream. */
+  white-space: pre-wrap;
+  /* TipTap turns ligatures off (for caret placement in old browsers). The theme fonts use them,
+     and pagination must measure the text as it prints/exports. */
+  font-variant-ligatures: normal;
+  font-feature-settings: normal;
+  outline: none;
+}
+
+/* Pages ------------------------------------------------------------------------------------ */
+
+.hb-canvas .page {
+  /* The theme sets content-visibility: auto, which skips layout for offscreen pages; in browsers
+     whose layout queries don't bring skipped content up to date (Firefox), pagination's
+     measurements of those pages would be wrong. !important: brew CSS must not hide pages from
+     measurement either. Where they do (Chromium), see the rule below. */
+  content-visibility: visible !important;
+  /* The theme makes .page a multi-column container and .columnWrapper a `column-span: all` child
+     that inherits the page's column settings (Blank style.less:35-46). Firefox (155) hangs, then
+     crashes the tab, laying out that nesting when a box the theme keeps whole (li, blockquote:
+     break-inside: avoid) is taller than a column; upstream's preview has the same hang. As a flex
+     container the page is not a multi-column box: column properties don't apply to it, but they
+     still compute (theme rules, :has(.frontCover), hb-cols-N, user CSS) and .columnWrapper still
+     inherits them, so the wrapper is the only multi-column box, with the same settings, the same
+     size (the content box: stretched across, height 100%) and the same layout. Page chrome is
+     absolutely positioned (below), so the wrapper is the only flex item. One difference: chrome
+     with no horizontal offset has its static position at the content box's start, where a block
+     container would follow text-align (only the empty marker spans, e.g. span.frontCover on a
+     centred cover, rely on it). e2e/canvas/multicol.spec.ts compares both structures. */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Offscreen pages skip style, layout and paint where a layout query inside skipped content brings
+   it up to date first (Chromium; EditorCanvas sets data-hb-offscreen="skip" after asking the
+   browser, offscreen.ts). The theme's contain: strict already applies the same containment.
+   Pages nobody measures then cost nothing: adding or removing a page no longer restyles every page
+   after it (the themes' .page:nth-child rules), and the browser's editing work per keystroke no
+   longer walks the whole brew (P8.1, docs/implementation-notes.md). */
+.hb-canvas[data-hb-offscreen='skip'] .page {
+  content-visibility: auto !important;
+}
+
+/* Printing lays out every page: nothing is skipped. */
+@media print {
+  .hb-canvas[data-hb-offscreen='skip'] .page {
+    content-visibility: visible !important;
+  }
+}
+
+/* The page pagination is measuring and the one after it are rendered as usual (pagination/
+   layout.ts MEASURING_ATTR): right after a boundary move, a skipped page's layout can be off by a
+   line in Chromium, which costs a pull and a push back per page in a long pass. After the rule
+   above, which it overrides. */
+.hb-canvas .page[data-hb-measuring] {
+  content-visibility: visible !important;
+}
+
+/* Section column setting (page.attrs.columns): hb-cols-1 / hb-cols-2 on the page. The theme puts
+   column-count on .page and .columnWrapper inherits it (Blank: .columnWrapper { columns: inherit }),
+   so the override goes on the page too. Same specificity as the theme's `.page` rule, so it wins
+   by order, while `.page:has(.frontCover) { columns: 1 }` and similar still win. */
+.hb-canvas .page:where(.hb-cols-1) {
+  column-count: 1;
+}
+.hb-canvas .page:where(.hb-cols-2) {
+  column-count: 2;
+}
+
+/* The flow: a multi-column container exactly as tall as the page's content box, filling columns
+   in order. Content that doesn't fit forms extra columns to the right of the content box, which
+   the page clips (overflow: clip); pagination detects those fragments (plan §4.3). The fixed
+   height (upstream: max-height only) also makes free space measurable on short pages. */
+.hb-canvas .page > .columnWrapper {
+  box-sizing: border-box;
+  /* A flex item (see .page above) sized like the block it replaces: never shrunk, and no
+     content-based minimum height, which Firefox would lay out the whole flow again to find. */
+  flex: none;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  column-fill: auto;
+}
+
+/* Page chrome (markers, page objects, footer, page number, editor badges) sits outside
+   .columnWrapper. Anything the theme leaves in the flow would push the wrapper down, so it is
+   out of flow by default; theme rules that position it (.footnote, .pageNumber, .frontCover…)
+   still apply. */
+.hb-canvas :where(.page > :not(.columnWrapper)) {
+  position: absolute;
+}
+
+/* Column breaks: upstream's preview pushes whatever follows a \column into the next column even
+   where break-after isn't honoured (legacy brewRenderer.less). */
+@supports (break-after: always) {
+  .hb-canvas .page .columnSplit {
+    margin-bottom: 100vh;
+  }
+}
+
+/* Continuation fragments (pagination split a paragraph or list): never indented like a new
+   paragraph (plan §3.4). */
+.hb-canvas .page .hb-continued {
+  text-indent: 0 !important;
+}
+
+/* A continued list item is the rest of an item that began on an earlier page: it has no marker
+   of its own. It stays display: list-item, so the list-item counter still counts it (the
+   continued ordered list's start repeats the split item's number) and the next item is right. */
+.hb-canvas .page li.hb-continued::marker {
+  content: none;
+}
+
+/* A continued item that restarts with its nested list begins with an empty filler paragraph
+   (listItem content is `paragraph block*`; pagination/boundary.ts splitFilled). It takes no
+   space and shows no line, but stays a block formatting context, so the block after it keeps the
+   margin it has after the item's paragraph in the whole item (`p + *`) inside the item: the item
+   is as tall as the part pagination would pull back, which keeps pull estimates exact. Only an
+   empty paragraph matches: ProseMirror renders it as a lone trailing <br>. */
+.hb-canvas
+  .page
+  li.hb-continued
+  > p.hb-continued:first-child:not(:only-child):has(> br.ProseMirror-trailingBreak:only-child) {
+  display: flow-root;
+  height: 0;
+  margin-top: 0;
+  overflow: clip;
+}
+
+/* Definition lists: the theme makes dt/dd inline inside `dl { white-space: pre-line }` and relies
+   on the newlines marked-definition-lists writes between them. ProseMirror can't keep that text,
+   so the breaks are generated: after every dd, and after every dt in the multi-line form. */
+.hb-canvas .page dl > dd::after,
+.hb-canvas .page dl.hb-dl-multiline > dt::after {
+  content: '\A';
+}
+/* Upstream's single-line form ends with a newline before </dl>, the multi-line form doesn't. */
+.hb-canvas .page dl.hb-dl-multiline > :last-child::after {
+  content: none;
+}
+
+/* Oversized pages (one block taller than a column; set by pagination, rendered by PageView):
+   hooks for the warning. */
+.hb-canvas .page.hb-oversized {
+  outline: 3px dashed #c62828;
+  outline-offset: -3px;
+}
+.hb-canvas .page > .hb-oversized-badge {
+  top: 4px;
+  right: 4px;
+  z-index: 1000;
+  padding: 2px 8px;
+  font: 600 12px/1.4 system-ui, sans-serif;
+  color: #fff;
+  text-indent: 0;
+  background: #c62828;
+  border-radius: 4px;
+  pointer-events: auto;
+}
+
+@media print {
+  .hb-canvas .page.hb-oversized {
+    outline: none;
+  }
+  .hb-canvas .page > .hb-oversized-badge {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------ */
+/* Objects lane (P5.5–P5.7, plan §6.6): tables, images, definition lists, floats              */
+/* ------------------------------------------------------------------------------------------ */
+
+/* Header rows (tables/headerRows.ts): leading all-th rows carry hb-header-row and stand in for
+   upstream's <thead>; theme and user rules for `thead` are rewritten to match them
+   (tables/headerRowSelectors.ts). A rule for `thead` itself (5ePHB, Blank: `display:
+   table-row-group`) then reaches the row, which must stay a row or the table falls apart. */
+.hb-canvas .page tr.hb-header-row {
+  display: table-row !important;
+}
+
+/* Images with a stored natural size (objects/imageView.ts): the width/height attributes keep the
+   box's aspect ratio before the file loads, but their size hints would also fix both dimensions.
+   At zero specificity every theme and author rule still wins; without one, the image gets its
+   natural width (the variable; unset when the author's style sets only a height) and the height
+   that follows from the ratio, exactly as upstream's attribute-less <img>. */
+:where(.hb-canvas img[data-hb-natural]) {
+  width: var(--hb-natural-width, auto);
+  height: auto;
+}
+
+/* Empty definition terms (`::Definition`, a hanging indent upstream) and terms or descriptions
+   that end with an inline node: upstream's inline <dt>/<dd> draw nothing there, ProseMirror's
+   trailing <br> would add a line (and the generated line break after it a blank one). Not after
+   a hard break, whose new line the trailing break shows; not in the item that holds the caret
+   (class hb-caret-block, ui/blockMenu/caretBlock.ts), which needs a line to type into.
+   (fidelity-findings.md item 2) */
+.hb-canvas .page :is(dt, dd):not(.hb-caret-block) > br.ProseMirror-trailingBreak:not(br + *) {
+  display: none;
+}
+
+/* A paragraph that ends with a floated image (`![](…){float:right}` alone on its line): upstream's
+   <p> has no line box, ProseMirror's separator image (Chrome) and trailing <br> make one.
+   (fidelity-findings.md item 3; only floated images, so the caret after an inline image or icon
+   keeps ProseMirror's hack nodes. prosemirror.css shows the separator with !important.) */
+.hb-canvas .page p :is(img[style*='float'], img.wrapLeft, img.wrapRight) + img.ProseMirror-separator {
+  display: none !important;
+}
+.hb-canvas .page p > :is(img[style*='float'], img.wrapLeft, img.wrapRight) + br.ProseMirror-trailingBreak,
+.hb-canvas
+  .page
+  p
+  > :is(img[style*='float'], img.wrapLeft, img.wrapRight)
+  + img.ProseMirror-separator
+  + br.ProseMirror-trailingBreak,
+.hb-canvas .page p > :has(> :is(img[style*='float'], img.wrapLeft, img.wrapRight):last-child) + br.ProseMirror-trailingBreak,
+.hb-canvas
+  .page
+  p
+  > :has(> :is(img[style*='float'], img.wrapLeft, img.wrapRight) + img.ProseMirror-separator:last-child)
+  + br.ProseMirror-trailingBreak {
+  display: none;
+}
+
+/* Empty table cells: upstream's <td></td> holds nothing, so a row of empty cells (a header row of
+   empty headers) has no line; ProseMirror's paragraph with its trailing <br> adds one
+   (fidelity-findings.md: ORC notice). In a read-only view (share page, the S3 harness) the <br>
+   is hidden, as upstream. While editing it stays, or a new table's empty rows would have no
+   height to click into: an entirely empty row is one line taller in the editor. The paragraph is
+   a block with the cell's font and no margins (with the display: contents above, Chromium would
+   put the caret of a click into an empty cell in a neighbouring cell). */
+.hb-canvas .page :is(td, th) > p:only-child:has(> br.ProseMirror-trailingBreak:only-child) {
+  display: block;
+  margin: 0;
+  font: inherit;
+}
+.hb-canvas .ProseMirror[contenteditable='false'] .page :is(td, th) > p:only-child > br.ProseMirror-trailingBreak:only-child {
+  display: none;
+}
+
+/* The empty definition term or description that holds the caret (hb-caret-block): an inline dd right
+   after a term sits where the term's text ends, so the browser would put typing into the term.
+   While it is edited it gets a box of its own (and no generated line break inside that box). */
+.hb-canvas .page dl > :is(dt, dd).hb-caret-block:has(> br.ProseMirror-trailingBreak:only-child) {
+  display: inline-block;
+  min-width: 1ch;
+}
+.hb-canvas .page dl > :is(dt, dd).hb-caret-block:has(> br.ProseMirror-trailingBreak:only-child)::after {
+  content: none;
+}

@@ -1,6 +1,40 @@
-node_modules
-npm-debug.log
+# Build context for the root Dockerfile. The image needs only web/, themes/, shared/, src/ and the
+# root .NET build files (global.json, Directory.*.props). legacy/ has its own Dockerfile and ignore file.
+
+# VCS, editors, CI
 .git
+.github
+.vs
+.vscode
+.idea
+*.user
+*.swp
+
+# Not part of the image (the compose files and deploy/caddy are the local dev/run stack)
+legacy/
+docs/
+tests/
 Dockerfile
+.dockerignore
 docker-compose.yml
-tests
+compose*.yml
+deploy/caddy/
+
+# Dependencies and build outputs (rebuilt inside the image)
+**/node_modules
+**/bin
+**/obj
+src/Homebrewery.Api/wwwroot
+**/.vite
+
+# Test outputs
+**/TestResults
+**/coverage
+web/test-results
+web/playwright-report
+web/blob-report
+
+# Logs and local-only config
+**/*.log
+**/.env.local
+**/.env.*.local

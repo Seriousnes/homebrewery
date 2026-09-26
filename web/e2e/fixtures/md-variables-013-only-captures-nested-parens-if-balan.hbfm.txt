@@ -1,0 +1,7 @@
+$[var1](A variable (with nested parens) inside)
+
+$[var1]
+
+$[var2](A variable ) with unbalanced parens)
+
+$[var2]

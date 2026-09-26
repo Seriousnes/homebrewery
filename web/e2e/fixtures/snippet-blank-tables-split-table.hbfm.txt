@@ -1,0 +1,15 @@
+##### Typical Difficulty Classes
+{{column-count:2
+| Task Difficulty | DC |
+|:----------------|:--:|
+| Very easy       | 5  |
+| Easy            | 10 |
+| Medium          | 15 |
+
+| Task Difficulty   | DC |
+|:------------------|:--:|
+| Hard              | 20 |
+| Very hard         | 25 |
+| Nearly impossible | 30 |
+}}
+

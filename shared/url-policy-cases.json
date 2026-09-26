@@ -1,0 +1,107 @@
+{
+  "$comment": [
+    "URL policy cases the client and the server must agree on (plan §8.5 rule 4; review item RV-14).",
+    "Server: tests/Homebrewery.Api.Tests/Documents/UrlPolicyTests.cs runs every case against UrlPolicy.IsSafeHref/IsSafeSrc and DocInspector.",
+    "Client: web/src/editor/schema/urlPolicy.shared.test.ts runs every case against isSafeHref/isSafeSrc (web/src/editor/schema/html.ts).",
+    "A case is { url | parts, href, src, why, clientGap? }. href = allowed as a link (link.href); src = allowed as an image or page object source.",
+    "parts builds long URLs: the concatenation of each part's text repeated 'repeat' times (default 1).",
+    "clientGap marks a case where the client still disagrees; the client test expects it to fail (it.fails) until html.ts is fixed, then the field must be removed.",
+    "maxLength is UrlPolicy.MaxLength / MAX_URL_LENGTH (UTF-16 code units)."
+  ],
+  "maxLength": 2097152,
+  "cases": [
+    { "url": "https://example.com/a?b=c#d", "href": true, "src": true, "why": "https" },
+    { "url": "http://example.com", "href": true, "src": true, "why": "http" },
+    { "url": "HTTPS://EXAMPLE.COM/X.PNG", "href": true, "src": true, "why": "schemes are case-insensitive" },
+    { "url": "http:relative-looking", "href": true, "src": true, "why": "an http scheme without slashes is still http" },
+    { "url": "\thttps://example.com/", "href": true, "src": true, "why": "leading controls are ignored" },
+    { "url": "https://example.com/ ", "href": true, "src": true, "why": "trailing space" },
+    { "url": "mailto:someone@example.com", "href": true, "src": false, "why": "mailto is a link, not a source" },
+    { "url": "MAILTO:someone@example.com", "href": true, "src": false, "why": "mailto, upper case" },
+    { "url": "/share/abc123def456", "href": true, "src": true, "why": "root-relative" },
+    { "url": "relative/page", "href": true, "src": true, "why": "path-relative" },
+    { "url": "./a:b", "href": true, "src": true, "why": "a colon after a non-letter start is not a scheme" },
+    { "url": "#p3", "href": true, "src": true, "why": "anchor" },
+    { "url": "//cdn.example.com/x.png", "href": true, "src": true, "why": "protocol-relative" },
+    { "url": "?q=1", "href": true, "src": true, "why": "query-relative" },
+    { "url": "", "href": true, "src": true, "why": "empty (the schema's 'no URL')" },
+    { "url": "javascript", "href": true, "src": true, "why": "no colon, so no scheme" },
+    { "url": ":no-scheme", "href": true, "src": true, "why": "a scheme needs at least one letter" },
+    { "url": "1http://example.com", "href": true, "src": true, "why": "a scheme starts with an ASCII letter" },
+    { "url": "javascript&colon;alert(1)", "href": true, "src": true, "why": "entities are not decoded in stored attributes (browsers read it as a relative URL)" },
+    { "url": "\\\\evil.example\\x", "href": true, "src": true, "why": "backslashes: relative (browsers read //evil.example/x, still http(s))" },
+    { "url": "jav\u017fcript:alert(1)", "href": true, "src": true, "why": "U+017F is not an ASCII letter, so there is no scheme (browsers agree: relative)" },
+    { "url": "\u200bjavascript:alert(1)", "href": true, "src": true, "why": "U+200B is not white space; browsers read a relative URL" },
+    { "url": "\u180ejavascript:alert(1)", "href": true, "src": true, "why": "U+180E is not white space since Unicode 6.3; browsers read a relative URL" },
+    { "url": "java\u0085script:alert(1)", "href": true, "src": true, "why": "U+0085 is not in JavaScript's \\s (the server used to remove it); browsers read a relative URL" },
+
+    { "url": "javascript:alert(1)", "href": false, "src": false, "why": "javascript" },
+    { "url": "JavaScript:alert(1)", "href": false, "src": false, "why": "javascript, mixed case" },
+    { "url": "  javascript:alert(1)", "href": false, "src": false, "why": "leading spaces" },
+    { "url": "java\tscript:alert(1)", "href": false, "src": false, "why": "tab inside the scheme" },
+    { "url": "java\nscript:alert(1)", "href": false, "src": false, "why": "newline inside the scheme" },
+    { "url": "java\rscript:alert(1)", "href": false, "src": false, "why": "carriage return inside the scheme" },
+    { "url": "\u0000javascript:alert(1)", "href": false, "src": false, "why": "leading NUL" },
+    { "url": "\u0001javascript:alert(1)", "href": false, "src": false, "why": "leading C0 control" },
+    { "url": "java\u007fscript:alert(1)", "href": false, "src": false, "why": "DEL inside the scheme" },
+    { "url": "java\u00a0script:alert(1)", "href": false, "src": false, "why": "no-break space inside the scheme" },
+    { "url": "\u2028javascript:alert(1)", "href": false, "src": false, "why": "line separator" },
+    { "url": "\u3000javascript:alert(1)", "href": false, "src": false, "why": "ideographic space" },
+    { "url": "\ufeffjavascript:alert(1)", "href": false, "src": false, "why": "U+FEFF is in JavaScript's \\s (the server used to keep it and allow this)" },
+    { "url": "a b:c", "href": false, "src": false, "why": "white space is removed before the scheme is read (stricter than browsers, on both sides)" },
+    { "url": "vbscript:msgbox(1)", "href": false, "src": false, "why": "vbscript" },
+    { "url": "data:text/html,<script>alert(1)</script>", "href": false, "src": false, "why": "data: that is not an image" },
+    { "url": "data:text/html;base64,PHNjcmlwdD4=", "href": false, "src": false, "why": "data: HTML, base64" },
+    { "url": "data:image/png;base64,iVBORw0KGgo=", "href": false, "src": true, "why": "data:image is a source, not a link" },
+    { "url": " data:image/png;base64,iVBORw0KGgo=", "href": false, "src": true, "why": "leading space before data:image" },
+    { "url": "DATA:IMAGE/SVG+XML;utf8,<svg/>", "href": false, "src": true, "why": "data:image, upper case" },
+    { "url": "da\tta:image/png;base64,iVBORw0KGgo=", "href": false, "src": true, "why": "tab inside data:image" },
+    { "url": "data:image", "href": false, "src": false, "why": "data:image needs the slash" },
+    { "url": "data:,image/png", "href": false, "src": false, "why": "text data" },
+    { "url": "data:imagex/png;base64,AAAA", "href": false, "src": false, "why": "not image/" },
+    { "url": "data:\u0130mage/png;base64,AAAA", "href": false, "src": false, "why": "U+0130 is not an ASCII i (no Unicode case folding)" },
+    { "url": "file:///etc/passwd", "href": false, "src": false, "why": "file" },
+    { "url": "file:///C:/Users/x/clip_image002.png", "href": false, "src": false, "why": "file (a Word paste)" },
+    { "url": "ftp://example.com/x", "href": false, "src": false, "why": "ftp" },
+    { "url": "tel:+123", "href": false, "src": false, "why": "tel" },
+    { "url": "blob:http://x/1", "href": false, "src": false, "why": "blob" },
+    { "url": "about:blank", "href": false, "src": false, "why": "about" },
+    { "url": "chrome://settings", "href": false, "src": false, "why": "browser scheme" },
+    { "url": "web+evil:x", "href": false, "src": false, "why": "custom protocol handler scheme" },
+    {
+      "parts": [{ "text": "a", "repeat": 100 }, { "text": ":x" }],
+      "href": false, "src": false,
+      "why": "a 100-letter scheme is still a scheme (the server used to read only 64 characters and allow it)"
+    },
+    {
+      "parts": [{ "text": "https://example.com/" }, { "text": "a", "repeat": 2097132 }],
+      "href": true, "src": true,
+      "why": "exactly maxLength"
+    },
+    {
+      "parts": [{ "text": "https://example.com/" }, { "text": "a", "repeat": 2097133 }],
+      "href": false, "src": false,
+      "why": "maxLength + 1"
+    },
+    {
+      "parts": [{ "text": "a", "repeat": 2097153 }],
+      "href": false, "src": false,
+      "why": "a relative URL over maxLength"
+    },
+    {
+      "parts": [{ "text": " ", "repeat": 300 }, { "text": "javascript:alert(1)" }],
+      "href": false, "src": false,
+      "why": "browsers strip any number of leading spaces, so this is javascript:"
+    },
+    {
+      "parts": [{ "text": "a", "repeat": 300 }, { "text": ":x" }],
+      "href": false, "src": false,
+      "why": "a 300-letter scheme"
+    },
+    {
+      "parts": [{ "text": "data:" }, { "text": " ", "repeat": 70 }, { "text": "image/png;base64,iVBORw0KGgo=" }],
+      "href": false, "src": true,
+      "why": "ignored characters inside data:image are removed wherever they are"
+    }
+  ]
+}

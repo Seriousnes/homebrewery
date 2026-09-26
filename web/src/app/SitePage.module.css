@@ -1,0 +1,52 @@
+.page {
+  box-sizing: border-box;
+  flex: 1 0 auto;
+  padding: var(--hbui-space-6) var(--hbui-space-4) 64px;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-bg);
+}
+
+.content {
+  margin: 0 auto;
+}
+
+.narrow {
+  max-width: 28rem;
+}
+
+.normal {
+  max-width: 48rem;
+}
+
+.wide {
+  max-width: 72rem;
+}
+
+.heading {
+  margin: 0 0 var(--hbui-space-2);
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+  outline: none;
+}
+
+.heading:focus-visible {
+  border-radius: var(--hbui-radius-sm);
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.lead {
+  margin: 0 0 var(--hbui-space-5);
+  color: var(--hbui-color-text-muted);
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .heading:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

@@ -1,0 +1,49 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+}
+
+.chrome {
+  flex: none;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+}
+
+.control {
+  display: flex;
+  gap: var(--hbui-space-1);
+  align-items: center;
+}
+
+.requests {
+  margin-left: auto;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.placeholder {
+  min-height: 40px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+}
+
+.canvas {
+  height: 100%;
+}

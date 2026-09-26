@@ -1,0 +1,7 @@
+{{ol-lowerLetters
+1. **Notice.** This work includes AELF Open Gaming Content, which may only be used under the terms of the AELF Open License version 1.0a. This product is not endorsed or reviewed by Mythmere Games LLC or any other contributor of AELF Open Gaming Content and does not represent the olListLower
+2. **Designation of AELF Open Game Content.** Here you describe your AELF Open Game Content. There are some examples of what might go in this section below.
+3. **Product Identity.** Here you designate your Product Identity. 
+4. **Required Attributions.** Here you include any “Required Attributions” for your product or for a product containing AELF Open Game Content that you’re using.
+}}
+

@@ -1,0 +1,34 @@
+{{monster
+## All-devouring Baseball Imp
+*Tiny annoyance, weird neutral*
+___
+**Armor Class** :: 10 (chain mail, shield)
+**Hit Points**  :: 3 (1d4 + 5)
+**Speed**       :: 11 ft.
+___
+|  STR  |  DEX  |  CON  |  INT  |  WIS  |  CHA  |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|4 (-3)|14 (+2)|5 (-2)|19 (+5)|18 (+4)|17 (+4)|
+___
+**Condition Immunities** :: groggy
+**Senses**               :: darkvision 60 ft., passive Perception 15
+**Languages**            :: Pottymouth, Latin
+**Challenge**            :: 0 (8394 XP) {{bonus **Proficiency Bonus** +2}}
+___
+***Pack Tactics.*** These guys work together like peanut butter and jelly.
+:
+***Sassiness.*** When questioned, this creature will talk back instead of answering.
+:
+***Onion Stench.*** Any creatures within 5 feet of this thing develops an irrational craving for onion rings.
+:
+***Pack Tactics.*** These guys work together like peanut butter and jelly.
+:
+***Full of Detergent.*** This creature has swallowed an entire bottle of dish detergent and is actually having a pretty good time.
+
+While walking near this creature, you must make a dexterity check or become "a soapy mess" for three hours, after which your skin will get all dry and itchy.
+### Actions
+***Bulldog Rake.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+:
+***Airplane Hammer.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+}}
+

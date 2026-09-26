@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Homebrewery.Api/Homebrewery.Api.csproj" />
+    <Project Path="src/Homebrewery.Core/Homebrewery.Core.csproj" />
+    <Project Path="src/Homebrewery.Data/Homebrewery.Data.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Homebrewery.Api.Tests/Homebrewery.Api.Tests.csproj" />
+  </Folder>
+</Solution>

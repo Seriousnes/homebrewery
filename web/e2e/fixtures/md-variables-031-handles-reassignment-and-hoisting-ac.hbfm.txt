@@ -1,0 +1,9 @@
+$[var]
+
+[var]: one
+
+$[var]
+\page
+[var]: two
+
+$[var]

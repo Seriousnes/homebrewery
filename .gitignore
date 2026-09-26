@@ -1,5 +1,5 @@
 node_modules
-storage
+/storage
 .idea
 *.swp
 
@@ -14,3 +14,27 @@ startMViewer.bat
 .vscode
 
 coverage
+
+# WYSIWYG rewrite: .NET (src/, tests/) and web/ build and test outputs
+src/Homebrewery.Api/wwwroot/
+**/bin/
+**/obj/
+web/node_modules
+web/test-results/
+web/playwright-report/
+web/blob-report/
+web/.vite/
+*.user
+TestResults/
+.vs/
+# dotnet --artifacts-path output of the CI e2e jobs (HB_ARTIFACTS=.artifacts)
+.artifacts/
+
+# Upstream build output and local config, now under legacy/ (the root-anchored build/* and config/*
+# rules above no longer match after P0.1 moved them)
+legacy/build/
+legacy/config/local.*
+legacy/config/docker.*
+
+# Local compose overrides (HB_HTTP_PORT etc.)
+.env

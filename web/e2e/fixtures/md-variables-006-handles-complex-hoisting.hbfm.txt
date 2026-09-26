@@ -1,0 +1,13 @@
+$[titleAndName]: $[title] $[fullName]
+
+$[title]: Mr.
+
+$[fullName]: $[firstName] $[lastName]
+
+[firstName]: Bob
+
+Welcome, $[titleAndName]!
+
+[lastName]: Jacob
+
+[lastName]: $[lastName]son

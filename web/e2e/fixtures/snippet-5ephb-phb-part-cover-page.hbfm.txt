@@ -1,0 +1,10 @@
+{{partCover}}
+
+# PART X
+## Tomb of Shadows
+
+{{imageMaskEdge1,--offset:10cm,--rotation:180
+  ![The United States Frigate "President" Engaging the British Squadron, 1815, 1850, by Fitz Henry Lane](/assets/frigate.webp){position:absolute,bottom:0,right:0,height:100%}
+}}
+
+\page

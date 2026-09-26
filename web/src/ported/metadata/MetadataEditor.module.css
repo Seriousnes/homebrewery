@@ -1,0 +1,231 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-5);
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+}
+
+.sectionTitle {
+  padding-bottom: var(--hbui-space-1);
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-4);
+  align-items: flex-start;
+}
+
+.column {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+}
+
+.grow {
+  flex: 1 1 auto;
+}
+
+.thumbnailRow {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+}
+
+.thumbnailToggle {
+  /* Lines the button up with the input under the label. */
+  margin-top: 24px;
+}
+
+.thumbnail {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  height: 180px;
+  padding: var(--hbui-space-1);
+  margin: 24px 0 0;
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.thumbnailMissing {
+  padding: var(--hbui-space-2);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+  text-align: center;
+}
+
+.language {
+  flex: 0 1 200px;
+}
+
+.theme {
+  flex: 1 1 320px;
+}
+
+.inlineHint {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+}
+
+.authors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-weight: 500;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 2px 2px 10px;
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: 999px;
+}
+
+.chip[data-role='owner'] {
+  background: var(--hbui-color-accent-subtle);
+}
+
+.chip:not(:has(button)) {
+  padding-right: 10px;
+}
+
+.chipLink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--hbui-color-border-strong);
+  text-underline-offset: 2px;
+}
+
+.chipLink:hover {
+  text-decoration-color: currentcolor;
+}
+
+.chipLink:focus-visible {
+  border-radius: var(--hbui-radius-sm);
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: 1px;
+}
+
+.role {
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.chipRemove {
+  border-radius: 999px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.errorText {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-danger);
+}
+
+.alert {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  color: var(--hbui-color-danger);
+  background: var(--hbui-color-danger-subtle);
+  border: 1px solid var(--hbui-color-danger);
+  border-radius: var(--hbui-radius);
+}
+
+.lock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  padding: var(--hbui-space-3);
+  background: var(--hbui-color-warning-subtle);
+  border: 1px solid var(--hbui-color-warning);
+  border-radius: var(--hbui-radius);
+}
+
+.lockTitle {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.lockText,
+.lockReason {
+  margin: 0;
+}
+
+.lockReason {
+  white-space: pre-wrap;
+}
+
+.lockActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  align-items: flex-start;
+}
+
+@media (forced-colors: active) {
+  .lock,
+  .alert,
+  .chip {
+    border-color: CanvasText;
+  }
+}

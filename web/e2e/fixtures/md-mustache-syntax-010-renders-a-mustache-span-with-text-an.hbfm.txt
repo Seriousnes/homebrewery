@@ -1,0 +1,1 @@
+{{#my-span,#my-favorite-span text}}

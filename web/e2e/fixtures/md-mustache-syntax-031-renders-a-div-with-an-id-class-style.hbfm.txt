@@ -1,0 +1,3 @@
+{{color:red,cat,#dog,a="b and c",d="e"
+Sample text.
+}}

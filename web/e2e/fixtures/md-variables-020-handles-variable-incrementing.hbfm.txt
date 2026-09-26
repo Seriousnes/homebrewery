@@ -1,0 +1,3 @@
+$[num1]: 5
+
+Increment num1 to get $[num1]($[num1 + 1]) and again to $[num1]($[num1 + 1]).

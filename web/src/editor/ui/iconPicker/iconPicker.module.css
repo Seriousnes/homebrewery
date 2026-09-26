@@ -1,0 +1,141 @@
+/*
+ * Icon picker dialog and the `:` suggestion list. Glyph previews sit in a span with the class
+ * hb-canvas (next to .glyph): the icon fonts' CSS is part of the theme (Blank imports the four
+ * icon fonts) and theme CSS is scoped to .hb-canvas.
+ */
+
+.suggestions {
+  position: fixed;
+  z-index: 2000;
+  box-sizing: border-box;
+  min-width: 220px;
+  max-width: 360px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--hbui-color-border, #d0d7de);
+  border-radius: 8px;
+  background: var(--hbui-color-surface-raised, #fff);
+  color: var(--hbui-color-text, #1f2328);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+  font: 400 13px/1.3 system-ui, sans-serif;
+}
+
+.suggestions[hidden] {
+  display: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.option[aria-selected='true'] {
+  background: var(--hbui-color-accent-subtle, #dbeafe);
+}
+
+.optionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.optionCode {
+  margin-left: auto;
+  color: var(--hbui-color-text-muted, #57606a);
+  font: 11px/1.2 ui-monospace, monospace;
+}
+
+/* A glyph preview: <span class="glyph hb-canvas"><i class="df d12-2"></i></span> */
+.glyph.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+/* Dialog */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.search {
+  flex: 1 1 220px;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 4px;
+  max-height: min(50vh, 420px);
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--hbui-color-border, #d0d7de);
+  border-radius: 6px;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.result[aria-selected='true'] {
+  background: var(--hbui-color-accent-subtle, #dbeafe);
+  outline: 2px solid var(--hbui-color-accent, #2563eb);
+  outline-offset: -2px;
+}
+
+.result .glyph {
+  width: 36px;
+  height: 36px;
+  font-size: 28px;
+}
+
+.resultLabel {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  margin: 0;
+  color: var(--hbui-color-text-muted, #57606a);
+  font-size: 12px;
+}

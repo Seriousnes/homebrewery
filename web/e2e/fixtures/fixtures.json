@@ -1,0 +1,1882 @@
+{
+  "generated": "npx tsx scripts/fidelity-fixtures.ts",
+  "skipped": [
+    "Blank/Text Editor/Footer/Footer from H1: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer/Footer from H2: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer/Footer from H3: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer/Footer from H4: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer/Footer from H5: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer/Footer from H6: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Footer: Cannot read properties of undefined (reading 'line')",
+    "Blank/Text Editor/Table of Contents/Table of Contents: document is not defined",
+    "Blank/Text Editor/Table of Contents: document is not defined"
+  ],
+  "fixtures": [
+    {
+      "name": "welcome",
+      "kind": "welcome",
+      "source": "legacy/client/homebrew/pages/homePage/welcome_msg.md",
+      "theme": "5ePHB",
+      "note": "asset URLs made site-relative"
+    },
+    {
+      "name": "snippet-blank-text-editor-column-break",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Column Break",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-new-page",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › New Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-page-numbering-page-number",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Page Numbering › Page Number",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-page-numbering-auto-incrementing-page-nu",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Page Numbering › Auto-incrementing Page Number",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-page-numbering-variable-auto-page-number",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Page Numbering › Variable Auto Page Number",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-page-numbering-skip-page-number-incremen",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Page Numbering › Skip Page Number Increment this Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-page-numbering-restart-numbering",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Page Numbering › Restart Numbering",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-vertical-spacing",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Vertical Spacing",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-horizontal-spacing",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Horizontal Spacing",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-wide-block",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Wide Block",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-qr-code",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › QR Code",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-link-to-page",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Link to page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-add-comment",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Add Comment",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-homebrewery-credit",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Homebrewery Credit",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-table-of-contents-include-in-toc-up-to-h",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Table of Contents › Include in ToC up to H3",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-table-of-contents-include-in-toc-up-to-h-2",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Table of Contents › Include in ToC up to H4",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-table-of-contents-include-in-toc-up-to-h-3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Table of Contents › Include in ToC up to H5",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-table-of-contents-include-in-toc-up-to-h-4",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Table of Contents › Include in ToC up to H6",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-text-editor-index",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Text Editor › Index",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-aelf-title-page-declaration",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › AELF › Title Page Declaration",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-aelf-legal-declaration",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › AELF › Legal Declaration",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-aelf-aelf-license",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › AELF › AELF License",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc0-4",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC0 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by-2",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-SA 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by-3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-NC 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by-4",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-NC-SA 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by-5",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-ND 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-text-declarations-cc-by-6",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Text Declarations › CC-BY-NC-ND 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc0-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC0 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-sa-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-SA 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-nc-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-NC 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-nc-sa-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-NC-SA 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-nd-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-ND 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-creative-commons-badges-cc-by-nc-nd-40",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Creative Commons › Badges › CC-BY-NC-ND 4.0",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-chronicle-system",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Chronicle System Guild Colophon",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-green-ronins-age",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Green Ronin's Age Creator's Alliance › Required Text › Cover",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-green-ronins-age-2",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Green Ronin's Age Creator's Alliance › Logos › Age",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-green-ronins-age-3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Green Ronin's Age Creator's Alliance › Logos › Blue Rose",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-green-ronins-age-4",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Green Ronin's Age Creator's Alliance › Logos › Fantasy Age Compatible",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-green-ronins-age-5",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Green Ronin's Age Creator's Alliance › Logos › Modern AGE Compatible",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-hero-kids-creato",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Hero Kid's Creators Guild › Required Text › heroForgeHeroKidsCreatorsGuildColophon",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-hero-kids-creato-2",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Hero Kid's Creators Guild › Required Text › heroForgeHeroKidsCreatorsGuildSuperKidsColophon",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-hero-kids-creato-3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Hero Kid's Creators Guild › Required Text › heroForgeHeroKidsCreatorsGuildCover",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-hero-kids-creato-4",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Hero Kid's Creators Guild › Required Text › heroForgeHeroKidsCreatorsGuildSuperKidsCover",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-travellers-aid-s",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Travellers' Aid Society › Legal Statement",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-super-powered-by",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Super-Powered by M&M › Required Text › Colophon",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-super-powered-by-2",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Super-Powered by M&M › Required Text › Cover",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-dtrpg-community-content-super-powered-by-3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › DTRPG Community Content › Super-Powered by M&M › Required Text › Section 15",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-gnu-gnu-free-documentation-license",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › GNU › GNU Free Documentation License",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-gnu-gnu-fdl-title-page",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › GNU › GNU FDL Title Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-gnu-gnu-fdl-title-page-walterations",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › GNU › GNU FDL Title Page w/alterations",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-gnu-gnu-general-public-license-v3",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › GNU › GNU General Public License v3",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-gnu-gnu-gplv3-title-page",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › GNU › GNU GPLv3 Title Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-icons-text-declarations-compatibility",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Icons › Text Declarations › Compatibility",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-icons-text-declarations-section-15",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Icons › Text Declarations › Section 15",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-icons-text-declarations-trademark",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Icons › Text Declarations › Trademark",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-icons-compatibility-logo",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Icons › Compatibility Logo",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-mit-license",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › MIT License",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-mongoose-publishing-fair-use-long-form-f",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Mongoose Publishing Fair Use › Long Form Fair Use",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-mongoose-publishing-fair-use-traveller-f",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Mongoose Publishing Fair Use › Traveller Fair Use",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-mongoose-publishing-fair-use-2300ad-fair",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Mongoose Publishing Fair Use › 2300AD Fair Use",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-mongoose-publishing-fair-use-twilight-20",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Mongoose Publishing Fair Use › Twilight: 2000 Fair Use",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-orc-notice",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › ORC Notice",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-shadowdark-logos-compatibility-logo-blac",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Shadowdark › Logos › Compatibility Logo - Black",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-shadowdark-logos-compatibility-logo-whit",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Shadowdark › Logos › Compatibility Logo - White",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-shadowdark-license-statement",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Shadowdark › License Statement",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-true-20-ogl-10-section-15",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › True 20 › OGL 1.0 Section 15",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-true-20-true20-logo",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › True 20 › True20 Logo",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-wizards-of-the-coast-ogl-10-a",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Wizards of the Coast › OGL 1.0 A",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-license-wizards-of-the-coast-wotc-fan-content-po",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › License › Wizards of the Coast › WoTC Fan Content Policy",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-style-editor-add-comment",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Style Editor › Add Comment",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-images-image",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Image",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-image-wrap-left",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Image Wrap Left",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-image-wrap-right",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Image Wrap Right",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-background-image",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Background Image",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-splatter",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Splatter",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-center",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Center",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-edge-top",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Edge › Top",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-edge-right",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Edge › Right",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-edge-bottom",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Edge › Bottom",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-edge-left",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Edge › Left",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-edge",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Edge",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-corner-top-left",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Corner › Top-Left",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-corner-top-right",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Corner › Top-Right",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-corner-bottom-left",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Corner › Bottom-Left",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-corner-bottom-right",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Corner › Bottom-Right",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watercolor-corner",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watercolor Corner",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-images-watermark",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Images › Watermark",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-tables-table",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Tables › Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-tables-wide-table",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Tables › Wide Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-tables-split-table",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Tables › Split Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-open-sans",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Open Sans",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-code-bold",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Code Bold",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-code-light",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Code Light",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-scaly-sans",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Scaly Sans",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-book-insanity",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Book Insanity",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-mr-eaves",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Mr Eaves",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-pagella",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Pagella",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-solbera-imitation",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Solbera Imitation",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-scaly-sans-small-caps",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Scaly Sans Small Caps",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-walter-turncoat",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Walter Turncoat",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-lato",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Lato",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-courier",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Courier",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-nodesto-caps-condensed",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Nodesto Caps Condensed",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-overpass",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Overpass",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-davek",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Davek",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-iokharic",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Iokharic",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-rellanic",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Rellanic",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-fonts-times-new-roman",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Fonts › Times New Roman",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-blank-print-us-letter-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › US Letter Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-a3-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › A3 Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-a4-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › A4 Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-a5-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › A5 Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-square-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › Square Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-card-page-size",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › Card Page Size",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-blank-print-ink-friendly",
+      "kind": "snippet",
+      "source": "themes/V3/Blank/snippets.js › Print › Ink Friendly",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-5ephb-style-editor-remove-drop-cap",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Style Editor › Remove Drop Cap",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-5ephb-style-editor-tweak-drop-cap",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Style Editor › Tweak Drop Cap",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "snippet-5ephb-phb-spell",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Spell",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-spell-list",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Spell List",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-class-feature",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Class Feature",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-quote",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Quote",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-note",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Note",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-descriptive-text-box",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Descriptive Text Box",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-monster-stat-block-unframed",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Monster Stat Block (unframed)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-monster-stat-block",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Monster Stat Block",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-wide-monster-stat-block",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Wide Monster Stat Block",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-front-cover-page",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Front Cover Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-inside-cover-page",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Inside Cover Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-part-cover-page",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Part Cover Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-back-cover-page",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Back Cover Page",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-magic-item",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Magic Item",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-phb-artist-credit",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › PHB › Artist Credit",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-martial-class-table",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Martial Class Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-martial-class-table-unframe",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Martial Class Table (unframed)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-full-caster-class-table",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Full Caster Class Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-full-caster-class-table-unf",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Full Caster Class Table (unframed)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-half-caster-class-table",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Half Caster Class Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-half-caster-class-table-unf",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Half Caster Class Table (unframed)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-third-caster-spell-table",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Third Caster Spell Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables-third-caster-spell-table-un",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables › Third Caster Spell Table (unframed)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-class-tables",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Class Tables",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-rune-table-dwarvish",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Rune Table › Dwarvish",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-rune-table-elvish",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Rune Table › Elvish",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-rune-table-draconic",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Rune Table › Draconic",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-tables-rune-table",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Tables › Rune Table",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "snippet-5ephb-print-ink-friendly",
+      "kind": "snippet",
+      "source": "themes/V3/5ePHB/snippets.js › Print › Ink Friendly",
+      "theme": "5ePHB",
+      "note": "style snippet: the CSS block plus a sample body"
+    },
+    {
+      "name": "md-basic-001-processes-the-markdown-within-an-htm",
+      "kind": "markdown-test",
+      "source": "tests/markdown/basic.test.js › Processes the markdown within an HTML block if its just a class wrapper",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-001-no-term-1-definition",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Inline Definition Lists › No Term 1 Definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-002-single-definition-term",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Inline Definition Lists › Single Definition Term",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-003-multiple-definition-terms",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Inline Definition Lists › Multiple Definition Terms",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-004-single-term-single-definition",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Single Term, Single Definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-005-single-term-plural-definitions",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Single Term, Plural Definitions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-006-multiple-term-single-definitions",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiple Term, Single Definitions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-007-multiple-term-plural-definitions",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiple Term, Plural Definitions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-008-single-term-single-multi-line-defini",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Single Term, Single multi-line definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-009-single-term-plural-multi-line-defini",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Single Term, Plural multi-line definitions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-010-multiple-term-single-multi-line-defi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiple Term, Single multi-line definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-011-multiple-term-single-multi-line-defi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiple Term, Single multi-line definition, followed by an inline dl",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-012-multiple-term-single-multi-line-defi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiple Term, Single multi-line definition, followed by paragraph",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-013-block-token-cannot-be-the-term-of-a",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Block Token cannot be the Term of a multi-line definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-014-inline-dl-has-priority-over-multilin",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Inline DL has priority over Multiline",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-015-multiline-definition-term-must-have",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiline Definition Term must have at least one non-empty Definition",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-definition-lists-016-multiline-definition-list-must-have",
+      "kind": "markdown-test",
+      "source": "tests/markdown/definition-lists.test.js › Multiline Definition Lists › Multiline Definition List must have at least one non-newline character after ::",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-001-when-a-word-is-between-two-colons-wo",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › when a word is between two colons (:word:), and a matching emoji exists, it is rendered as an emoji",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-002-when-a-word-is-between-two-colons-wo",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › when a word is between two colons (:word:), and no matching emoji exists, it is not parsed",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-003-two-valid-emojis-with-no-whitespace",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › two valid emojis with no whitespace are prioritized over definition lists",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-004-definition-lists-that-are-not-also-p",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › definition lists that are not also part of an emoji can coexist with normal emojis",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-005-a-valid-emoji-is-compatible-with-cur",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › A valid emoji is compatible with curly injectors",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-006-emojis-are-not-parsed-inside-of-curl",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › Emojis are not parsed inside of curly span CSS blocks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-emojis-007-emojis-are-not-parsed-inside-of-curl",
+      "kind": "markdown-test",
+      "source": "tests/markdown/emojis.test.js › When emojis/icons are active › Emojis are not parsed inside of curly div CSS blocks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-001-single-break",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Single Break",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-002-double-break",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Double Break",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-003-triple-break",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Triple Break",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-004-many-break",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Many Break",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-005-multiple-sets-of-breaks",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Multiple sets of Breaks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-006-break-directly-between-two-paragraph",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Break directly between two paragraphs",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-hard-breaks-007-ignored-inside-a-code-block",
+      "kind": "markdown-test",
+      "source": "tests/markdown/hard-breaks.test.js › Hard Breaks › Ignored inside a code block",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-001-renders-a-mustache-span-with-text-on",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text only",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-002-renders-a-mustache-span-with-text-on",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text only, but with spaces",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-003-renders-an-empty-mustache-span",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders an empty mustache span",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-004-renders-a-mustache-span-with-just-a",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with just a space",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-005-renders-a-mustache-span-with-a-few-s",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with a few spaces only",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-006-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and class",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-007-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and two classes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-008-renders-a-mustache-span-with-text-wi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text with spaces and class",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-009-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and id",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-010-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and two ids",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-011-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and css property",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-012-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and two css properties",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-013-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and css property which contains quotes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-014-renders-a-mustache-span-with-text-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text and two css properties which contains quotes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-015-renders-a-mustache-span-with-text-wi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text with quotes and css property which contains double quotes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-016-renders-a-mustache-span-with-text-wi",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text with quotes and css property which contains double and simple quotes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-017-renders-a-mustache-span-with-text-id",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a mustache span with text, id, class and a couple of css properties",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-018-renders-a-span-with-added-attributes",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Inline: When using the Inline syntax {{ }} › Renders a span with added attributes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-019-renders-a-div-with-text-only",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with text only",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-020-renders-an-empty-div",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders an empty div",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-021-renders-a-single-paragraph-with-open",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a single paragraph with opening and closing brackets",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-022-renders-a-div-with-a-single-class",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a single class",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-023-renders-a-div-with-a-single-class-an",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a single class and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-024-renders-a-div-with-two-classes-and-t",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with two classes and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-025-renders-a-div-with-a-style-and-text",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a style and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-026-renders-a-div-with-a-style-that-has",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a style that has a string variable, and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-027-renders-a-div-with-a-style-that-has",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a style that has a string variable, and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-028-renders-a-div-with-a-class-style-and",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a class, style and text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-029-renders-a-div-with-an-id-class-style",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with an ID, class, style and text (different order)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-030-renders-a-div-with-a-single-id",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with a single ID",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-031-renders-a-div-with-an-id-class-style",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with an ID, class, style and text, and a variable assignment",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-032-renders-a-div-with-added-attributes",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Block: When using the Block syntax {{tags\\ntext\\n}} › Renders a div with added attributes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-033-renders-a-span-text-with-no-injectio",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with no injection",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-034-renders-a-span-text-with-injected-cl",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with injected Class name",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-035-renders-a-span-text-with-injected-at",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with injected attribute",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-036-renders-a-span-text-with-injected-st",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with injected style",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-037-renders-a-span-text-with-injected-st",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with injected style using a string variable",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-038-renders-a-span-text-with-two-injecte",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with two injected styles",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-039-renders-a-span-text-with-its-own-id",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with its own ID, overwritten with an injected ID",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-040-renders-a-span-text-with-its-own-att",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with its own attributes, overwritten with an injected attribute, plus a new one",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-041-renders-a-span-text-with-its-own-att",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with its own attributes, overwritten with an injected attribute, ignoring \"class\", \"style\", and \"id\"",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-042-renders-a-span-text-with-its-own-sty",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with its own styles, appended with injected styles",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-043-renders-a-span-text-with-its-own-cla",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a span \"text\" with its own classes, appended with injected classes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-044-renders-an-emphasis-element-with-inj",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an emphasis element with injected Class name",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-045-renders-a-code-element-with-injected",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders a code element with injected style",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-046-renders-an-image-element-with-inject",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an image element with injected style",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-047-renders-an-element-modified-by-only",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an element modified by only the first of two consecutive injections",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-048-renders-an-parent-and-child-element",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an parent and child element, each modified by an injector",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-049-renders-an-image-with-added-attribut",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an image with added attributes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-050-renders-an-image-with-in-the-url-and",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an image with \"=\" in the url, and added attributes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-051-renders-an-image-and-added-attribute",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is an inline-block › Renders an image and added attributes with \"=\" in the value, ",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-052-renders-a-div-text-with-no-injection",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div \"text\" with no injection",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-053-renders-a-div-text-with-injected-cla",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div \"text\" with injected Class name",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-054-renders-a-div-text-with-injected-sty",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div \"text\" with injected style",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-055-renders-a-div-text-with-two-injected",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div \"text\" with two injected styles",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-056-renders-a-div-text-with-injected-var",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div \"text\" with injected variable string",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-057-renders-a-span-text-with-its-own-id",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › Renders a span \"text\" with its own ID, overwritten with an injected ID",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-058-renders-a-span-text-with-its-own-att",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › Renders a span \"text\" with its own attributes, overwritten with an injected attribute, plus a new one",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-059-renders-a-span-text-with-its-own-att",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › Renders a span \"text\" with its own attributes, overwritten with an injected attribute, ignoring \"class\", \"style\", and \"id\"",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-060-renders-a-span-text-with-its-own-sty",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › Renders a span \"text\" with its own styles, appended with injected styles",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-061-renders-a-span-text-with-its-own-cla",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › Renders a span \"text\" with its own classes, appended with injected classes",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-062-renders-an-h2-header-text-with-injec",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders an h2 header \"text\" with injected class name",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-063-renders-a-table-with-injected-class",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a table with injected class name",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-064-renders-an-h2-header-text-with-injec",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders an h2 header \"text\" with injected class name, and \"secondInjection\" as regular text on the next line.",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-mustache-syntax-065-renders-a-div-nested-into-another-di",
+      "kind": "markdown-test",
+      "source": "tests/markdown/mustache-syntax.test.js › Injection: When an injection tag follows an element › and that element is a block › renders a div nested into another div, the inner with class=innerDiv and the other class=outerDiv",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-non-breaking-spaces-001-i-am-actually-a-single-line-definiti",
+      "kind": "markdown-test",
+      "source": "tests/markdown/non-breaking-spaces.test.js › Non-Breaking Spaces Interactions › I am actually a single-line definition list!",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-non-breaking-spaces-002-i-am-actually-a-definition-list",
+      "kind": "markdown-test",
+      "source": "tests/markdown/non-breaking-spaces.test.js › Non-Breaking Spaces Interactions › I am actually a definition list!",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-non-breaking-spaces-003-i-am-actually-a-two-term-definition",
+      "kind": "markdown-test",
+      "source": "tests/markdown/non-breaking-spaces.test.js › Non-Breaking Spaces Interactions › I am actually a two-term definition list!",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-paragraph-justificat-001-left-justify",
+      "kind": "markdown-test",
+      "source": "tests/markdown/paragraph-justification.test.js › Justification › Left Justify",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-paragraph-justificat-002-right-justify",
+      "kind": "markdown-test",
+      "source": "tests/markdown/paragraph-justification.test.js › Justification › Right Justify",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-paragraph-justificat-003-center-justify",
+      "kind": "markdown-test",
+      "source": "tests/markdown/paragraph-justification.test.js › Justification › Center Justify",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-paragraph-justificat-004-ignored-inside-a-code-block",
+      "kind": "markdown-test",
+      "source": "tests/markdown/paragraph-justification.test.js › Justification › Ignored inside a code block",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-001-handles-variable-assignment-and-reca",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles variable assignment and recall with simple text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-002-handles-variable-assignment-and-reca",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles variable assignment and recall with multiline string",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-003-handles-variable-assignment-and-reca",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles variable assignment and recall with tables",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-004-hoists-undefined-variables",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Hoists undefined variables",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-005-hoists-last-instance-of-variable",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Hoists last instance of variable",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-006-handles-complex-hoisting",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles complex hoisting",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-007-handles-variable-reassignment",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles variable reassignment",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-008-handles-variable-reassignment-with-h",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Handles variable reassignment with hoisting",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-009-ignores-undefined-variables-that-can",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Block-level variables › Ignores undefined variables that can't be hoisted",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-010-handles-variable-assignment-and-reca",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Inline-level variables › Handles variable assignment and recall with simple text",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-011-hoists-undefined-variables-when-poss",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Inline-level variables › Hoists undefined variables when possible",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-012-hoists-last-instance-of-variable",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Inline-level variables › Hoists last instance of variable",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-013-only-captures-nested-parens-if-balan",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Inline-level variables › Only captures nested parens if balanced",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-014-handles-simple-math-using-numbers-on",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles simple math using numbers only",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-015-handles-round-function",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles round function",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-016-handles-floor-function",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles floor function",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-017-handles-ceil-function",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles ceil function",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-018-handles-nested-functions",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles nested functions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-019-handles-simple-math-with-variables",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles simple math with variables",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-020-handles-variable-incrementing",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math › Handles variable incrementing",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-021-ignores-all-variables-in-fenced-code",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Code blocks › Ignores all variables in fenced code blocks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-022-ignores-all-variables-in-indented-co",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Code blocks › Ignores all variables in indented code blocks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-023-ignores-all-variables-in-inline-code",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Code blocks › Ignores all variables in inline code blocks",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-024-renders-normal-images",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Normal Links and Images › Renders normal images",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-025-renders-normal-images-with-a-title",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Normal Links and Images › Renders normal images with a title",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-026-applies-curly-injectors-to-images",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Normal Links and Images › Applies curly injectors to images",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-027-renders-normal-links",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Normal Links and Images › Renders normal links",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-028-renders-normal-links-with-a-title",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Normal Links and Images › Renders normal links with a title",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-029-handles-variable-assignment-and-reca",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Handles variable assignment and recall across pages",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-030-handles-hoisting-across-pages",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Handles hoisting across pages",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-031-handles-reassignment-and-hoisting-ac",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Handles reassignment and hoisting across pages",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-032-page-numbering-across-pages-default",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Page numbering across pages : default",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-033-page-numbering-across-pages-custom-p",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Page numbering across pages : custom page number (Number)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-034-page-numbering-across-pages-custom-p",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Cross-page variables › Page numbering across pages : custom page number (NaN)",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-035-allows-variables-in-single-parameter",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math function parameter handling › allows variables in single-parameter functions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-036-allows-one-variable-and-a-number-in",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math function parameter handling › allows one variable and a number in two-parameter functions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-037-allows-two-variables-in-two-paramete",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Math function parameter handling › allows two variables in two-parameter functions",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-038-do-not-conflict-with-function-names",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Variable names that are subsets of other names › do not conflict with function names",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-039-do-not-conflict-with-other-variable",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Variable names that are subsets of other names › do not conflict with other variable names",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-040-dont-eat-all-the-parentheticals",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Regression Tests › Don't Eat all the parentheticals!",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-041-handle-extra-spaces-in-image-alt-tex",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Regression Tests › Handle Extra spaces in image alt-text 1",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-042-handle-extra-spaces-in-image-alt-tex",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Regression Tests › Handle Extra spaces in image alt-text 2",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-043-handle-extra-spaces-in-image-alt-tex",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Regression Tests › Handle Extra spaces in image alt-text 3",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-044-handle-extra-spaces-in-image-alt-tex",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Regression Tests › Handle Extra spaces in image alt-text 4",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-045-sign-test",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Sign Test",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-046-signed-test",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Signed Test",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-047-roman-numerals-test",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Roman Numerals Test",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-048-roman-numerals-test-uppercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Roman Numerals Test - Uppercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-049-roman-numerals-test-lowercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Roman Numerals Test - Lowercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-050-number-to-characters-test",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Characters Test",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-051-number-to-characters-test-uppercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Characters Test - Uppercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-052-number-to-characters-test-lowercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Characters Test - Lowercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-053-number-to-words-test",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Words Test",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-054-number-to-words-test-uppercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Words Test - Uppercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-055-number-to-words-test-lowercase",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Words Test - Lowercase",
+      "theme": "5ePHB"
+    },
+    {
+      "name": "md-variables-056-number-to-words-test-capitalized",
+      "kind": "markdown-test",
+      "source": "tests/markdown/variables.test.js › Custom Math Function Tests › Number to Words Test - Capitalized",
+      "theme": "5ePHB"
+    }
+  ]
+}

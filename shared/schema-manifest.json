@@ -1,0 +1,1225 @@
+{
+  "version": 1,
+  "docSchemaVersion": 1,
+  "topNode": "doc",
+  "generic": {
+    "types": [
+      "page",
+      "paragraph",
+      "heading",
+      "bulletList",
+      "orderedList",
+      "listItem",
+      "blockquote",
+      "codeBlock",
+      "horizontalRule",
+      "image",
+      "table",
+      "tableRow",
+      "tableHeader",
+      "tableCell",
+      "definitionList",
+      "themeBlock",
+      "inlineBox"
+    ],
+    "safeAttributePattern": "^(data-[\\w-]+|aria-[\\w-]+|title|lang|dir|role)$",
+    "reservedAttributes": [
+      "data-pid",
+      "data-kind",
+      "data-markers",
+      "data-objects",
+      "data-footer",
+      "data-page-number",
+      "data-custom-id",
+      "data-depth",
+      "data-hb-raw",
+      "data-pm-slice",
+      "data-hb-clipboard"
+    ],
+    "reservedClasses": [
+      "block",
+      "inline-block",
+      "page",
+      "columnWrapper",
+      "ProseMirror",
+      "hb-continued",
+      "hb-cols-1",
+      "hb-cols-2",
+      "hb-oversized",
+      "hb-dl-multiline"
+    ]
+  },
+  "pageMarkers": [
+    "frontCover",
+    "insideCover",
+    "partCover",
+    "backCover",
+    "skipCounting",
+    "resetCounting"
+  ],
+  "iconFonts": [
+    "df",
+    "ei",
+    "gi",
+    "fas",
+    "far",
+    "fab",
+    "fa",
+    "fa-solid",
+    "fa-regular",
+    "fa-brands",
+    "fa-classic"
+  ],
+  "nodes": {
+    "paragraph": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "align": {
+          "default": null,
+          "type": "string|null",
+          "enum": [
+            "left",
+            "right",
+            "center",
+            "justify",
+            null
+          ]
+        },
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "inline*",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": true,
+      "marks": "_",
+      "children": [
+        "text",
+        "image",
+        "icon",
+        "rawInline",
+        "inlineBox",
+        "hardBreak"
+      ],
+      "allowsEmpty": true
+    },
+    "doc": {
+      "attrs": {},
+      "content": "page+",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "page"
+      ],
+      "allowsEmpty": false
+    },
+    "page": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "pid": {
+          "default": null,
+          "type": "string|null"
+        },
+        "kind": {
+          "default": "manual",
+          "type": "string",
+          "enum": [
+            "manual",
+            "auto"
+          ]
+        },
+        "columns": {
+          "default": null,
+          "type": "number|null",
+          "enum": [
+            1,
+            2,
+            null
+          ]
+        },
+        "markers": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "pageNumber": {
+          "default": false,
+          "type": "boolean"
+        },
+        "footer": {
+          "default": null,
+          "type": "string|null",
+          "kind": "text"
+        },
+        "objects": {
+          "default": [],
+          "type": "array",
+          "kind": "pageObjects"
+        },
+        "oversized": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "block+",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "text": {
+      "attrs": {},
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "heading": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "level": {
+          "default": 1,
+          "type": "number",
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        },
+        "customId": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "inline*",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": true,
+      "marks": "_",
+      "children": [
+        "text",
+        "image",
+        "icon",
+        "rawInline",
+        "inlineBox",
+        "hardBreak"
+      ],
+      "allowsEmpty": true
+    },
+    "bulletList": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "listItem+",
+      "group": "block list",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "listItem"
+      ],
+      "allowsEmpty": false
+    },
+    "orderedList": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "start": {
+          "default": 1,
+          "type": "number",
+          "integer": true
+        },
+        "type": {
+          "default": null,
+          "type": "string|null"
+        },
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "listItem+",
+      "group": "block list",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "listItem"
+      ],
+      "allowsEmpty": false
+    },
+    "listItem": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "paragraph block*",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "definitionList": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "multiline": {
+          "default": false,
+          "type": "boolean"
+        },
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "(definitionTerm | definitionDesc)+",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "definitionTerm",
+        "definitionDesc"
+      ],
+      "allowsEmpty": false
+    },
+    "definitionTerm": {
+      "attrs": {
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "inline*",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": true,
+      "marks": "_",
+      "children": [
+        "text",
+        "image",
+        "icon",
+        "rawInline",
+        "inlineBox",
+        "hardBreak"
+      ],
+      "allowsEmpty": true
+    },
+    "definitionDesc": {
+      "attrs": {
+        "continuation": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "content": "inline*",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": true,
+      "marks": "_",
+      "children": [
+        "text",
+        "image",
+        "icon",
+        "rawInline",
+        "inlineBox",
+        "hardBreak"
+      ],
+      "allowsEmpty": true
+    },
+    "blockquote": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": "block+",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "codeBlock": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "language": {
+          "default": null,
+          "type": "string|null"
+        }
+      },
+      "content": "text*",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": true,
+      "marks": "",
+      "children": [
+        "text"
+      ],
+      "allowsEmpty": true
+    },
+    "horizontalRule": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": null,
+      "group": "block",
+      "inline": false,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "table": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": "tableRow+",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "tableRow"
+      ],
+      "allowsEmpty": false
+    },
+    "tableRow": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": "(tableCell | tableHeader)*",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "tableHeader",
+        "tableCell"
+      ],
+      "allowsEmpty": true
+    },
+    "tableHeader": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "colspan": {
+          "default": 1,
+          "type": "number",
+          "integer": true,
+          "min": 1
+        },
+        "rowspan": {
+          "default": 1,
+          "type": "number",
+          "integer": true,
+          "min": 1
+        },
+        "colwidth": {
+          "default": null,
+          "type": "array|null"
+        },
+        "align": {
+          "default": null,
+          "type": "string|null",
+          "enum": [
+            "left",
+            "right",
+            "center",
+            null
+          ]
+        },
+        "width": {
+          "default": null,
+          "type": "string|null"
+        }
+      },
+      "content": "block+",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "tableCell": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "colspan": {
+          "default": 1,
+          "type": "number",
+          "integer": true,
+          "min": 1
+        },
+        "rowspan": {
+          "default": 1,
+          "type": "number",
+          "integer": true,
+          "min": 1
+        },
+        "colwidth": {
+          "default": null,
+          "type": "array|null"
+        },
+        "align": {
+          "default": null,
+          "type": "string|null",
+          "enum": [
+            "left",
+            "right",
+            "center",
+            null
+          ]
+        },
+        "width": {
+          "default": null,
+          "type": "string|null"
+        }
+      },
+      "content": "block+",
+      "group": null,
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "themeBlock": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": "block+",
+      "group": "block",
+      "inline": false,
+      "atom": false,
+      "leaf": false,
+      "textblock": false,
+      "marks": "",
+      "children": [
+        "paragraph",
+        "heading",
+        "bulletList",
+        "orderedList",
+        "definitionList",
+        "blockquote",
+        "codeBlock",
+        "horizontalRule",
+        "table",
+        "themeBlock",
+        "columnBreak",
+        "spacer",
+        "toc",
+        "rawHtml"
+      ],
+      "allowsEmpty": false
+    },
+    "columnBreak": {
+      "attrs": {},
+      "content": null,
+      "group": "block",
+      "inline": false,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "spacer": {
+      "attrs": {},
+      "content": null,
+      "group": "block",
+      "inline": false,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "toc": {
+      "attrs": {
+        "depth": {
+          "default": 3,
+          "type": "number",
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        },
+        "wide": {
+          "default": true,
+          "type": "boolean"
+        },
+        "title": {
+          "default": "Contents",
+          "type": "string",
+          "kind": "text"
+        }
+      },
+      "content": null,
+      "group": "block",
+      "inline": false,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "rawHtml": {
+      "attrs": {
+        "html": {
+          "default": "",
+          "type": "string",
+          "kind": "html"
+        }
+      },
+      "content": null,
+      "group": "block",
+      "inline": false,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "image": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        },
+        "src": {
+          "default": null,
+          "type": "string|null",
+          "kind": "url"
+        },
+        "alt": {
+          "default": null,
+          "type": "string|null",
+          "kind": "text"
+        },
+        "title": {
+          "default": null,
+          "type": "string|null",
+          "kind": "text"
+        },
+        "width": {
+          "default": null,
+          "type": "number|null",
+          "integer": true,
+          "min": 1
+        },
+        "height": {
+          "default": null,
+          "type": "number|null",
+          "integer": true,
+          "min": 1
+        }
+      },
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "icon": {
+      "attrs": {
+        "font": {
+          "default": "df",
+          "type": "string",
+          "kind": "classes"
+        },
+        "glyph": {
+          "default": "",
+          "type": "string",
+          "kind": "classes"
+        }
+      },
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "rawInline": {
+      "attrs": {
+        "html": {
+          "default": "",
+          "type": "string",
+          "kind": "html"
+        }
+      },
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "inlineBox": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    },
+    "hardBreak": {
+      "attrs": {},
+      "content": null,
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "leaf": true,
+      "textblock": false,
+      "marks": "",
+      "children": [],
+      "allowsEmpty": true
+    }
+  },
+  "marks": {
+    "span": {
+      "attrs": {
+        "classes": {
+          "default": [],
+          "type": "array",
+          "kind": "classes"
+        },
+        "style": {
+          "default": null,
+          "type": "string|null",
+          "kind": "css"
+        },
+        "id": {
+          "default": null,
+          "type": "string|null"
+        },
+        "attributes": {
+          "default": {},
+          "type": "object",
+          "kind": "attributes"
+        }
+      },
+      "excludes": "",
+      "inclusive": true
+    },
+    "link": {
+      "attrs": {
+        "href": {
+          "default": null,
+          "type": "string|null",
+          "kind": "url"
+        },
+        "target": {
+          "default": null,
+          "type": "string|null"
+        },
+        "rel": {
+          "default": null,
+          "type": "string|null"
+        },
+        "class": {
+          "default": null,
+          "type": "string|null"
+        },
+        "title": {
+          "default": null,
+          "type": "string|null",
+          "kind": "text"
+        }
+      },
+      "excludes": "link",
+      "inclusive": true
+    },
+    "bold": {
+      "attrs": {},
+      "excludes": "bold",
+      "inclusive": true
+    },
+    "italic": {
+      "attrs": {},
+      "excludes": "italic",
+      "inclusive": true
+    },
+    "underline": {
+      "attrs": {},
+      "excludes": "underline",
+      "inclusive": true
+    },
+    "strike": {
+      "attrs": {},
+      "excludes": "strike",
+      "inclusive": true
+    },
+    "code": {
+      "attrs": {},
+      "excludes": "code",
+      "inclusive": true
+    },
+    "superscript": {
+      "attrs": {},
+      "excludes": "superscript",
+      "inclusive": true
+    },
+    "subscript": {
+      "attrs": {},
+      "excludes": "subscript",
+      "inclusive": true
+    }
+  }
+}

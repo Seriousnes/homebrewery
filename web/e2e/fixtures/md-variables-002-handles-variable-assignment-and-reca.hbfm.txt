@@ -1,0 +1,5 @@
+[var]: string
+across multiple
+lines
+
+$[var]

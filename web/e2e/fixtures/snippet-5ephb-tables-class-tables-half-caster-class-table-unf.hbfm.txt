@@ -1,0 +1,27 @@
+{{classTable,wide
+##### The Concierge
+| Level | Proficiency | Features     | Spells |--- Spell Slots Per Spell Level ---|||||
+|      ^| Bonus      ^|             ^| Known ^|  1st  |  2nd  |  3rd  |  4th  |  5th  |
+|:-----:|:-----------:|:-------------|:------:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|  1st  | +2 | Consecrated Augury    |   —    |   —   |   —   |   —   |   —   |   —   |
+|  2nd  | +2 | Exo Interfacer        |   2    |   2   |   —   |   —   |   —   |   —   |
+|  3rd  | +2 | Pharmaceutical Outlaw |   3    |   3   |   —   |   —   |   —   |   —   |
+|  4th  | +2 | Civil Divination      |   3    |   3   |   —   |   —   |   —   |   —   |
+|  5th  | +3 | Plasma Gunslinger     |   4    |   4   |   2   |   —   |   —   |   —   |
+|  6th  | +3 | Hermetic Geography    |   4    |   4   |   2   |   —   |   —   |   —   |
+|  7th  | +3 | Spell Analyst         |   5    |   4   |   3   |   —   |   —   |   —   |
+|  8th  | +3 | Police Necromancer    |   5    |   4   |   3   |   —   |   —   |   —   |
+|  9th  | +4 | Exo Interfacer        |   6    |   4   |   3   |   2   |   —   |   —   |
+| 10th  | +4 | Demonic Anthropology  |   6    |   4   |   3   |   2   |   —   |   —   |
+| 11th  | +4 | Torque Interfacer     |   7    |   4   |   3   |   3   |   —   |   —   |
+| 12th  | +4 | Civil Divination      |   7    |   4   |   3   |   3   |   —   |   —   |
+| 13th  | +5 | Biochemical Sorcery   |   8    |   4   |   3   |   3   |   1   |   —   |
+| 14th  | +5 | Demonic Anthropology  |   8    |   4   |   3   |   3   |   1   |   —   |
+| 15th  | +5 | Statistical Occultism |   9    |   4   |   3   |   3   |   2   |   —   |
+| 16th  | +5 | Consecrated Augury    |   9    |   4   |   3   |   3   |   2   |   —   |
+| 17th  | +6 | Hermetic Geography    |   10   |   4   |   3   |   3   |   3   |   1   |
+| 18th  | +6 | Pharmaceutical Outlaw |   10   |   4   |   3   |   3   |   3   |   1   |
+| 19th  | +6 | Gunslinger Corruptor  |   11   |   4   |   3   |   3   |   3   |   2   |
+| 20th  | +6 | Nuclear Biochemistry  |   11   |   4   |   3   |   3   |   3   |   2   |
+}}
+
