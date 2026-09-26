@@ -239,12 +239,20 @@ describe('TagInput', () => {
     await user.click(screen.getByRole('button', { name: 'Edit tag one' }));
     const editor = screen.getByRole('textbox', { name: 'Edit tag one' });
     expect(editor).toHaveFocus();
+    // Hold the refocus the Escape defers to the next frame, to reopen the edit before it runs.
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => frames.push(cb));
     await user.keyboard('{Escape}');
     expect(outer.mock.calls.filter(([e]) => (e as KeyboardEvent).key === 'Escape' && !(e as KeyboardEvent).defaultPrevented)).toHaveLength(0);
     expect(screen.queryByRole('textbox', { name: 'Edit tag one' })).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Edit tag one' }));
+    raf.mockRestore();
+    expect(frames.length).toBeGreaterThan(0);
+    act(() => frames.forEach((cb) => cb(0)));
+    // The stale refocus must not close the reopened edit.
+    expect(screen.getByRole('textbox', { name: 'Edit tag one' })).toHaveFocus();
     await user.clear(screen.getByRole('textbox', { name: 'Edit tag one' }));
     await user.type(screen.getByRole('textbox', { name: 'Edit tag one' }), 'dnd{Enter}');
     expect(onChange).toHaveBeenLastCalledWith(['D&D', 'two']);

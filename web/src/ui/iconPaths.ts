@@ -76,6 +76,8 @@ export const ICONS = {
   close: { d: 'M6 6l12 12 M18 6 6 18' },
   check: { d: 'M5 12.5l4.5 4.5L19 7' },
   search: { d: `${circle(11, 11, 7)} M20 20l-4-4` },
+  // The Vault: an arched gate with a portcullis (the legacy navbar's dungeon).
+  vault: { d: 'M3 21h18 M5 21V11a7 7 0 0 1 14 0v10 M9 21V8.5 M12 21V7 M15 21V8.5 M9 13h6 M9 17h6' },
   user: { d: `${circle(12, 8, 4)} M4 21a8 8 0 0 1 16 0` },
   lock: { d: 'M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4' },
   unlock: { d: 'M5 11h14v10H5z M8 11V7a4 4 0 0 1 7.6-1.8' },

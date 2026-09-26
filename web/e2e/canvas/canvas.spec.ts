@@ -131,7 +131,9 @@ test.describe('P3.2 PageView (chrome doc: cover, counters, even/odd)', () => {
     expect(styles.slice(1).map((s) => s.footSide)).toEqual(['left', 'right', 'left', 'right']);
 
     // The rendered numbers: pages 2, 3 (skipCounting) and 5 show "2"; page 4 (resetCounting)
-    // shows "1". Same-side numbers with the same value are pixel-identical.
+    // shows "1". Same-side numbers with the same value are pixel-identical; one digit that
+    // differs changes ~2-4 % of the small number box (the anti-aliasing and font vary per
+    // browser and host), so a single 1 % cut-off tells "same" from "different".
     const shot = async (n: number) => {
       const png = await page.locator(`#p${n} > .pageNumber`).screenshot();
       writeFileSync(testInfo.outputPath(`page-number-p${n}.png`), png);
@@ -139,8 +141,9 @@ test.describe('P3.2 PageView (chrome doc: cover, counters, even/odd)', () => {
       return png;
     };
     const [n2, n3, n4, n5] = [await shot(2), await shot(3), await shot(4), await shot(5)];
-    expect(diffRatio(n3, n5), 'p3 and p5 both show 2').toBeLessThan(0.01);
-    expect(diffRatio(n2, n4), 'p2 shows 2, p4 shows 1').toBeGreaterThan(0.02);
+    const SAME = 0.01;
+    expect(diffRatio(n3, n5), 'p3 and p5 both show 2').toBeLessThan(SAME);
+    expect(diffRatio(n2, n4), 'p2 shows 2, p4 shows 1').toBeGreaterThan(SAME);
   });
 
   test('oversized pages get the class and the badge', async () => {

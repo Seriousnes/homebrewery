@@ -77,8 +77,11 @@ export function SnippetsEditor({ store, brewTitle, themeSnippets, readOnly = fal
   }, [snapshot, selected]);
 
   const focusOption = (key: string | null) => {
-    // After React rendered the new selection.
+    // After React rendered the new selection, unless focus left the list meanwhile (Enter to the name).
+    const from = document.activeElement;
     requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== from && active !== document.body && !listRef.current?.contains(active)) return;
       const option = key ? listRef.current?.querySelector<HTMLElement>(`[data-key="${key}"]`) : null;
       (option ?? newRef.current)?.focus();
     });

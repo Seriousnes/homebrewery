@@ -72,9 +72,15 @@ export function TagInput({
     return suggestions.filter((s) => !taken.has(s.value.toLowerCase()));
   }, [suggestions, values]);
 
-  /** Focus the chip button at `index` (clamped), or the text box when the list is empty. */
+  /**
+   * Focus the chip button at `index` (clamped), or the text box when the list is empty, after
+   * React rendered. Skipped when focus moved on meanwhile (e.g. a quick click opened an edit).
+   */
   const focusChip = (index: number) => {
+    const from = document.activeElement;
     requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== from && active !== document.body) return;
       const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>('[data-chip-edit]');
       const target = buttons && buttons.length > 0 ? buttons[Math.max(0, Math.min(index, buttons.length - 1))] : inputRef.current;
       target?.focus();

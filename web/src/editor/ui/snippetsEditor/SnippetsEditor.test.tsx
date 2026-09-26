@@ -182,10 +182,16 @@ describe('SnippetsEditor', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: 'C' })).toHaveFocus());
     await user.keyboard('{Home}');
     await waitFor(() => expect(screen.getByRole('option', { name: 'A' })).toHaveFocus());
+    // Hold the refocus the Delete defers to the next frame, so Enter runs before it.
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => frames.push(cb));
     await user.keyboard('{Delete}');
     expect(options()).toEqual(['B', 'C']);
     await waitFor(() => expect(screen.getByRole('option', { name: 'B' })).toHaveFocus());
     await user.keyboard('{Enter}');
+    raf.mockRestore();
+    expect(frames.length).toBeGreaterThan(0);
+    act(() => frames.forEach((cb) => cb(0)));
     expect(screen.getByRole('textbox', { name: /^Name/ })).toHaveFocus();
   });
 

@@ -5,7 +5,7 @@ import { NavLinkItem } from './NavItem';
 
 export function VaultNavItem() {
   return (
-    <NavLinkItem to={paths.vault} tone="purple" icon={<Icon name="search" />} collapsible data-testid="nav-vault">
+    <NavLinkItem to={paths.vault} tone="purple" icon={<Icon name="vault" />} collapsible data-testid="nav-vault">
       Vault
     </NavLinkItem>
   );
