@@ -1,0 +1,5 @@
+$[var]
+
+[var]: string
+
+[var]: new string

@@ -1,0 +1,26 @@
+{{classTable,frame,decoration
+##### The Fishmonger
+| Level | Proficiency Bonus | Features | Police Necromancer    |
+|:-----:|:-----------------:|:---------|:---------------------:|
+|  1st  |  +2  | Mathematical Pharmacy |          2            |
+|  2nd  |  +2  | Consecrated Augury    |          2            |
+|  3rd  |  +2  | Exo Interfacer        |          3            |
+|  4th  |  +2  | Immunological Cultist |          3            |
+|  5th  |  +3  | Astrological Botany   |          3            |
+|  6th  |  +3  | Orbital Gravedigger   |          4            |
+|  7th  |  +3  | Astrological Botany   |          4            |
+|  8th  |  +3  | Immunological Cultist |          4            |
+|  9th  |  +4  | Civil Divination      |          4            |
+| 10th  |  +4  | Statistical Occultism |          4            |
+| 11th  |  +4  | Divinatory Mineralogy |          4            |
+| 12th  |  +4  | Hermetic Geography    |          5            |
+| 13th  |  +5  | Divinatory Mineralogy |          5            |
+| 14th  |  +5  | Spell Analyst         |          5            |
+| 15th  |  +5  | Spiritual Illusionism |          5            |
+| 16th  |  +5  | Ritual Astronomy      |          5            |
+| 17th  |  +6  | Spiritual Illusionism |          6            |
+| 18th  |  +6  | Hermetic Geography    |          6            |
+| 19th  |  +6  | Immunological Cultist |          6            |
+| 20th  |  +6  | Phased Linguist       |      unlimited        |
+}}
+

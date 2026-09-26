@@ -1,0 +1,24 @@
+.popover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  min-width: 160px;
+  padding: var(--hbui-space-3);
+  overflow: auto;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+  outline: none;
+  box-shadow: var(--hbui-shadow-popover);
+}
+
+@media (forced-colors: active) {
+  .popover {
+    border-color: CanvasText;
+  }
+}

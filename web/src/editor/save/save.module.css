@@ -1,0 +1,167 @@
+/* Save lane chrome: status, draft banner, conflict dialog body, local history list. */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hbui-space-2);
+  min-height: var(--hbui-control-height-sm);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hbui-space-1);
+  white-space: nowrap;
+}
+
+.status[data-tone='busy'] .statusLabel {
+  color: var(--hbui-color-text);
+}
+
+.status[data-tone='warning'] .statusLabel {
+  color: var(--hbui-color-text);
+}
+
+.status[data-tone='warning'] .statusIcon {
+  color: var(--hbui-color-warning);
+}
+
+.status[data-tone='error'] .statusLabel {
+  color: var(--hbui-color-danger-text);
+}
+
+.status[data-tone='busy'] .statusIcon {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status[data-tone='busy'] .statusIcon {
+    animation: none;
+  }
+}
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hbui-space-3);
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  border: 1px solid var(--hbui-color-border);
+  border-inline-start: 4px solid var(--hbui-color-info);
+  border-radius: var(--hbui-radius);
+  background: var(--hbui-color-info-subtle);
+  color: var(--hbui-color-text);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.bannerIcon {
+  flex: none;
+  color: var(--hbui-color-info);
+}
+
+.bannerText {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.bannerTitle {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.bannerMessage {
+  margin: var(--hbui-space-1) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.bannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+}
+
+.options {
+  display: grid;
+  gap: var(--hbui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: grid;
+  gap: var(--hbui-space-1);
+  justify-items: start;
+}
+
+.optionHint {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.actionError {
+  margin: 0 0 var(--hbui-space-3);
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  border-radius: var(--hbui-radius-sm);
+  background: var(--hbui-color-danger-subtle);
+  color: var(--hbui-color-danger-text);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.snapshots {
+  display: grid;
+  gap: var(--hbui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.snapshot {
+  display: flex;
+  align-items: center;
+  gap: var(--hbui-space-3);
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.snapshotText {
+  flex: 1;
+  min-width: 0;
+}
+
+.snapshotTime {
+  font-weight: 600;
+}
+
+.snapshotMeta {
+  display: block;
+  overflow: hidden;
+  color: var(--hbui-color-text-muted);
+  font-size: var(--hbui-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+/* Accessibility lane (P8.2): --hbui-color-danger-text is the text colour ON a danger fill (white
+   in the light scheme), so as a plain text colour the failed and conflict labels had no contrast
+   on the toolbar (axe color-contrast, serious). The danger colour itself meets AA as text on the
+   toolbar in both schemes. */
+.status[data-tone='error'] .statusLabel {
+  color: var(--hbui-color-danger);
+}

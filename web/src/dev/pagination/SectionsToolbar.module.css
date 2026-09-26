@@ -1,0 +1,9 @@
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.field {
+  min-width: 120px;
+}

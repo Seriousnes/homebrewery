@@ -1,16 +1,163 @@
+# Local development stack (CLAUDE.md "Development guidelines", plan §2 "Running locally").
+#
+#   docker compose up            everything below; open http://localhost:8080
+#   docker compose up -d db      only PostgreSQL, for running the API and Vite on the host
+#
+# Production image instead of the dev servers (same db, same Caddy):
+#   docker compose -f docker-compose.yml -f compose.prod.yml up --build
+#
+# Routing (deploy/caddy/Caddyfile): /api, /share, /openapi and /healthz go to the API, everything
+# else (SPA, Vite modules, HMR websocket) to the Vite dev server. Only Caddy and Postgres publish
+# ports on the host, so a host-run API (:5080) or Vite (:5173) never collides with the containers.
+#
+# The repository is bind-mounted into api and web, so edits on the host are picked up by
+# `dotnet watch` and Vite. Build outputs that are platform-specific (src/*/bin, src/*/obj,
+# tests/*/bin, tests/*/obj, web/node_modules) live in named volumes instead, so Linux builds in the
+# containers never mix with Windows or macOS builds on the host.
+#
+# Settings (environment or a .env file next to this one):
+#   HB_HTTP_PORT   host port for Caddy (default 8080)
+
 services:
-  mongodb:
-    image: mongo:latest
-    volumes:
-      - mongodata:/data/db
-  homebrewery:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: homebrewery
+  db:
+    image: postgres:18
     environment:
-      MONGODB_URI: mongodb://mongodb/homebrewery
+      POSTGRES_USER: homebrewery
+      POSTGRES_PASSWORD: homebrewery
+      POSTGRES_DB: homebrewery
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql"]   # postgres 18 images keep data under a versioned subfolder
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homebrewery -d homebrewery"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ASP.NET Core API under `dotnet watch` (hot reload; restarts on edits hot reload can't apply).
+  api:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /repo
+    command:
+      - dotnet
+      - watch
+      - run
+      - --project
+      - src/Homebrewery.Api
+      - --no-launch-profile   # launchSettings.json binds localhost:5080; the container uses the env below
+      - --non-interactive     # restart on rude edits instead of prompting
+    init: true
+    # dotnet watch's polling watcher can crash ("An item with the same key has already been added")
+    # when a directory listing on the bind mount changes mid-scan, e.g. during a branch switch.
+    # Docker then restarts it; the rebuild is incremental.
+    restart: on-failure
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Caddy sends X-Forwarded-For/-Proto. ASP.NET Core's built-in switch applies them from any
+      # peer, which is safe here because the API publishes no port and only Caddy reaches it.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__Homebrewery: Host=db;Port=5432;Database=homebrewery;Username=homebrewery;Password=homebrewery
+      Database__MigrateOnStartup: "true"
+      # File events from a Windows/macOS host don't cross the bind mount; poll instead.
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # Vite owns browser refresh; dotnet watch must not inject its own script or open a browser.
+      DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH: "1"
+      DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "1"
+      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "1"
+      DOTNET_WATCH_SUPPRESS_EMOJIS: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    volumes:
+      - .:/repo
+      - nuget-packages:/root/.nuget/packages
+      - aspnet-keys:/root/.aspnet            # data protection keys: sign-ins survive container re-creation
+      - dotnet-api-bin:/repo/src/Homebrewery.Api/bin
+      - dotnet-api-obj:/repo/src/Homebrewery.Api/obj
+      - dotnet-core-bin:/repo/src/Homebrewery.Core/bin
+      - dotnet-core-obj:/repo/src/Homebrewery.Core/obj
+      - dotnet-data-bin:/repo/src/Homebrewery.Data/bin
+      - dotnet-data-obj:/repo/src/Homebrewery.Data/obj
+      - dotnet-tests-bin:/repo/tests/Homebrewery.Api.Tests/bin   # for `docker compose exec api dotnet test ...`
+      - dotnet-tests-obj:/repo/tests/Homebrewery.Api.Tests/obj
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10m      # the first start restores packages and builds the solution
+      start_interval: 3s
+
+  # Vite dev server. node_modules is a named volume holding Linux binaries; `npm ci` runs only when
+  # package-lock.json (or the Node version) differs from the last install into that volume.
+  web:
+    image: node:24
+    working_dir: /repo/web
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        want="$$(sha256sum package-lock.json | cut -d' ' -f1) node $$(node --version)"
+        have="$$(cat node_modules/.hb-install-stamp 2>/dev/null || true)"
+        if [ "$$want" != "$$have" ]; then
+          echo "web: package-lock.json changed since the last install, running npm ci"
+          npm ci --no-audit --no-fund
+          echo "$$want" > node_modules/.hb-install-stamp
+        fi
+        exec npm run dev -- --host 0.0.0.0 --port 5173
+    init: true
+    restart: on-failure
+    environment:
+      # Vite's proxy (vite.config.ts) is not on Caddy's path for /api, but keep it working for
+      # requests that reach Vite directly.
+      HB_API_URL: http://api:8080
+      HB_WATCH_POLLING: "1"
+      HB_HMR_CLIENT_PORT: ${HB_HTTP_PORT:-8080}
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    volumes:
+      - .:/repo                  # Vite reads ../themes (and later ../shared) next to web/
+      - web-node-modules:/repo/web/node_modules
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:5173/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10m      # the first start runs npm ci
+      start_interval: 3s
+
+  # One origin for the browser: http://localhost:${HB_HTTP_PORT:-8080}.
+  caddy:
+    image: caddy:2
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
+    environment:
+      HB_HTTP_PORT: ${HB_HTTP_PORT:-8080}
+      HB_API_UPSTREAM: api:8080
+      HB_WEB_UPSTREAM: web:5173
     ports:
-      - "8000:8000"
+      # Loopback only: the dev server has no authentication and serves source files.
+      - 127.0.0.1:${HB_HTTP_PORT:-8080}:${HB_HTTP_PORT:-8080}
+    volumes:
+      - ./deploy/caddy:/etc/caddy:ro
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+
 volumes:
-  mongodata:
+  pgdata:
+  nuget-packages:
+  aspnet-keys:
+  dotnet-api-bin:
+  dotnet-api-obj:
+  dotnet-core-bin:
+  dotnet-core-obj:
+  dotnet-data-bin:
+  dotnet-data-obj:
+  dotnet-tests-bin:
+  dotnet-tests-obj:
+  web-node-modules:

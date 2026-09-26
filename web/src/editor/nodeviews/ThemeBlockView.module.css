@@ -1,0 +1,33 @@
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--hbui-z-layer, 1000);
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  line-height: 1.2;
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-sm);
+  box-shadow: var(--hbui-shadow-popover);
+  user-select: none;
+}
+
+.toolbar {
+  gap: 2px;
+  align-items: center;
+  padding: 1px 2px;
+}
+
+.label {
+  padding: 0 6px;
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+  white-space: nowrap;
+}
+
+.toggle {
+  min-height: 22px;
+  padding-block: 0;
+}

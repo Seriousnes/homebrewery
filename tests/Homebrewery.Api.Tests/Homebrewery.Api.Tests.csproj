@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Fail fast (CLAUDE.md): the whole run is capped; the full suite takes ~1.5 min. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --timeout 5m</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Homebrewery.Api\Homebrewery.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    The repository root, for tests that read shared/, themes/ or web/ files. A build with an artifacts path
+    (dotnet build/test with the artifacts-path option) puts the binaries outside the repository, so
+    SchemaManifestTests.RepositoryRoot() reads this before it walks up from the binaries.
+  -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!--
+    Fixtures/themes.json is a committed copy of the web build's /themes/themes.json (web/vite/generateAssetsPlugin.ts).
+    HomebreweryApiFactory points Themes:CatalogPath at it, so tests don't need a web build. ThemeCatalogTests checks
+    that it still matches what the theme sources produce.
+  -->
+  <ItemGroup>
+    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Reports any test still running after 10 s (fail-fast diagnostics). -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

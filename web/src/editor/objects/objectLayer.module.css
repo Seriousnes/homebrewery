@@ -1,0 +1,177 @@
+/*
+ * The page-object layer (nodeviews/ObjectLayer.ts): selection frame, resize handles and the
+ * object toolbar, drawn inside .hb-canvas next to the pages (never inside a page, so pages'
+ * overflow doesn't clip them and theme selectors never see them). Coordinates are canvas pixels,
+ * so the layer scales with the zoom; --hb-object-inverse-zoom keeps handles and the toolbar at
+ * screen size. Classes are doubled so brew CSS such as `div { … }` (scoped to `.hb-canvas div`)
+ * can't restyle the chrome. Tokens fall back to fixed colours: the canvas is outside any UiRoot.
+ */
+
+.layer.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+  font: 400 13px/1.2 system-ui, sans-serif;
+  color: #1f2328;
+  text-indent: 0;
+  text-align: start;
+  letter-spacing: normal;
+  --hb-object-accent: var(--hbui-color-accent, #2563eb);
+}
+
+.frame.frame {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 4px;
+  min-height: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: calc(1.5px * var(--hb-object-inverse-zoom, 1)) solid var(--hb-object-accent);
+  outline-offset: 0;
+  background: transparent;
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.frame.frame:focus-visible {
+  outline-width: calc(2.5px * var(--hb-object-inverse-zoom, 1));
+  box-shadow: 0 0 0 calc(4px * var(--hb-object-inverse-zoom, 1)) rgb(37 99 235 / 0.25);
+}
+
+.frame.frame[data-editing] {
+  outline-style: dashed;
+  cursor: text;
+  pointer-events: none;
+}
+
+.frame.frame[data-editing] .handle,
+.frame.frame[data-dragging] .handle {
+  display: none;
+}
+
+.handle.handle {
+  --size: calc(9px * var(--hb-object-inverse-zoom, 1));
+  position: absolute;
+  box-sizing: border-box;
+  width: var(--size);
+  height: var(--size);
+  margin: 0;
+  padding: 0;
+  border: calc(1.5px * var(--hb-object-inverse-zoom, 1)) solid var(--hb-object-accent);
+  border-radius: 2px;
+  background: #fff;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.handle[data-handle='nw'] { top: calc(var(--size) / -2); left: calc(var(--size) / -2); cursor: nwse-resize; }
+.handle[data-handle='n'] { top: calc(var(--size) / -2); left: calc(50% - var(--size) / 2); cursor: ns-resize; }
+.handle[data-handle='ne'] { top: calc(var(--size) / -2); right: calc(var(--size) / -2); cursor: nesw-resize; }
+.handle[data-handle='e'] { top: calc(50% - var(--size) / 2); right: calc(var(--size) / -2); cursor: ew-resize; }
+.handle[data-handle='se'] { right: calc(var(--size) / -2); bottom: calc(var(--size) / -2); cursor: nwse-resize; }
+.handle[data-handle='s'] { bottom: calc(var(--size) / -2); left: calc(50% - var(--size) / 2); cursor: ns-resize; }
+.handle[data-handle='sw'] { bottom: calc(var(--size) / -2); left: calc(var(--size) / -2); cursor: nesw-resize; }
+.handle[data-handle='w'] { top: calc(50% - var(--size) / 2); left: calc(var(--size) / -2); cursor: ew-resize; }
+
+.toolbar.toolbar {
+  position: absolute;
+  display: flex;
+  gap: 2px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  white-space: nowrap;
+  transform-origin: 0 0;
+  pointer-events: auto;
+}
+
+.toolbar.toolbar[data-side='top'] {
+  transform: scale(var(--hb-object-inverse-zoom, 1)) translateY(calc(-100% - 6px));
+}
+
+.toolbar.toolbar[data-side='bottom'] {
+  transform: scale(var(--hb-object-inverse-zoom, 1)) translateY(6px);
+}
+
+.button.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #1f2328;
+  font: inherit;
+  cursor: pointer;
+}
+
+.button.button:hover {
+  background: #eef1f4;
+}
+
+.button.button:focus-visible {
+  outline: 2px solid var(--hb-object-accent);
+  outline-offset: -2px;
+}
+
+.button.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.button svg {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.visuallyHidden.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The text object being edited in place (an element inside the page, marked by the layer). */
+:global(.hb-canvas) :global(.page) > [data-hb-object-editing] {
+  outline: none;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+@media print {
+  .layer.layer {
+    display: none;
+  }
+}
+
+/* The hidden attribute (no object selected, a button that doesn't apply) wins over the display
+   values above. Integration fix (app pages lane): the toolbar showed at the layer's corner. */
+.toolbar.toolbar[hidden],
+.button.button[hidden] {
+  display: none;
+}

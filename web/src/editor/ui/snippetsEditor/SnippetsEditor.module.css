@@ -1,0 +1,315 @@
+/* Brew snippets editor. App chrome: CSS module classes only, UI kit tokens (--hbui-*). */
+
+.editor {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.toolbar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--hbui-space-2) var(--hbui-space-3) var(--hbui-space-3);
+  overflow: auto;
+}
+
+.intro,
+.empty {
+  margin: 0 0 var(--hbui-space-2);
+  color: var(--hbui-color-text-muted);
+}
+
+/* The list: one block per Insert-menu submenu. */
+.list {
+  padding: 2px;
+  margin: 0 0 var(--hbui-space-3);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.group + .group {
+  margin-top: 4px;
+}
+
+.groupLabel {
+  padding: 2px 6px;
+  overflow: hidden;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 6px 3px 14px;
+  cursor: pointer;
+  border-radius: var(--hbui-radius-sm);
+}
+
+.option:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.selected,
+.selected:hover {
+  background: var(--hbui-color-accent-subtle);
+  box-shadow: inset 3px 0 0 var(--hbui-color-accent);
+}
+
+.optionName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unnamed {
+  font-style: italic;
+  color: var(--hbui-color-text-muted);
+}
+
+.optionIssue {
+  flex: none;
+  color: var(--hbui-color-danger);
+}
+
+/* The selected snippet's fields. */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  padding-top: var(--hbui-space-2);
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.bodyField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.body {
+  height: 260px;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.hint code,
+.warning code {
+  font-family: var(--hbui-font-mono);
+}
+
+.warning {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 4px 6px;
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-warning-subtle);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* User themes' snippets (read-only). */
+.themes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  padding-top: var(--hbui-space-2);
+  margin-top: var(--hbui-space-3);
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.theme {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.themeName {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+}
+
+.themeList {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.themeSnippet > summary {
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: var(--hbui-radius-sm);
+}
+
+.themeSnippet > summary:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.themeSnippet > summary:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.themeSnippet[open] {
+  padding-bottom: var(--hbui-space-2);
+}
+
+.code {
+  max-height: 200px;
+  padding: 6px;
+  margin: 4px 0;
+  overflow: auto;
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+  font-size: var(--hbui-font-size-sm);
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.status,
+.notice {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.notice:empty {
+  display: none;
+}
+
+.noticeError {
+  color: var(--hbui-color-danger);
+}
+
+/* Import / export dialogs. */
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+}
+
+.mono {
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  white-space: pre;
+}
+
+.file {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+}
+
+.file > label {
+  font-weight: 600;
+}
+
+.dialogError {
+  margin: 0;
+  color: var(--hbui-color-danger);
+}
+
+/* The CodeMirror host. Syntax colours (hbfmLanguage.ts) read these; both sets meet WCAG AA. */
+.editorHost {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+
+  --hb-css-keyword: #7a3e9d;
+  --hb-css-property: #0b5ea8;
+  --hb-css-string: #a31515;
+  --hb-css-number: #116644;
+  --hb-css-class: #795e26;
+  --hb-css-tag: #800000;
+  --hb-css-atom: #0451a5;
+  --hb-css-variable: #1f6f86;
+  --hb-css-comment: #5c6370;
+  --hb-css-invalid: #c50f1f;
+  --hb-css-active-line: rgb(0 0 0 / 0.035);
+  --hb-css-selection: #b5d3ff;
+  --hb-css-match: rgb(255 214 0 / 0.35);
+}
+
+.editorHost[data-scheme='dark'] {
+  --hb-css-keyword: #d7a6f5;
+  --hb-css-property: #8cc4ff;
+  --hb-css-string: #f0a58a;
+  --hb-css-number: #9fdc9f;
+  --hb-css-class: #e8d18b;
+  --hb-css-tag: #ff9d9d;
+  --hb-css-atom: #7fc6ff;
+  --hb-css-variable: #7fd6e8;
+  --hb-css-comment: #9aa3ad;
+  --hb-css-invalid: #ff8080;
+  --hb-css-active-line: rgb(255 255 255 / 0.045);
+  --hb-css-selection: #264f78;
+  --hb-css-match: rgb(255 214 0 / 0.22);
+}

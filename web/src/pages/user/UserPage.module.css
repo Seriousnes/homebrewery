@@ -1,0 +1,45 @@
+.welcome {
+  padding: var(--hbui-space-4);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.welcome > p {
+  margin: 0;
+}
+
+.welcome > .welcomeLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2) var(--hbui-space-4);
+  margin-top: var(--hbui-space-2);
+}
+
+.link {
+  font-weight: 600;
+  color: var(--hbui-color-accent);
+  text-underline-offset: 2px;
+  border-radius: var(--hbui-radius-sm);
+  outline: 2px solid transparent;
+}
+
+.link:hover {
+  color: var(--hbui-color-accent-hover);
+}
+
+.link:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+/* Forced colours: only the focused link gets an outline (box-shadow rings are dropped, transparent outlines drawn). */
+@media (forced-colors: active) {
+  .link {
+    outline: none;
+  }
+
+  .link:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

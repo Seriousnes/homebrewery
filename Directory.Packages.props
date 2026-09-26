@@ -1,0 +1,38 @@
+<Project>
+  <!-- Central package management: projects use <PackageReference Include="X" /> without a version. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="EF Core and PostgreSQL">
+    <!-- Keep EF Core packages and the dotnet-ef tool (.config/dotnet-tools.json) on the same version. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+    <!--
+      Homebrewery.Core references Npgsql directly for NpgsqlTsVector (Brew.SearchVector). Keep it on
+      the version Npgsql.EntityFrameworkCore.PostgreSQL resolves, or the Data project downgrades.
+    -->
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="ASP.NET Core">
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <!-- IdentityUser<TKey> for AppUser in Homebrewery.Core (no ASP.NET Core framework reference there). -->
+    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="Domain">
+    <PackageVersion Include="Nanoid" Version="3.1.0" />
+    <PackageVersion Include="HtmlSanitizer" Version="9.2.1039" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+  </ItemGroup>
+</Project>

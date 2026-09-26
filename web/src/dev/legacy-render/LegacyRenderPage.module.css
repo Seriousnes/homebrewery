@@ -1,0 +1,31 @@
+.frame {
+  min-height: 100vh;
+  background: #585858;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  padding: 6px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #eee;
+  background: #222;
+}
+
+.bar a {
+  color: #9cf;
+}
+
+.iframe {
+  display: block;
+  width: 900px;
+  height: 1200px;
+  margin: 0;
+  border: 0;
+}
+
+.index {
+  padding: 16px;
+  font: 14px/1.5 system-ui, sans-serif;
+}

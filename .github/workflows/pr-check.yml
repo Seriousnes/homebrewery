@@ -13,9 +13,10 @@ jobs:
   limit-pull-requests:
     if: always() && github.repository_owner == 'naturalcrit'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name : Run limit-pull-requests action
         uses: ./.github/actions/limit-pull-requests

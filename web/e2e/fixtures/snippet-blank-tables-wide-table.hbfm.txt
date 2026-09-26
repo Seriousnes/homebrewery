@@ -1,0 +1,14 @@
+{{wide
+##### Weapons
+| Name                    | Cost  | Damage          | Weight  | Properties |
+|:------------------------|:-----:|:----------------|--------:|:-----------|
+| *Simple Melee Weapons*  |       |                 |         |            |
+| &emsp; Club             | 1 sp  | 1d4 bludgeoning | 2 lb.   | Light      |
+| &emsp; Dagger           | 2 gp  | 1d4 piercing    | 1 lb.   | Finesse    |
+| &emsp; Spear            | 1 gp  | 1d6 piercing    | 3 lb.   | Thrown     |
+| *Simple Ranged Weapons* |       |                 |         |            |
+| &emsp; Dart             | 5 cp  | 1d4 piercig     | 1/4 lb. | Finesse    |
+| &emsp; Shortbow         | 25 gp | 1d6 piercing    | 2 lb.   | Ammunition |
+| &emsp; Sling            | 1 sp  | 1d4 bludgeoning | &mdash; | Ammunition |
+}}
+

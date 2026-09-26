@@ -1,0 +1,3 @@
+[a]: 80085
+
+Words: $[toWordsUpper(a)]

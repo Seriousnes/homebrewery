@@ -1,0 +1,58 @@
+.frame {
+  min-height: 100vh;
+  background: #585858;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  padding: 6px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #eee;
+  background: #222;
+}
+
+.bar a {
+  color: #9cf;
+}
+
+.canvas {
+  padding: 30px 20px 0;
+}
+
+/* Page spacing and shadow as in the legacy preview (brewRenderer.less); left-aligned at a
+   whole-pixel offset like /dev/legacy-render, so fractional page widths (A4, A3) line up. */
+.canvas :global(.pages) > :global(.page) {
+  margin: 0 0 30px;
+  box-shadow: 1px 4px 14px #000;
+}
+
+/* view=canvas: EditorCanvas centres its pages; put them where /dev/legacy-render has them (20px
+   from the left, 30px apart), on the same whole-pixel grid. */
+.canvasHost :global(.hb-canvas) > :global(.pages) {
+  padding: 30px 20px 1px;
+}
+
+.canvasHost :global(.hb-canvas) > :global(.pages) > :where(:global(.page)) {
+  margin: 0 0 30px;
+}
+
+.report {
+  margin: 0 auto;
+  max-width: 900px;
+  padding: 12px;
+  font: 12px/1.4 ui-monospace, monospace;
+  color: #eee;
+}
+
+.error {
+  padding: 12px;
+  color: #fcc;
+  white-space: pre-wrap;
+}
+
+.index {
+  padding: 16px;
+  font: 14px/1.5 system-ui, sans-serif;
+}

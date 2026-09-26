@@ -1,0 +1,4 @@
+# CA certificates of an external PostgreSQL server (deploy/compose.external-db.yml mounts this folder).
+# Keep them out of git.
+*
+!.gitignore

@@ -1,0 +1,150 @@
+True20 Adventure Roleplaying, Revised Edition OGL Section 15.
+
+15. COPYRIGHT NOTICE
+Open Game License v 1.0 Copyright 2000, Wizards of the Coast, Inc.
+
+System Reference Document, Copyright 2000, Wizards of the Coast, Inc., Authors Jonathan Tweet, Monte Cook, Skip Williams, based on original material by E. Gary Gygax and Dave Arneson.
+
+Modern System Reference Document Copyright 2002-2004, Wizards of the Coast, Inc.; Authors Bill Slavicsek, Jeff Grubb, Rich Redman, Charles Ryan, Eric Cagle, David Noonan, Stan!, Christopher Perkins, Rodney Thompson, and JD Wiker, based on material by Jonathan Tweet, Monte Cook, Skip Williams, Richard Baker, Peter Adkison, Bruce R. Cordell, John Tynes, Andy Collins, and JD Wiker.
+
+Advanced Player’s Manual, Copyright 2005, Green Ronin Publishing: Author Skip Williams.
+
+Advanced Player’s Guide, Copyright 2004, White Wolf Publishing, Inc.
+
+Algernon Files, Copyright 2004, Blackwyrm Games; Authors Aaron Sullivan and Dave Mattingly.
+
+Armies of the Abyss, Copyright 2002, Green Ronin Publishing; Authors Erik Mona and Chris Pramas.
+
+The Avatar’s Handbook, Copyright 2003, Green Ronin Publishing; Authors Jesse Decker and Chris Tomasson.
+
+Bastards & Bloodlines, Copyright 2003, Green Ronin Publishing, Author Owen K.C. Stephens
+
+Blue Rose, Copyright 2005, Green Ronin Publishing; Authors Jeremy Crawford, Dawn Elliot, Steve Kenson, and John Snead.
+
+Blue Rose Companion, Copyright 2005, Green Ronin Publishing; Editor Jeremy Crawford.
+
+The Book of Fiends, Copyright 2003, Green Ronin Publishing; Authors Aaron Loeb, Erik Mona, Chris Pramas, and Robert J. Schwalb.
+
+Book of the Righteous, Copyright 2002, Aaron Loeb.
+
+Challenging Challenge Ratings: Immortal’s Handbook, Copyright 2003, Craig Cochrane.
+
+Conan The Roleplaying Game, Copyright 2003 Conan Properties International LCC; Authorized Publisher Mongoose Publishing Ltd; Author Ian Sturrock.
+
+CORE Explanatory Notice, Copyright 2003, Benjamin R. Durbin
+
+Creatures of Freeport, Copyright 2004, Green Ronin Publishing, LLC; Authors Graeme Davis and Keith Baker.
+
+Crime and Punishment, Copyright 2003, Author Keith Baker
+
+Crooks!, Copyright 2003, Green Ronin Publishing; Authors Sean Glenn, Kyle Hunter, and Erik Mona.
+
+Cry Havoc, Copyright 2003, Skip Williams. All rights reserved.
+
+Challenging Challenge Ratings: Immortal’s Handbook, Copyright 2003, Craig Cochrane.
+
+Darwin’s World 2nd Edition, Copyright 2003, RPG Objects; Authors Dominic Covey and Chris Davis.
+
+Design Parameters: Immortal’s Handbook, Copyright 2003, Craig Cochrane.
+
+Fading Suns d20, Copyright 2001, Holistic Design, Inc.
+
+Galactic Races, Copyright 2001, Fantasy Flight Games.
+
+Gimmick’s Guide to Gadgets, Copyright 2005, Green Ronin Publishing; Author Mike Mearls.
+
+Grim Tales, Copyright 2004, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Grim Tales, Cyberware game mechanics; Copyright 2003, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Grim Tales, Firearms game mechanics; Copyright 2003, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Grim Tales, Horror game mechanics; Copyright 2003, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Grim Tales, Spellcasting game mechanics; Copyright 2003, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Grim Tales, Vehicle game mechanics; Copyright 2003, Benjamin R. Durbin, published by Bad Axe Games, LCC.
+
+Hot Pursuit, Copyright 2005, Corey Reid, published by Adamant Entertainment, Inc.
+
+Immortals Handbook, Copyright 2003, Craig Cochrane.
+
+Legions of Hell, Copyright 2001, Green Ronin Publishing; Author Chris Pramas.
+
+A Magical Medieval Society: Western Europe, Copyright 2003, Expeditious Retreat Press; Authors Suzi Yee and Joseph Browning.
+
+The Mastermind’s Manual, Copyright 2006, Green Ronin Publishing; Author Steve Kenson.
+
+Modern Player’s Companion, Copyright 2003, The Game Mechanics, Inc; Author: Stan!
+
+Monster’s Handbook, Copyright 2002, Fantasy Flight Publishing, Inc.
+
+Monte Cook Presents: Iron Heroes, Copyright 2005, Monte J. Cook. All rights reserved.
+
+Monte Cook’s: Arcana Unearthed, Copyright 2003, Monte J. Cook. All rights reserved.
+
+Mutants & Masterminds, Copyright 2002, Green Ronin Publishing; Author Steve Kenson.
+
+Mutants & Masterminds, Second Edition, Copyright 2005, Green Ronin Publishing; Author Steve Kenson.
+
+Mutants & Masterminds Annual #1, Copyright 2004, Green Ronin Publishing, LLC; Editor Erik Mona.
+
+Mythic Heroes, Copyright 2005, Benjamin R. Durbin, published by Bad Axe Games, LLC.
+
+OGL Horror, Copyright 2003, Mongoose Publishing Limited.
+
+Possessors: Children of the Outer Gods, Copyright 2003, Philip Reed and Christopher Shy, www.philipjreed.com and www.studioronin.com.
+
+The Psychic’s Handbook, Copyright 2004, Green Ronin Publishing; Author Steve Kenson.
+
+The Quintessential Fighter, Copyright 2001 Mongoose Publishing
+
+Relics and Rituals: Excalibur,Copyright 2004, White Wolf Publishing, Inc.
+
+Rokugan, Copyright 2001 AEG
+
+The Seven Saxons, by Benjamin R. Durbin and Ryan Smalley, Copyright 2005, Bad Axe Games, LLC.
+
+Silver Age Sentinels d20, Copyright 2002, Guardians of Order, Inc.; Authors Stephen Kenson, Mark C. Mackinnon, Jeff Mackintosh, Jesse Scoble.
+
+Skull & Bones, Copyright 2003, Green Ronin, Green Ronin Publisihing, Authors Ian Sturrock, T.S. Luikart, and Gareth-Michael Skarka.
+
+Spycraft Copyright 2002, Alderac Entertainment Group.
+
+Spycraft Espionage Handbook, Copyright 2002, Alderac Entertainment Group, Inc.; Authors Patrick Kapera and Kevin Wilson.
+
+Spycraft Faceman/Snoop Class Guide, Copyright 2003, Alderac Entertainment Group, Inc.; Authors Alexander Flagg, Clayton A. Oliver.
+
+Spycraft Fixer/Pointman Class Guide, Copyright 2003, Alderac Entertainment Group, Inc.; Authors Scott Gearin.
+
+Spycraft Mastermind Guide, Copyright 2004, Alderac Entertainment Group, Inc.; Steve Crow, Alexander Flagg, B. D. Flory, Clayton A. Oliver.
+
+Spycraft Modern Arms Guide, Copyright 2002, Alderac Entertainment Group, Inc.; Authors Chad Brunner, Tim D’Allard, Rob Drake, Michael Fish, Scott Gearin, Owen Hershey, Patrick Kapera, Michael Petrovich, Jim Wardrip, Stephen Wilcoxon.
+
+Spycraft Soldier/Wheelman Class Guide, Copyright 2003, Alderac Entertainment Group, Inc.; Authors Chad Brunner, Shawn Carman, B. D. Flory, Scott Gearin, Patrick Kapera.
+
+Spycraft U.S. Militaries Guide, Copyright 2004, Alderac Entertainment Group, Inc.; Authors Dave McAlister, Clayton A. Oliver, Patrick Kapera.
+
+Spycraft, Copyright 2005, Alderac Entertainment Group.
+
+Swords of Our Fathers, Copyright 2003, The Game Mechanics
+
+Tales of the Caliphate Nights, Copyright 2006, Paradigm Concepts, Inc., Author Aaron Infante-Levy
+
+Tome of Horrors, Copyright 2002, Necromancer Games., Inc.; Author Scott Greene, based on original material by Gary Gygax.
+
+True20 Adventure Roleplaying, Copyright 2005, Green Ronin Publishing; Author Steve Kenson.
+
+True20 Bestiary, Copyright 2006, Green Ronin Publishing; Author Matthew E. Kaiser.
+
+True20 Companion, Copyright 2007, Green Ronin Publishing; Authors Erica Balsley, David Jarvis, Matthew E. Kaiser, Steve Kenson, and Sean Preston.
+
+The Unholy Warrior’s Handbook, Copyright 2003, Green Ronin Publishing; Author Robert J. Schwalb.
+
+Ultramodern Firearms, Copyright 2002, Green Ronin Publishing; Author Charles McManus Ryan.
+
+Unearthed Arcana, Copyright 2004, Wizards of the Coast, Inc.; Andy Collins, Jesse Decker, David Noonan, Rich Redman.
+
+Wrath & Rage, Copyright 2002, Green Ronin Publishing, Author Jim Bishop
+
+True20 Adventure Roleplaying, Revised Edition, Copyright 2008, Green Ronin Publishing; Author Steve Kenson.

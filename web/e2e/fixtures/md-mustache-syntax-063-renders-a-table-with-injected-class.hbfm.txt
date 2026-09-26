@@ -1,0 +1,6 @@
+| Experience Points | Level |
+|:------------------|:-----:|
+| 0                 | 1     |
+| 300               | 2     |
+
+{ClassName}

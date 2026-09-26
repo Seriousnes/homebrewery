@@ -1,0 +1,463 @@
+/* Inspector (P3.5). App chrome: CSS module classes only, UI kit tokens (--hbui-*). */
+
+.inspector {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.tabs {
+  min-width: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+  padding: var(--hbui-space-3);
+}
+
+.placeholder {
+  margin: 0;
+  padding: var(--hbui-space-3);
+  color: var(--hbui-color-text-muted);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+}
+
+/* A fieldset used only to disable its fields (read-only editor). */
+.bareFieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.targetHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.targetTitle {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+  padding-top: var(--hbui-space-3);
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+/* Breadcrumbs */
+
+.crumbs {
+  min-width: 0;
+}
+
+.crumbList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.crumbItem {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  min-width: 0;
+}
+
+.crumbSep {
+  color: var(--hbui-color-text-muted);
+}
+
+.crumb {
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0 6px;
+  overflow: hidden;
+  font: inherit;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--hbui-radius-sm);
+  outline: 2px solid transparent;
+}
+
+.crumb:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.crumb:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.crumbCurrent {
+  font-weight: 600;
+  background: var(--hbui-color-accent-subtle);
+  border-color: var(--hbui-color-accent);
+}
+
+.crumbClasses {
+  margin-left: 2px;
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+/* Fields */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  padding: 0;
+  font-weight: 500;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.none {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.error {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-danger);
+}
+
+.mono {
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Class chips and the add combobox */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  max-width: 100%;
+  padding: 0 2px 0 8px;
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: 999px;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipRemove {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--hbui-color-text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  outline: 2px solid transparent;
+}
+
+.chipRemove:hover {
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-hover);
+}
+
+.chipRemove:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.comboRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.comboInput {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--hbui-control-height);
+  padding: 4px 8px;
+  margin: 0;
+  font: inherit;
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  color-scheme: light dark;
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius);
+  outline: 2px solid transparent;
+}
+
+.comboInput::placeholder {
+  color: var(--hbui-color-text-muted);
+  opacity: 1;
+}
+
+.comboInput:focus-visible {
+  border-color: var(--hbui-color-focus);
+  box-shadow: 0 0 0 1px var(--hbui-color-focus);
+}
+
+.comboInput[aria-invalid='true'] {
+  border-color: var(--hbui-color-danger);
+}
+
+.listbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  max-height: 240px;
+  padding: 4px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  list-style: none;
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+  box-shadow: var(--hbui-shadow-popover);
+}
+
+.hidden {
+  display: none;
+}
+
+.option {
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--hbui-radius-sm);
+}
+
+.option:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.optionActive,
+.optionActive:hover {
+  color: var(--hbui-color-accent-text);
+  background: var(--hbui-color-accent);
+}
+
+/* Id */
+
+.idRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.idReset {
+  flex: none;
+}
+
+/* Attributes */
+
+.attrList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.attrRow {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.attrAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.attrAdd > .grow {
+  flex-basis: 96px;
+}
+
+.attrAddButton {
+  flex: none;
+}
+
+/* Objects */
+
+.objectList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.objectItem {
+  box-sizing: border-box;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  min-height: 28px;
+  padding: 2px 8px;
+  font: inherit;
+  color: var(--hbui-color-text);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--hbui-radius-sm);
+  outline: 2px solid transparent;
+}
+
+.objectItem:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.objectItem:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.objectItemSelected {
+  background: var(--hbui-color-accent-subtle);
+  border-color: var(--hbui-color-accent);
+}
+
+.objectLabel {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.objectFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  padding: var(--hbui-space-2);
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+@media (forced-colors: active) {
+  .crumbCurrent,
+  .objectItemSelected,
+  .optionActive {
+    border: 1px solid Highlight;
+    forced-color-adjust: none;
+    color: HighlightText;
+    background: Highlight;
+  }
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .crumb:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .chipRemove:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .comboInput:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  .objectItem:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

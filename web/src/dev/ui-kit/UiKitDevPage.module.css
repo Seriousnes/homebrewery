@@ -1,0 +1,120 @@
+.page {
+  min-height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+}
+
+.skip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  padding: 6px 10px;
+  color: var(--hbui-color-accent-text);
+  background: var(--hbui-color-accent);
+  border-radius: var(--hbui-radius);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size-xl);
+}
+
+.main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  padding: 16px 24px 96px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.output {
+  font-family: var(--hbui-font-mono);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.iconCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 4px;
+  font-size: 11px;
+  color: var(--hbui-color-text-muted);
+  background: var(--hbui-color-surface-raised);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.iconCell svg {
+  color: var(--hbui-color-text);
+}
+
+.layout {
+  height: 420px;
+  overflow: hidden;
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.canvasStandIn {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 16px;
+  overflow: auto;
+}
+
+.panelBody {
+  padding: 12px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}

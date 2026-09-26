@@ -1,0 +1,20 @@
+{{backCover}}
+
+# Sands of Fate
+
+Dive into a world of epic fantasy and adventure, where you can explore ancient civilizations, dark dungeons, and hidden secrets. Along the way, you’ll meet colorful characters, collect powerful items, and learn new skills. The more you play, the more you’ll discover.
+:
+Experience a rich and immersive story that adapts to your actions and decisions. Every choice you make has consequences, for good or ill. Will you be a hero or a villain? A leader or a follower? A friend or a foe? The choice is yours.
+:
+Embark on a thrilling journey across a vast and varied world, where magic and mystery await you at every turn. Encounter strange creatures and ancient secrets, and forge your own destiny with your choices. The world is yours to shape and explore.
+___
+
+For use with any fantasy roleplaying ruleset. Play the best game of your life!
+
+![Italian Coast Scene with Ruined Tower, 1838, by Thomas Cole](/assets/ruined_tower.webp){position:absolute,bottom:0,right:-250px,height:100%}
+
+{{logo
+![](/assets/naturalCritLogoWhite.svg)
+
+Homebrewery.Naturalcrit.com
+}}

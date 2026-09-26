@@ -1,0 +1,40 @@
+{{monster,frame,wide
+## Mind Ferret
+*Medium annoyance, lawful coy*
+___
+**Armor Class** :: 11 (chain mail, shield)
+**Hit Points**  :: 145 (1d4 + 5)
+**Speed**       :: 16 ft.
+___
+|  STR  |  DEX  |  CON  |  INT  |  WIS  |  CHA  |
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|11 (+1)|5 (-2)|2 (-4)|18 (+4)|5 (-2)|16 (+3)|
+___
+**Condition Immunities** :: groggy, groovy, drunk
+**Senses**               :: darkvision 60 ft., passive Perception 5
+**Languages**            :: None
+**Challenge**            :: 7 (8909 XP) {{bonus **Proficiency Bonus** +2}}
+___
+***Pack Tactics.*** These guys work together like peanut butter and jelly.
+:
+***Fowl Appearance.*** While the creature remains motionless, it is indistinguishable from a normal chicken.
+:
+***Pack Tactics.*** These guys work together like peanut butter and jelly.
+:
+***Fowl Appearance.*** While the creature remains motionless, it is indistinguishable from a normal chicken.
+:
+***Hangriness.*** This creature is angry, and hungry. It will refuse to do anything with you until its hunger is satisfied.
+
+When in visual contact with this creature, you must purchase an extra order of fries, even if they say they aren't hungry.
+### Actions
+***Crossface Suplex.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+:
+***Super Spin.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+:
+***DDT Powerbomb.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+:
+***Dual Throw.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+:
+***Corkscrew Strike.*** *Melee Weapon Attack:* +4 to hit, reach 5 ft., one target. *Hit:* 5 (1d6 + 2) 
+}}
+

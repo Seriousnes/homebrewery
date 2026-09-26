@@ -1,0 +1,30 @@
+/* The canvas takes its natural height (no inner scrolling): element screenshots of pages then
+   capture whole pages, as on /dev/import. */
+.frame {
+  min-height: 100vh;
+  background: #585858;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #111;
+  background: #eee;
+}
+
+/* Pages where /dev/legacy-render has them (20px from the left, 30px apart), on a whole-pixel
+   grid, so the snippet screenshots compare like the S3 harness's. */
+.main :global(.hb-canvas) > :global(.pages) {
+  padding: 30px 20px 1px;
+}
+
+.main :global(.hb-canvas) > :global(.pages) > :where(:global(.page)) {
+  margin: 0 0 30px;
+}

@@ -1,0 +1,32 @@
+```css
+/* Drop Cap settings */
+.page p.first-letter::first-letter,
+.page p.drop-cap::first-letter,
+.page h1 + p::first-letter {
+	font-family: SolberaImitationRemake;
+	font-size: 3.5cm;
+	background-image: linear-gradient(-45deg, #322814, #998250, #322814);
+	line-height: 1em;
+}
+
+
+```
+
+# Chapter Title
+Drop caps, indents and colours come from the theme. This paragraph follows the heading, so it
+gets the drop cap; the next paragraph is indented.
+
+A second paragraph with **bold**, *italic* and a [link](#p1).
+
+{{note
+##### A Note
+Notes use the theme's note frame.
+}}
+
+| d6 | Result |
+|:--:|:-------|
+| 1  | Nothing happens |
+| 2  | Something happens |
+
+{{pageNumber,auto}}
+{{footnote PART 1 | FIXTURE}}

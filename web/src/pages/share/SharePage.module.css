@@ -1,0 +1,11 @@
+/* The share page's view count, in the viewing toolbar. */
+.views {
+  display: inline-flex;
+  gap: var(--hbui-space-1);
+  align-items: center;
+  padding: 0 var(--hbui-space-2);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

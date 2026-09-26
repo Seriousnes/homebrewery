@@ -1,0 +1,56 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+  color: #eee;
+  background: #222;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+}
+
+.probe {
+  margin: 0;
+  color: #eee;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.css {
+  box-sizing: border-box;
+  width: 220px;
+  padding: 6px;
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
+  color: #ddd;
+  resize: horizontal;
+  background: #111;
+  border: 0;
+  border-right: 1px solid #444;
+}
+
+.canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+.legacyFrame {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+}

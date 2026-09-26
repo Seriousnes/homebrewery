@@ -1,0 +1,1 @@
+![homebrewery_mug](/assets/homebrewerymug.png) {width:280px,margin-right:-3cm,wrapLeft}

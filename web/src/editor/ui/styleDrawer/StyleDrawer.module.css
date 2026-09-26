@@ -1,0 +1,90 @@
+/* Style drawer (P3.6). App chrome: CSS module classes only, UI kit tokens (--hbui-*). */
+
+.drawer {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+}
+
+.toolbar {
+  flex: none;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.editor {
+  flex: 1 1 auto;
+}
+
+/* The CodeMirror host. Syntax colours (editorTheme.ts) read these; both sets meet WCAG AA. */
+.editorHost {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+
+  --hb-css-keyword: #7a3e9d;
+  --hb-css-property: #0b5ea8;
+  --hb-css-string: #a31515;
+  --hb-css-number: #116644;
+  --hb-css-class: #795e26;
+  --hb-css-tag: #800000;
+  --hb-css-atom: #0451a5;
+  --hb-css-variable: #1f6f86;
+  --hb-css-comment: #5c6370;
+  --hb-css-invalid: #c50f1f;
+  --hb-css-active-line: rgb(0 0 0 / 0.035);
+  --hb-css-selection: #b5d3ff;
+  --hb-css-match: rgb(255 214 0 / 0.35);
+}
+
+.editorHost[data-scheme='dark'] {
+  --hb-css-keyword: #d7a6f5;
+  --hb-css-property: #8cc4ff;
+  --hb-css-string: #f0a58a;
+  --hb-css-number: #9fdc9f;
+  --hb-css-class: #e8d18b;
+  --hb-css-tag: #ff9d9d;
+  --hb-css-atom: #7fc6ff;
+  --hb-css-variable: #7fd6e8;
+  --hb-css-comment: #9aa3ad;
+  --hb-css-invalid: #ff8080;
+  --hb-css-active-line: rgb(255 255 255 / 0.045);
+  --hb-css-selection: #264f78;
+  --hb-css-match: rgb(255 214 0 / 0.22);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: var(--hbui-font-size-sm);
+  border-top: 1px solid var(--hbui-color-border);
+}
+
+.hint {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.status {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.statusError {
+  color: var(--hbui-color-danger);
+}

@@ -1,0 +1,3256 @@
+{
+  "source": "legacy/client/homebrew/pages/homePage/welcome_msg.md",
+  "generator": "web/scripts/welcome-doc.ts (hbfmToDoc, variables expanded)",
+  "docSchemaVersion": 1,
+  "theme": "5ePHB",
+  "lang": "en",
+  "title": "",
+  "style": ".page #example + table td {\n\tborder:1px dashed #00000030;\n}\n.page {\n\tpadding-bottom : 1.1cm;\n}\n",
+  "doc": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "page",
+        "attrs": {
+          "classes": [],
+          "style": null,
+          "id": null,
+          "attributes": {},
+          "pid": null,
+          "kind": "manual",
+          "columns": null,
+          "markers": [],
+          "pageNumber": false,
+          "footer": "PART 1 | FANCINESS",
+          "objects": [
+            {
+              "id": "o1-1",
+              "kind": "image",
+              "classes": [],
+              "style": "position: absolute; bottom: 20px; left: 130px; width: 220px;",
+              "src": "https://homebrewery.naturalcrit.com/assets/homebrewerymug.png"
+            },
+            {
+              "id": "o1-2",
+              "kind": "text",
+              "classes": [
+                "pageNumber"
+              ],
+              "style": "",
+              "text": "1"
+            }
+          ],
+          "oversized": false
+        },
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "the-homebrewery-v3",
+              "attributes": {},
+              "level": 1,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The Homebrewery "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "V3"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Welcome traveler from an antique land. Please sit and tell us of what you have seen. The unheard of monsters, who slither and bite. Tell us of the wondrous items and and artifacts you have found, their mysteries yet to be unlocked. Of the vexing vocations and surprising skills you have seen."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "homebrew-dd-made-easy",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Homebrew D&D made easy"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The Homebrewery makes the creation and sharing of authentic looking Fifth-Edition homebrews easy. It uses "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://help.github.com/articles/markdown-basics/",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Markdown"
+              },
+              {
+                "type": "text",
+                "text": " with a little CSS magic to make your brews come to life."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Try it!"
+              },
+              {
+                "type": "text",
+                "text": " Simply edit the text on the left and watch it "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "update live"
+              },
+              {
+                "type": "text",
+                "text": " on the right. Note that not every button is visible on this demo page. Click New "
+              },
+              {
+                "type": "inlineBox",
+                "attrs": {
+                  "classes": [
+                    "fas",
+                    "fa-plus-square"
+                  ],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                }
+              },
+              {
+                "type": "text",
+                "text": " in the navbar above to start brewing with all the features!"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "editing-and-sharing",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Editing and Sharing"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "When you create a new homebrew document (“brew”), your document will be given a "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "edit link"
+              },
+              {
+                "type": "text",
+                "text": " and a "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "share link"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "edit link"
+              },
+              {
+                "type": "text",
+                "text": " is where you write your brew. If you edit a brew while logged in, you are added as one of the brew’s authors, and no one else can edit that brew until you add them as a new author via the "
+              },
+              {
+                "type": "inlineBox",
+                "attrs": {
+                  "classes": [
+                    "fa",
+                    "fa-info-circle"
+                  ],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Properties"
+              },
+              {
+                "type": "text",
+                "text": " tab. Brews without any author can still be edited by anyone with the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "edit link"
+              },
+              {
+                "type": "text",
+                "text": ", so be careful about who you share it with if you prefer to work without an account."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Anyone with the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "share url"
+              },
+              {
+                "type": "text",
+                "text": " will be able to access a read-only version of your homebrew."
+              }
+            ]
+          },
+          {
+            "type": "themeBlock",
+            "attrs": {
+              "classes": [
+                "note"
+              ],
+              "style": null,
+              "id": null,
+              "attributes": {}
+            },
+            "content": [
+              {
+                "type": "heading",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": "pdf-creation",
+                  "attributes": {},
+                  "level": 5,
+                  "customId": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "PDF Creation"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "PDF Printing works best in Google Chrome. If you are having quality/consistency issues, try using Chrome to print instead."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "After clicking the “Print” item in the navbar a new page will open and a print dialog will pop-up."
+                  }
+                ]
+              },
+              {
+                "type": "bulletList",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "listItem",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Set the "
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Destination"
+                          },
+                          {
+                            "type": "text",
+                            "text": " to “Save as PDF”"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Set "
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Paper Size"
+                          },
+                          {
+                            "type": "text",
+                            "text": " to “Letter”"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "If you are printing on A4 paper, make sure to have the "
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "PRINT → "
+                          },
+                          {
+                            "type": "inlineBox",
+                            "attrs": {
+                              "classes": [
+                                "far",
+                                "fa-file"
+                              ],
+                              "style": null,
+                              "id": null,
+                              "attributes": {}
+                            },
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": " A4 Pagesize"
+                          },
+                          {
+                            "type": "text",
+                            "text": " snippet in your brew"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "In "
+                          },
+                          {
+                            "type": "text",
+                            "marks": [
+                              {
+                                "type": "bold"
+                              }
+                            ],
+                            "text": "Options"
+                          },
+                          {
+                            "type": "text",
+                            "text": " make sure “Background Images” is selected."
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Hit print and enjoy! You’re done!"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "If you want to save ink or have a monochrome printer, add the "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": "PRINT → "
+                  },
+                  {
+                    "type": "inlineBox",
+                    "attrs": {
+                      "classes": [
+                        "fas",
+                        "fa-tint"
+                      ],
+                      "style": null,
+                      "id": null,
+                      "attributes": {}
+                    },
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": " Ink Friendly"
+                  },
+                  {
+                    "type": "text",
+                    "text": " snippet to your brew!"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "themeBlock",
+            "attrs": {
+              "classes": [
+                "artist"
+              ],
+              "style": "bottom: 160px; left: 100px;",
+              "id": null,
+              "attributes": {}
+            },
+            "content": [
+              {
+                "type": "heading",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": "homebrew-mug",
+                  "attributes": {},
+                  "level": 5,
+                  "customId": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Homebrew Mug"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "https://homebrew.naturalcrit.com",
+                          "target": null,
+                          "rel": null,
+                          "class": null,
+                          "title": null
+                        }
+                      }
+                    ],
+                    "text": "naturalcrit"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "columnBreak"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "v3-vs-legacy",
+              "attributes": {},
+              "level": 2,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "V3 vs Legacy"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The Homebrewery has two renderers: Legacy and V3. The V3 renderer is recommended for all users because it is more powerful, more customizable, and continues to receive new feature updates while Legacy does not. However Legacy mode will remain available for older brews and veteran users. At any time, any individual brew can be changed to your renderer of choice via the "
+              },
+              {
+                "type": "inlineBox",
+                "attrs": {
+                  "classes": [
+                    "fa",
+                    "fa-info-circle"
+                  ],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                }
+              },
+              {
+                "type": "text",
+                "text": " "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Properties"
+              },
+              {
+                "type": "text",
+                "text": " tab on your brew. However, converting between Legacy and V3 may require heavily tweaking the document; while both renderers can use raw HTML, V3 prefers a streamlined curly bracket syntax that avoids the complex HTML structures required by Legacy."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Scroll down to the next page for a brief summary of the changes and features available in V3!"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "new-things-all-the-time",
+              "attributes": {},
+              "level": 4,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "New Things All The Time!"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Check out the latest updates in the full changelog "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "/changelog",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "here"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "helping-out",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Helping out"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Like this tool? Head over to our "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.patreon.com/Naturalcrit",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Patreon"
+              },
+              {
+                "type": "text",
+                "text": " to help us keep the servers running."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "This tool will "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "always"
+              },
+              {
+                "type": "text",
+                "text": " be free, never have ads, and we will never offer any “premium” features or whatever."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "bugs-issues-suggestions",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Bugs, Issues, Suggestions?"
+              }
+            ]
+          },
+          {
+            "type": "bulletList",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "listItem",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "align": null,
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Check the "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "/faq",
+                              "target": null,
+                              "rel": null,
+                              "class": null,
+                              "title": null
+                            }
+                          }
+                        ],
+                        "text": "Frequently Asked Questions"
+                      },
+                      {
+                        "type": "text",
+                        "text": " page first for quick answers."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "align": null,
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Get help or the right look for your brew by posting on "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "https://www.reddit.com/r/homebrewery/submit?selftext=true&title=%5BIssue%5D%20Describe%20Your%20Issue%20Here",
+                              "target": null,
+                              "rel": null,
+                              "class": null,
+                              "title": null
+                            }
+                          }
+                        ],
+                        "text": "r/Homebrewery"
+                      },
+                      {
+                        "type": "text",
+                        "text": " or joining the "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "https://discord.gg/by3deKx",
+                              "target": null,
+                              "rel": null,
+                              "class": null,
+                              "title": null
+                            }
+                          }
+                        ],
+                        "text": "Discord Of Many Things"
+                      },
+                      {
+                        "type": "text",
+                        "text": "."
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "listItem",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "align": null,
+                      "continuation": false
+                    },
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Report technical issues or provide feedback on the "
+                      },
+                      {
+                        "type": "text",
+                        "marks": [
+                          {
+                            "type": "link",
+                            "attrs": {
+                              "href": "https://github.com/naturalcrit/homebrewery/",
+                              "target": null,
+                              "rel": null,
+                              "class": null,
+                              "title": null
+                            }
+                          }
+                        ],
+                        "text": "GitHub Repo"
+                      },
+                      {
+                        "type": "text",
+                        "text": "."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "legal-junk",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Legal Junk"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The Homebrewery is licensed using the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://github.com/naturalcrit/homebrewery/blob/master/license",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "MIT License"
+              },
+              {
+                "type": "text",
+                "text": ". Which means you are free to use The Homebrewery codebase any way that you want, except for claiming that you made it yourself."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "If you wish to sell or in some way gain profit for what’s created on this site, it’s your responsibility to ensure you have the proper licenses/rights for any images or resources used."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "crediting-us",
+              "attributes": {},
+              "level": 4,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Crediting Us"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "If you’d like to credit us in your brew, we’d be flattered! Just reference that you made it with The Homebrewery."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "more-homebrew-resources",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "More Homebrew Resources"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "image",
+                "attrs": {
+                  "classes": [],
+                  "style": "width: 50px; float: right; padding-left: 10px;",
+                  "id": null,
+                  "attributes": {},
+                  "src": "https://homebrewery.naturalcrit.com/assets/discordOfManyThings.svg",
+                  "alt": "Discord",
+                  "title": null,
+                  "width": null,
+                  "height": null
+                },
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://discord.gg/by3deKx",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "If you are looking for more 5e Homebrew resources check out "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.reddit.com/r/UnearthedArcana/",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "r/UnearthedArcana"
+              },
+              {
+                "type": "text",
+                "text": " and their list of useful resources "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.reddit.com/r/UnearthedArcana/wiki/resources",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "here"
+              },
+              {
+                "type": "text",
+                "text": ". The "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://discord.gg/by3deKx",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Discord Of Many Things"
+              },
+              {
+                "type": "text",
+                "text": " is another great resource to connect with fellow homebrewers for help and feedback."
+              }
+            ]
+          },
+          {
+            "type": "themeBlock",
+            "attrs": {
+              "classes": [],
+              "style": "position: absolute; top: 20px; right: 20px; width: auto;",
+              "id": null,
+              "attributes": {}
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "image",
+                    "attrs": {
+                      "classes": [],
+                      "style": "height: 30px;",
+                      "id": null,
+                      "attributes": {},
+                      "src": "https://homebrewery.naturalcrit.com/assets/discord.png",
+                      "alt": "Discord",
+                      "title": null,
+                      "width": null,
+                      "height": null
+                    },
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "https://discord.gg/by3deKx",
+                          "target": null,
+                          "rel": null,
+                          "class": null,
+                          "title": null
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "attrs": {
+                      "classes": [],
+                      "style": "height: 30px;",
+                      "id": null,
+                      "attributes": {},
+                      "src": "https://homebrewery.naturalcrit.com/assets/github.png",
+                      "alt": "Github",
+                      "title": null,
+                      "width": null,
+                      "height": null
+                    },
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "https://github.com/naturalcrit/homebrewery",
+                          "target": null,
+                          "rel": null,
+                          "class": null,
+                          "title": null
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "attrs": {
+                      "classes": [],
+                      "style": "height: 30px;",
+                      "id": null,
+                      "attributes": {},
+                      "src": "https://homebrewery.naturalcrit.com/assets/patreon.png",
+                      "alt": "Patreon",
+                      "title": null,
+                      "width": null,
+                      "height": null
+                    },
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "https://patreon.com/NaturalCrit",
+                          "target": null,
+                          "rel": null,
+                          "class": null,
+                          "title": null
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "image",
+                    "attrs": {
+                      "classes": [],
+                      "style": "height: 30px;",
+                      "id": null,
+                      "attributes": {},
+                      "src": "https://homebrewery.naturalcrit.com/assets/reddit.png",
+                      "alt": "Reddit",
+                      "title": null,
+                      "width": null,
+                      "height": null
+                    },
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "https://www.reddit.com/r/homebrewery/",
+                          "target": null,
+                          "rel": null,
+                          "class": null,
+                          "title": null
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "page",
+        "attrs": {
+          "classes": [],
+          "style": null,
+          "id": null,
+          "attributes": {},
+          "pid": null,
+          "kind": "manual",
+          "columns": null,
+          "markers": [],
+          "pageNumber": false,
+          "footer": "PART 2 | BORING STUFF",
+          "objects": [
+            {
+              "id": "o2-1",
+              "kind": "text",
+              "classes": [
+                "pageNumber"
+              ],
+              "style": "",
+              "text": "2"
+            }
+          ],
+          "oversized": false
+        },
+        "content": [
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "markdown",
+              "attributes": {},
+              "level": 2,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Markdown+"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "The Homebrewery aims to make homebrewing as simple as possible, providing a live editor with Markdown syntax that is more human-readable and faster to write with than raw HTML."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "From version 3.0.0, with a goal of adding maximum flexibility without users resorting to complex HTML to accomplish simple tasks, Homebrewery provides an extended verision of Markdown with additional syntax."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "curly-brackets",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Curly Brackets"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Standard Markdown lacks several equivalences to HTML. Hence, we have introduced "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "{{ }}"
+              },
+              {
+                "type": "text",
+                "text": " as a replacement for "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "<span></span>"
+              },
+              {
+                "type": "text",
+                "text": " and "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "<div></div>"
+              },
+              {
+                "type": "text",
+                "text": " for a cleaner custom formatting. Inline spans and block elements can be created and given ID’s and Classes, as well as CSS properties, each of which are comma separated with no spaces. Use double quotes if a value requires spaces. Spans and Blocks start the same:"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "span",
+              "attributes": {},
+              "level": 4,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Span"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "My favorite author is "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "span",
+                    "attrs": {
+                      "classes": [
+                        "pen"
+                      ],
+                      "style": "color: orange; font-family: \"trebuchet ms\";",
+                      "id": "author",
+                      "attributes": {}
+                    }
+                  }
+                ],
+                "text": "Brandon Sanderson"
+              },
+              {
+                "type": "text",
+                "text": ". The orange text has a class of "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "pen"
+              },
+              {
+                "type": "text",
+                "text": ", an id of "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "author"
+              },
+              {
+                "type": "text",
+                "text": ", is colored orange, and given a new font. The first space outside of quotes marks the beginning of the content."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "block",
+              "attributes": {},
+              "level": 4,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Block"
+              }
+            ]
+          },
+          {
+            "type": "themeBlock",
+            "attrs": {
+              "classes": [
+                "purple"
+              ],
+              "style": "text-align: center; background: rgba(170, 136, 170, 0.333);",
+              "id": "book",
+              "attributes": {}
+            },
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {},
+                  "align": null,
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "My favorite book is Wheel of Time. This block has a class of "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "code"
+                      }
+                    ],
+                    "text": "purple"
+                  },
+                  {
+                    "type": "text",
+                    "text": ", an id of "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "code"
+                      }
+                    ],
+                    "text": "book"
+                  },
+                  {
+                    "type": "text",
+                    "text": ", and centered text with a colored background. The opening and closing brackets are on lines separate from the block contents."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "injection",
+              "attributes": {},
+              "level": 4,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Injection"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "For any element not inside a span or block, you can "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "inject"
+              },
+              {
+                "type": "text",
+                "text": " attributes using the same syntax but with single brackets in a single line immediately after the element."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Inline elements like "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "italics"
+              },
+              {
+                "type": "text",
+                "text": " or images require the injection on the same line."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Block elements like headers require the injection to start on the line immediately following."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": "color: purple; text-align: center;",
+              "id": "a-purple-header",
+              "attributes": {},
+              "level": 5,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A Purple Header"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "* "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "this does not currently work for tables yet"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "vertical-spacing",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Vertical Spacing"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A blank line can be achieved with a run of one or more "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": ":"
+              },
+              {
+                "type": "text",
+                "text": " alone on a line. More "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": ":"
+              },
+              {
+                "type": "text",
+                "text": "‘s will create more space."
+              }
+            ]
+          },
+          {
+            "type": "spacer"
+          },
+          {
+            "type": "spacer"
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Much nicer than "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "<br><br><br><br><br>"
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "definition-lists",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Definition Lists"
+              }
+            ]
+          },
+          {
+            "type": "definitionList",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "multiline": false,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "definitionTerm",
+                "attrs": {
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": "Example"
+                  }
+                ]
+              },
+              {
+                "type": "definitionDesc",
+                "attrs": {
+                  "continuation": false
+                },
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "V3 uses HTML "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "italic"
+                      }
+                    ],
+                    "text": "definition lists"
+                  },
+                  {
+                    "type": "text",
+                    "text": " to create “lists” with hanging indents."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "column-breaks",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Column Breaks"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Column and page breaks with "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "\\column"
+              },
+              {
+                "type": "text",
+                "text": " and "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "\\page"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "columnBreak"
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "tables",
+              "attributes": {},
+              "level": 3,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Tables"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Tables now allow column & row spanning between cells. This is included in some updated snippets, but a simplified example is given below."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "A cell can be spanned across columns by grouping multiple pipe "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "|"
+              },
+              {
+                "type": "text",
+                "text": " characters at the end of a cell."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Row spanning is achieved by adding a "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "^"
+              },
+              {
+                "type": "text",
+                "text": " at the end of a cell just before the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "|"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "These can be combined to span a cell across both columns and rows. Cells must have the same colspan if they are to be rowspan’d."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "example",
+              "attributes": {},
+              "level": 5,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Example"
+              }
+            ]
+          },
+          {
+            "type": "table",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {}
+            },
+            "content": [
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "left",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Head A"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 2,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Spanned Header"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "left",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Head B"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Head C"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableHeader",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Head D"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 3,
+                      "colwidth": null,
+                      "align": "left",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "1A 2A 3A"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "1B"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "1C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "2B"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "2C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 2,
+                      "rowspan": 2,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "3B 3C 4B 4C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 2,
+                      "colwidth": null,
+                      "align": "left",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "4A 5A"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 2,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "5B 6B"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "5C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableRow",
+                "attrs": {
+                  "classes": [],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                },
+                "content": [
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "left",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "6A"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "tableCell",
+                    "attrs": {
+                      "classes": [],
+                      "style": null,
+                      "id": null,
+                      "attributes": {},
+                      "colspan": 1,
+                      "rowspan": 1,
+                      "colwidth": null,
+                      "align": "center",
+                      "width": null
+                    },
+                    "content": [
+                      {
+                        "type": "paragraph",
+                        "attrs": {
+                          "classes": [],
+                          "style": null,
+                          "id": null,
+                          "attributes": {},
+                          "align": null,
+                          "continuation": false
+                        },
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "6C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "level": 2,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Images"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Images must be hosted online somewhere, like "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "link",
+                    "attrs": {
+                      "href": "https://www.imgur.com",
+                      "target": null,
+                      "rel": null,
+                      "class": null,
+                      "title": null
+                    }
+                  }
+                ],
+                "text": "Imgur"
+              },
+              {
+                "type": "text",
+                "text": ". You use the address to that image to reference it in your brew*."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Using "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "Curly Injection"
+              },
+              {
+                "type": "text",
+                "text": " you can assign an id, classes, or inline CSS properties to the Markdown image syntax."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "image",
+                "attrs": {
+                  "classes": [],
+                  "style": "width: 100px; border: 2px solid; border-radius: 10px;",
+                  "id": null,
+                  "attributes": {},
+                  "src": "https://homebrewery.naturalcrit.com/assets/catwarrior.jpg",
+                  "alt": "alt-text",
+                  "title": null,
+                  "width": null,
+                  "height": null
+                }
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "* "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "When using Imgur-hosted images, use the “direct link”, which can be found when you click into your image in the Imgur interface."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "snippets",
+              "attributes": {},
+              "level": 2,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Snippets"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Homebrewery comes with a series of "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "italic"
+                  }
+                ],
+                "text": "code snippets"
+              },
+              {
+                "type": "text",
+                "text": " found at the top of the editor pane that make it easy to create brews as quickly as possible. Just set your cursor where you want the code to appear in the editor pane, choose a snippet, and make the adjustments you need."
+              }
+            ]
+          },
+          {
+            "type": "heading",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": "style-editor-panel",
+              "attributes": {},
+              "level": 2,
+              "customId": false
+            },
+            "content": [
+              {
+                "type": "text",
+                "text": "Style Editor Panel"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "attrs": {
+              "classes": [],
+              "style": null,
+              "id": null,
+              "attributes": {},
+              "align": null,
+              "continuation": false
+            },
+            "content": [
+              {
+                "type": "inlineBox",
+                "attrs": {
+                  "classes": [
+                    "fa",
+                    "fa-paint-brush"
+                  ],
+                  "style": null,
+                  "id": null,
+                  "attributes": {}
+                }
+              },
+              {
+                "type": "text",
+                "text": " Usually overlooked or unused by some users, the "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Style Editor"
+              },
+              {
+                "type": "text",
+                "text": " tab is located on the right side of the Snippet bar. This editor accepts CSS for styling without requiring "
+              },
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "code"
+                  }
+                ],
+                "text": "<style>"
+              },
+              {
+                "type": "text",
+                "text": " tags– anything that would have gone inside style tags before can now be placed here, and snippets that insert CSS styles are now located on that tab."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

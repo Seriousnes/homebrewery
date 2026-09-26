@@ -1,0 +1,1 @@
+{{my-class,my-class2 text}}

@@ -1,0 +1,3 @@
+{{--stringVariable:"'string'"
+Sample text.
+}}

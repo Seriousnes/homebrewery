@@ -1,0 +1,1 @@
+Components ported from legacy/ to TypeScript: MetadataEditor, TagInput, Navbar, BrewItem (plan §10).

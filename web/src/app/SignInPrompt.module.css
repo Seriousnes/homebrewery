@@ -1,0 +1,24 @@
+.footer {
+  margin: var(--hbui-space-4) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.link {
+  color: var(--hbui-color-info);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:focus-visible {
+  border-radius: 2px;
+  outline: none;
+  box-shadow: var(--hbui-focus-ring);
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .link:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

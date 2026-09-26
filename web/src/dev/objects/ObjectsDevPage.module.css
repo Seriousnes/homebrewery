@@ -1,0 +1,31 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+}
+
+.chrome {
+  flex: none;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+}
+
+.toolbar {
+  flex: none;
+}
+
+.field {
+  font-size: 13px;
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+}

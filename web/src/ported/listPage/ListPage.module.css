@@ -1,0 +1,241 @@
+/* The list pages' controls and groups (upstream: listPage.less). App chrome: UI kit tokens only. */
+
+.listPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-3);
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3) var(--hbui-space-5);
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: var(--hbui-space-3);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius-lg);
+}
+
+/* Sort bar (upstream .sort-container). */
+.sortBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-1);
+  align-items: center;
+  min-width: 0;
+}
+
+.sortLabel {
+  margin-right: var(--hbui-space-1);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sortButton {
+  box-sizing: border-box;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  min-height: var(--hbui-control-height-sm);
+  padding: 0 var(--hbui-space-2);
+  margin: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 500;
+  color: var(--hbui-color-text);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--hbui-radius);
+  outline: 2px solid transparent;
+}
+
+.sortButton:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.sortButton:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.sortButton[aria-pressed='true'] {
+  font-weight: 700;
+  color: var(--hbui-color-accent);
+  background: var(--hbui-color-accent-subtle);
+  border-color: var(--hbui-color-accent);
+}
+
+.filter {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+
+.tagFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-1) var(--hbui-space-2);
+  align-items: center;
+}
+
+.tagFilter {
+  box-sizing: border-box;
+  display: inline-flex;
+  gap: var(--hbui-space-1);
+  align-items: center;
+  max-width: 100%;
+  min-height: var(--hbui-control-height-sm);
+  padding: 0 var(--hbui-space-2);
+  margin: 0;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+  color: var(--hbui-color-text);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-accent);
+  border-radius: 999px;
+  outline: 2px solid transparent;
+}
+
+.tagFilter:hover {
+  background: var(--hbui-color-accent-subtle);
+}
+
+.tagFilter:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  min-height: var(--hbui-control-height-sm);
+}
+
+.count {
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.note {
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  margin: 0;
+  background: var(--hbui-color-info-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+/* Groups (upstream .brewCollection with its clickable h1). */
+.group {
+  min-width: 0;
+}
+
+.groupHeading {
+  margin: var(--hbui-space-3) 0 var(--hbui-space-2);
+  font-size: var(--hbui-font-size-xl);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.groupToggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  max-width: 100%;
+  padding: var(--hbui-space-1) var(--hbui-space-2) var(--hbui-space-1) 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--hbui-radius);
+  outline: 2px solid transparent;
+}
+
+.groupToggle:hover > span:first-of-type {
+  text-decoration: underline;
+}
+
+.groupToggle:focus-visible {
+  box-shadow: var(--hbui-focus-ring);
+}
+
+.groupToggle[aria-expanded='false'] {
+  color: var(--hbui-color-text-muted);
+}
+
+.groupCount {
+  padding: 0 var(--hbui-space-2);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: 600;
+  color: var(--hbui-color-text-muted);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: 999px;
+}
+
+.empty {
+  margin: var(--hbui-space-2) 0;
+  font-style: italic;
+  color: var(--hbui-color-text-muted);
+}
+
+/* Two or three columns on wide screens (upstream: two 48% cards), one on phones. */
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: var(--hbui-space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.itemCell {
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter {
+    flex-basis: auto;
+    max-width: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .sortButton[aria-pressed='true'],
+  .tagFilter {
+    border-color: Highlight;
+  }
+
+  /* Forced colours drop the box-shadow focus rings and draw the always-on transparent outlines, so every control
+     would look focused (P8.2): only the focused one gets an outline. */
+  .sortButton,
+  .tagFilter,
+  .groupToggle {
+    outline: none;
+  }
+
+  .sortButton:focus-visible,
+  .tagFilter:focus-visible,
+  .groupToggle:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

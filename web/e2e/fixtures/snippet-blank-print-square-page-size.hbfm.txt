@@ -1,0 +1,30 @@
+```css
+/* Square Page Size */
+.page {
+	width   : 125mm;
+	height  : 125mm;
+	padding : 12.5mm;
+	columns : unset;
+}
+
+
+```
+
+# Chapter Title
+Drop caps, indents and colours come from the theme. This paragraph follows the heading, so it
+gets the drop cap; the next paragraph is indented.
+
+A second paragraph with **bold**, *italic* and a [link](#p1).
+
+{{note
+##### A Note
+Notes use the theme's note frame.
+}}
+
+| d6 | Result |
+|:--:|:-------|
+| 1  | Nothing happens |
+| 2  | Something happens |
+
+{{pageNumber,auto}}
+{{footnote PART 1 | FIXTURE}}

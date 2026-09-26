@@ -1,0 +1,2 @@
+<i class="far fa-copyright"></i> <year> This work is openly licensed via [CC BY-SA 4.0](https://creativecommons.org/publicdomain/by-sa/4.0/)
+

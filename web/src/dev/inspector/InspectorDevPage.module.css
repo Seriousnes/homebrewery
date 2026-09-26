@@ -1,0 +1,51 @@
+.page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: -8px; /* no global CSS: undo the body margin */
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface);
+}
+
+.bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-bg);
+  border-bottom: 1px solid var(--hbui-color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+  font-weight: 600;
+}
+
+.status {
+  flex: 1 1 auto;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+  text-align: right;
+}
+
+.split {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  min-width: 0;
+}
+
+.canvas {
+  flex: 1;
+  min-width: 0;
+}

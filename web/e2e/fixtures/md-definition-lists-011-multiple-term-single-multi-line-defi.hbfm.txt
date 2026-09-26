@@ -1,0 +1,9 @@
+Term 1
+::Definition 1
+and more and more
+
+Term 2
+::Definition 1
+::Definition 2
+
+::Inline Definition (no term)

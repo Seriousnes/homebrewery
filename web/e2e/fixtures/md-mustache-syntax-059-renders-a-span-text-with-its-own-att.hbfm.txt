@@ -1,0 +1,4 @@
+{{attrA="old",attrB="old"
+text
+}}
+{attrA="new",attrC="new",class="new",style="new",id="new"}

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!--
+      XML doc comments feed the OpenAPI document (Microsoft.AspNetCore.OpenApi's comment generator), which web/
+      generates its client from. Undocumented members and partially documented records are fine (CS1591, CS1573).
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Homebrewery.Core\Homebrewery.Core.csproj" />
+    <ProjectReference Include="..\Homebrewery.Data\Homebrewery.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Homebrewery.Api.Tests" />
+  </ItemGroup>
+
+  <!--
+    The editor schema (plan §3.7), written by the web build (npm run schema). DocInspector validates saved
+    documents against it. It is copied next to the binaries for dotnet run / test / publish (and so into the
+    Docker image, whose api stage copies shared/ before publishing); Schema:ManifestPath overrides the location.
+  -->
+  <ItemGroup>
+    <Content Include="..\..\shared\schema-manifest.json" Link="schema-manifest.json"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

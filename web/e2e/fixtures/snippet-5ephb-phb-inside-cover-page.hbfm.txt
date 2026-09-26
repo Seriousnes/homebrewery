@@ -1,0 +1,13 @@
+{{insideCover}}
+
+# The Blade of Orcus
+## Lost Caverns
+___
+
+{{imageMaskCenter1,--offsetX:0%,--offsetY:0%,--rotation:0
+  ![The Spirit of War, 1851, by Jasper Francis Cropsey](/assets/the_spirit_of_war.webp){position:absolute,bottom:100px,right:70px,height:70%}
+}}
+
+{{logo ![](/assets/naturalCritLogoRed.svg)}}
+
+\page

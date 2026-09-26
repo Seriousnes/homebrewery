@@ -1,0 +1,53 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #585858;
+}
+
+.bar {
+  flex: none;
+  z-index: 10;
+  padding: 6px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #eee;
+  background: #222;
+}
+
+.bar code {
+  color: #fff;
+}
+
+/* The shells fill the rest (EditorApp and EditorCanvas fill their parent). */
+.area {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chrome {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+}
+
+.canvasArea {
+  flex: 1;
+  min-height: 0;
+}
+
+.empty {
+  margin: 24px;
+  color: #eee;
+  font: 14px/1.5 system-ui, sans-serif;
+}

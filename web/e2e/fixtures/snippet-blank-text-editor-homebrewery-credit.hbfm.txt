@@ -1,0 +1,9 @@
+{{homebreweryCredits
+Made With
+
+{{homebreweryIcon}}
+
+The Homebrewery  
+[Homebrewery.Naturalcrit.com](https://homebrewery.naturalcrit.com)
+}}
+

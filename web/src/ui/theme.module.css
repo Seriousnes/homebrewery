@@ -1,0 +1,162 @@
+/*
+ * Design tokens for the app chrome (plan §5: CSS modules only, no global selectors). Tokens are
+ * custom properties on the .root class, which <UiRoot> and every UI portal container carry. The
+ * prefix --hbui- keeps them apart from theme variables inside the brew canvas.
+ *
+ * Light by default, dark via prefers-color-scheme; data-color-scheme="light|dark" on the root
+ * forces one.
+ */
+.root {
+  --hbui-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --hbui-font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  --hbui-font-size: 14px;
+  --hbui-font-size-sm: 12px;
+  --hbui-font-size-lg: 16px;
+  --hbui-font-size-xl: 20px;
+  --hbui-line-height: 1.45;
+
+  --hbui-space-1: 4px;
+  --hbui-space-2: 8px;
+  --hbui-space-3: 12px;
+  --hbui-space-4: 16px;
+  --hbui-space-5: 24px;
+  --hbui-space-6: 32px;
+
+  --hbui-radius-sm: 4px;
+  --hbui-radius: 6px;
+  --hbui-radius-lg: 10px;
+
+  --hbui-control-height: 32px;
+  --hbui-control-height-sm: 26px;
+
+  --hbui-duration: 120ms;
+
+  --hbui-z-layer: 1000;
+  --hbui-z-toast: 1100;
+
+  /* Light */
+  --hbui-color-bg: #ffffff;
+  --hbui-color-surface: #f4f4f6;
+  --hbui-color-surface-raised: #ffffff;
+  --hbui-color-surface-hover: #e9e9ee;
+  --hbui-color-surface-active: #dcdce3;
+  --hbui-color-text: #1c1c21;
+  --hbui-color-text-muted: #55555f;
+  --hbui-color-border: #d3d3da;
+  --hbui-color-border-strong: #85858f;
+  --hbui-color-accent: #9b1c1c;
+  --hbui-color-accent-hover: #7f1616;
+  --hbui-color-accent-text: #ffffff;
+  --hbui-color-accent-subtle: #fbeaea;
+  --hbui-color-danger: #b42318;
+  --hbui-color-danger-hover: #912018;
+  --hbui-color-danger-text: #ffffff;
+  --hbui-color-danger-subtle: #fdecea;
+  --hbui-color-success: #1d6b36;
+  --hbui-color-success-subtle: #e6f4ea;
+  --hbui-color-warning: #7a4d00;
+  --hbui-color-warning-subtle: #fff3d6;
+  --hbui-color-info: #1a58a0;
+  --hbui-color-info-subtle: #e7f0fb;
+  --hbui-color-focus: #1a66d2;
+  --hbui-color-overlay: rgb(20 20 25 / 0.45);
+  --hbui-color-tooltip-bg: #26262c;
+  --hbui-color-tooltip-text: #ffffff;
+
+  --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.12);
+  --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.28);
+  --hbui-focus-ring: 0 0 0 2px var(--hbui-color-bg), 0 0 0 4px var(--hbui-color-focus);
+}
+
+@media (prefers-color-scheme: dark) {
+  .root:not([data-color-scheme='light']) {
+    --hbui-color-bg: #1a1a1e;
+    --hbui-color-surface: #242429;
+    --hbui-color-surface-raised: #2c2c32;
+    --hbui-color-surface-hover: #35353c;
+    --hbui-color-surface-active: #414149;
+    --hbui-color-text: #ededf1;
+    --hbui-color-text-muted: #aeaeb9;
+    --hbui-color-border: #45454e;
+    --hbui-color-border-strong: #8d8d98;
+    --hbui-color-accent: #ff8f85;
+    --hbui-color-accent-hover: #ffaaa2;
+    --hbui-color-accent-text: #1a1a1e;
+    --hbui-color-accent-subtle: #3d2524;
+    --hbui-color-danger: #ff8a80;
+    --hbui-color-danger-hover: #ffa89f;
+    --hbui-color-danger-text: #1a1a1e;
+    --hbui-color-danger-subtle: #3e2322;
+    --hbui-color-success: #7fd49a;
+    --hbui-color-success-subtle: #1d3325;
+    --hbui-color-warning: #f3c465;
+    --hbui-color-warning-subtle: #382d17;
+    --hbui-color-info: #8ab8f5;
+    --hbui-color-info-subtle: #1c2a3d;
+    --hbui-color-focus: #7fb0ff;
+    --hbui-color-overlay: rgb(0 0 0 / 0.6);
+    --hbui-color-tooltip-bg: #ededf1;
+    --hbui-color-tooltip-text: #1a1a1e;
+    --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+    --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
+  }
+}
+
+.root[data-color-scheme='dark'] {
+  --hbui-color-bg: #1a1a1e;
+  --hbui-color-surface: #242429;
+  --hbui-color-surface-raised: #2c2c32;
+  --hbui-color-surface-hover: #35353c;
+  --hbui-color-surface-active: #414149;
+  --hbui-color-text: #ededf1;
+  --hbui-color-text-muted: #aeaeb9;
+  --hbui-color-border: #45454e;
+  --hbui-color-border-strong: #8d8d98;
+  --hbui-color-accent: #ff8f85;
+  --hbui-color-accent-hover: #ffaaa2;
+  --hbui-color-accent-text: #1a1a1e;
+  --hbui-color-accent-subtle: #3d2524;
+  --hbui-color-danger: #ff8a80;
+  --hbui-color-danger-hover: #ffa89f;
+  --hbui-color-danger-text: #1a1a1e;
+  --hbui-color-danger-subtle: #3e2322;
+  --hbui-color-success: #7fd49a;
+  --hbui-color-success-subtle: #1d3325;
+  --hbui-color-warning: #f3c465;
+  --hbui-color-warning-subtle: #382d17;
+  --hbui-color-info: #8ab8f5;
+  --hbui-color-info-subtle: #1c2a3d;
+  --hbui-color-focus: #7fb0ff;
+  --hbui-color-overlay: rgb(0 0 0 / 0.6);
+  --hbui-color-tooltip-bg: #ededf1;
+  --hbui-color-tooltip-text: #1a1a1e;
+  --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+  --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
+}
+
+/* Reduced motion (WCAG 2.3.3): every chrome transition uses --hbui-duration. */
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    --hbui-duration: 0ms;
+  }
+}
+
+/* Optional base for a region of app chrome: text, font and background from the tokens. */
+.surface {
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  line-height: var(--hbui-line-height);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-bg);
+}
+
+/* Portal containers: no box of their own. */
+.layer {
+  position: relative;
+  z-index: var(--hbui-z-layer);
+}
+
+.toastLayer {
+  position: relative;
+  z-index: var(--hbui-z-toast);
+}

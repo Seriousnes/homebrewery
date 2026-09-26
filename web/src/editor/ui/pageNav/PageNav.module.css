@@ -1,0 +1,54 @@
+.pageNav {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.position {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0 4px;
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size);
+  color: var(--hbui-color-text);
+  white-space: nowrap;
+}
+
+.input {
+  box-sizing: content-box;
+  min-height: calc(var(--hbui-control-height-sm) - 2px);
+  padding: 0 4px;
+  margin: 0;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  color-scheme: light dark;
+  text-align: center;
+  background: var(--hbui-color-bg);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius-sm);
+  outline: none;
+}
+
+.input:focus-visible {
+  border-color: var(--hbui-color-focus);
+  box-shadow: 0 0 0 1px var(--hbui-color-focus);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.total {
+  font-variant-numeric: tabular-nums;
+  color: var(--hbui-color-text-muted);
+}
+
+/* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
+@media (forced-colors: active) {
+  .input:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+}

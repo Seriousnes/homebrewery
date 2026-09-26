@@ -1,0 +1,25 @@
+.toolbar {
+  row-gap: 2px;
+}
+
+/* Stable widths, so the toolbar doesn't jump while the caret moves. */
+.blockType {
+  justify-content: space-between;
+  min-width: 9.5em;
+}
+
+.zoom {
+  justify-content: space-between;
+  min-width: 5.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  margin-left: auto;
+  padding: 0 var(--hbui-space-2);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
