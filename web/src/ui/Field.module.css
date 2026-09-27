@@ -9,8 +9,12 @@
   color: var(--hbui-color-text);
 }
 
+/* Upstream's field labels (metadataEditor.less): small, bold, uppercase. */
 .label {
-  font-weight: 500;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
 }
 
 .required {
@@ -56,6 +60,11 @@
 .control:focus-visible {
   border-color: var(--hbui-color-focus);
   box-shadow: 0 0 0 1px var(--hbui-color-focus);
+}
+
+/* Upstream shades an invalid value pink (metadataEditor.less .value:invalid). */
+.control:user-invalid {
+  background: var(--hbui-color-danger-subtle);
 }
 
 .control:disabled {
@@ -139,7 +148,7 @@
   cursor: inherit;
   appearance: none;
   background: var(--hbui-color-border-strong);
-  border-radius: 9px;
+  border-radius: 0;
   transition: background-color var(--hbui-duration);
 }
 
@@ -151,7 +160,7 @@
   height: 14px;
   content: '';
   background: var(--hbui-color-bg);
-  border-radius: 50%;
+  border-radius: 0;
   transition: transform var(--hbui-duration);
 }
 

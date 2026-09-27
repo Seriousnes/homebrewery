@@ -30,7 +30,7 @@ export function RootErrorBoundary() {
 export function RootHydrateFallback() {
   return (
     <UiRoot>
-      <PageLoading />
+      <PageLoading fullScreen />
     </UiRoot>
   );
 }

@@ -1,67 +1,76 @@
 /*
- * Site navbar (port of legacy client/homebrew/navbar/navbar.less). Like upstream it is a dark
- * bar in both colour schemes: local custom properties, not the light/dark UI kit tokens (the
- * dropdown panels are UI kit popovers and follow the scheme). Item colours from upstream
- * (purple, teal, …) become an accent underline so the white text keeps its contrast.
+ * Site navbar (port of legacy client/homebrew/navbar/navbar.less): the #333 bar in both colour
+ * schemes, bold uppercase 10px Open Sans items split by #666 rules, each filling with its
+ * upstream colour (purple, teal, …) under the pointer. Upstream's colours are darkened within the
+ * same hue where white text on them would fail WCAG AA. The dropdown panels are UI kit popovers
+ * and follow the scheme.
  */
 .nav {
-  --nav-bg: #2f2f33;
-  --nav-bg-hover: #45454b;
-  --nav-bg-active: #55555c;
-  --nav-fg: #ffffff;
-  --nav-fg-muted: #c9c9d1;
-  --nav-divider: #5c5c63;
-  --nav-focus: #8cbcff;
-  --nav-accent: #b8b8c2;
-  --nav-height: 40px;
+  --nav-bg: var(--hbui-chrome-bg);
+  --nav-bg-hover: var(--hbui-chrome-hover);
+  --nav-bg-active: #555555;
+  --nav-fg: var(--hbui-chrome-text);
+  --nav-fg-muted: var(--hbui-chrome-text-muted);
+  --nav-divider: var(--hbui-chrome-divider);
+  --nav-focus: #5dade2;
+  --nav-tone: var(--nav-bg-hover);
+  --nav-height: 30px;
 
   box-sizing: border-box;
   display: flex;
   align-items: stretch;
   min-height: var(--nav-height);
   font-family: var(--hbui-font);
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 10px;
+  line-height: 13px;
   color: var(--nav-fg);
   background: var(--nav-bg);
 }
 
+/* "The Homebrewery" wordmark: upstream's .homebrewLogo, CodeBold, blue on hover. */
 .brand {
   display: flex;
   flex: none;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  padding: 0 14px;
-  font-size: 15px;
-  font-weight: 700;
+  padding: 0 12px 0 10px;
+  font-family: var(--hbui-font-display);
+  font-size: 12px;
+  font-weight: normal;
   color: var(--nav-fg);
   text-decoration: none;
-  letter-spacing: 0.01em;
   white-space: nowrap;
   outline: none;
+  transition: color var(--hbui-duration);
 }
 
 .brandMark {
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   fill: currentColor;
 }
 
-.brand:hover .brandMark {
-  fill: #f7a35c;
+.brand:hover {
+  color: #5dade2;
 }
 
+.brand:hover .brandMark {
+  fill: #e67e22;
+}
+
+/* The brew title: upstream's .brewTitle, centred bold white. */
 .title {
   display: flex;
   flex: 1 1 0;
   align-items: center;
+  justify-content: center;
   min-width: 0;
   padding: 0 12px;
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--nav-fg-muted);
+  font-size: 12px;
+  font-weight: var(--hbui-label-weight);
+  color: var(--nav-fg);
   white-space: nowrap;
 }
 
@@ -93,51 +102,42 @@
   display: flex;
 }
 
-/* One nav item: a link, a button or a disclosure trigger. */
+/* One nav item: a link, a button or a disclosure trigger (upstream's .navItem). */
 .item {
   box-sizing: border-box;
   display: inline-flex;
-  gap: 6px;
+  gap: 5px;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
+  min-width: 40px;
   height: 100%;
   min-height: var(--nav-height);
   padding: 0 12px;
   margin: 0;
   font: inherit;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: var(--hbui-label-weight);
   color: var(--nav-fg);
   text-decoration: none;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
   white-space: nowrap;
   cursor: pointer;
   background: var(--nav-bg);
   border: 0;
-  border-bottom: 3px solid transparent;
   border-left: 1px solid var(--nav-divider);
   border-radius: 0;
   outline: none;
-  transition:
-    background-color 120ms,
-    border-color 120ms;
+  transition: background-color var(--hbui-duration);
 }
 
-.item:hover {
-  background: var(--nav-bg-hover);
-  border-bottom-color: var(--nav-accent);
-}
-
+.item:hover,
 .item:active,
 .item[aria-expanded='true'] {
-  background: var(--nav-bg-active);
-  border-bottom-color: var(--nav-accent);
+  background: var(--nav-tone);
 }
 
 .item[aria-current='page'] {
-  border-bottom-color: var(--nav-accent);
+  box-shadow: inset 0 -3px 0 var(--nav-fg-muted);
 }
 
 .item:focus-visible,
@@ -151,7 +151,7 @@
 }
 
 .chevron {
-  transition: transform 120ms;
+  transition: transform var(--hbui-duration);
 }
 
 .item[aria-expanded='true'] .chevron {
@@ -176,37 +176,37 @@
   border-left: 1px solid var(--nav-divider);
 }
 
-/* Upstream's colour names, as the accent underline. */
+/* Upstream's colour names (colors.less #backgroundColorsHover), as the hover fill. */
 .purple {
-  --nav-accent: #b38bf2;
+  --nav-tone: #8e44ad;
 }
 
 .yellow {
-  --nav-accent: #f2cf5b;
+  --nav-tone: #9c640c;
 }
 
 .teal {
-  --nav-accent: #4fd1c5;
+  --nav-tone: #117a65;
 }
 
 .green {
-  --nav-accent: #6ad07d;
+  --nav-tone: #1d7a43;
 }
 
 .red {
-  --nav-accent: #ff7a70;
+  --nav-tone: #c0392b;
 }
 
 .orange {
-  --nav-accent: #f7a35c;
+  --nav-tone: #ba4a00;
 }
 
 .blue {
-  --nav-accent: #6aa9ff;
+  --nav-tone: #2471a3;
 }
 
 .grey {
-  --nav-accent: #b8b8c2;
+  --nav-tone: #5d6d7e;
 }
 
 .error {
@@ -270,28 +270,46 @@
   }
 }
 
-/* ─── Dropdown panels (UI kit popovers; colours from the kit tokens) ─────────────────────────── */
+/* ─── Dropdown panels (UI kit popovers) ──────────────────────────────────────────────────────── */
 
+/* Upstream's .navDropdown: the navbar's #333 under a #888 rule, white bold uppercase items that
+   turn blue under the pointer, in both schemes. The panel re-points the kit tokens. */
 .panel {
+  --hbui-color-surface: var(--hbui-chrome-bg);
+  --hbui-color-surface-hover: #2471a3;
+  --hbui-color-text: var(--hbui-chrome-text);
+  --hbui-color-text-muted: var(--hbui-chrome-text-muted);
+  --hbui-color-border: var(--hbui-chrome-border);
+  --hbui-color-bg: var(--hbui-chrome-bg);
+  --hbui-color-info: #5dade2;
+  --hbui-color-danger: #f1948a;
+  --hbui-color-focus: #5dade2;
+
   min-width: 220px;
   max-width: min(360px, calc(100vw - 16px));
-  padding: var(--hbui-space-2);
+  padding: 0;
+  font-size: 11px;
+  border-radius: 0;
 }
 
 .panelSection + .panelSection {
-  padding-top: var(--hbui-space-2);
-  margin-top: var(--hbui-space-2);
   border-top: 1px solid var(--hbui-color-border);
 }
 
+/* Upstream's recent-brews headers: centred grey caps on a tinted strip. */
 .panelHeading {
   margin: 0;
-  padding: var(--hbui-space-1) var(--hbui-space-2);
-  font-size: var(--hbui-font-size-sm);
-  font-weight: 700;
+  padding: 5px var(--hbui-space-2);
+  font-size: 10px;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  background: #0b5345;
+}
+
+.panelSection + .panelSection .panelHeading {
+  background: #4a235a;
 }
 
 .panelNote {
@@ -308,7 +326,7 @@
 .panelList {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -320,16 +338,25 @@
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  padding: var(--hbui-space-2);
+  padding: 8px 10px;
   font: inherit;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text);
   text-align: left;
   text-decoration: none;
+  text-transform: uppercase;
   cursor: pointer;
   background: none;
   border: 0;
-  border-radius: var(--hbui-radius-sm);
+  border-top: 1px solid var(--hbui-color-border);
+  border-radius: 0;
   outline: none;
+  transition: background-color var(--hbui-duration);
+}
+
+.panelList > li:first-child > .panelLink,
+.panelList > li:first-child > .recentItem > .panelLink {
+  border-top: 0;
 }
 
 .panelLink:hover {
@@ -347,8 +374,14 @@
 }
 
 .panelHint {
-  font-size: var(--hbui-font-size-sm);
+  font-size: 10px;
+  font-weight: normal;
   color: var(--hbui-color-text-muted);
+  text-transform: none;
+}
+
+.panelLink:hover .panelHint {
+  color: var(--hbui-color-text);
 }
 
 .danger {
@@ -369,7 +402,7 @@
 
 .recentTitle {
   overflow: hidden;
-  font-weight: 600;
+  text-transform: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -413,14 +446,11 @@
 }
 
 @media (forced-colors: active) {
-  .item {
-    border-bottom-color: transparent;
-  }
-
   .item:hover,
   .item[aria-expanded='true'],
   .item[aria-current='page'] {
-    border-bottom-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
   }
 }
 

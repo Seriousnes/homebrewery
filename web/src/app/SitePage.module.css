@@ -1,46 +1,62 @@
+/*
+ * Upstream's uiPage (legacy/client/homebrew/pages/basePages/uiPage/uiPage.less): the steel site
+ * backdrop with a light grey content box, Open Sans, and bold uppercase headings over a slate rule.
+ */
 .page {
   box-sizing: border-box;
   flex: 1 0 auto;
-  padding: var(--hbui-space-6) var(--hbui-space-4) 64px;
+  padding: 25px var(--hbui-space-4) 64px;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size);
-  line-height: var(--hbui-line-height);
+  line-height: 1.8;
   color: var(--hbui-color-text);
-  background: var(--hbui-color-bg);
+  background: var(--hbui-color-backdrop);
 }
 
 .content {
+  box-sizing: border-box;
+  padding: var(--hbui-space-5) clamp(var(--hbui-space-4), 4%, 40px) var(--hbui-space-6);
   margin: 0 auto;
+  background: var(--hbui-color-surface);
 }
 
 .narrow {
-  max-width: 28rem;
+  max-width: 32rem;
 }
 
 .normal {
-  max-width: 48rem;
+  max-width: 52rem;
 }
 
 .wide {
-  max-width: 72rem;
+  max-width: 76rem;
 }
 
 .heading {
-  margin: 0 0 var(--hbui-space-2);
-  font-size: 1.75rem;
-  font-weight: 650;
+  padding-bottom: 2px;
+  margin: 0 0 0.5em;
+  font-size: 2em;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.2;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
   outline: none;
 }
 
 .heading:focus-visible {
-  border-radius: var(--hbui-radius-sm);
   box-shadow: var(--hbui-focus-ring);
 }
 
 .lead {
   margin: 0 0 var(--hbui-space-5);
   color: var(--hbui-color-text-muted);
+}
+
+/* Narrow screens: the box fills the width. */
+@media (max-width: 600px) {
+  .page {
+    padding: 0;
+  }
 }
 
 /* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */

@@ -6,10 +6,14 @@
   color: var(--hbui-color-text);
 }
 
+/* uiPage.less headings: bold uppercase over a slate rule. */
 .title {
+  padding-bottom: 2px;
   margin: 0 0 var(--hbui-space-3);
   font-size: var(--hbui-font-size-lg);
-  font-weight: 650;
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .list {
@@ -25,7 +29,7 @@
   padding: var(--hbui-space-2) var(--hbui-space-3);
   background: var(--hbui-color-surface);
   border: 1px solid var(--hbui-color-border);
-  border-inline-start-width: 4px;
+  border-inline-start-width: 5px;
   border-radius: var(--hbui-radius);
 }
 
@@ -45,7 +49,9 @@
   display: flex;
   gap: var(--hbui-space-2);
   align-items: center;
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .icon {
@@ -71,7 +77,7 @@
 
 .count {
   font-size: var(--hbui-font-size-lg);
-  font-weight: 700;
+  font-weight: var(--hbui-label-weight);
   font-variant-numeric: tabular-nums;
   text-align: end;
 }
@@ -90,10 +96,10 @@
 .summaryToggle {
   width: fit-content;
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
-  color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-info);
+  text-transform: uppercase;
   cursor: pointer;
-  border-radius: var(--hbui-radius-sm);
 }
 
 .summaryToggle:focus-visible {

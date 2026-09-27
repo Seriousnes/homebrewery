@@ -7,9 +7,10 @@
   font-size: var(--hbui-font-size-sm);
   line-height: 1.2;
   color: var(--hbui-color-text);
-  background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-sm);
+  /* The kit Toolbar inside is upstream's #DDD snippet bar. */
+  background: var(--hbui-bar-bg);
+  border: 1px solid var(--hbui-bar-divider);
+  border-radius: 0;
   box-shadow: var(--hbui-shadow-popover);
   user-select: none;
 }
@@ -17,13 +18,16 @@
 .toolbar {
   gap: 2px;
   align-items: center;
+  min-height: 0;
   padding: 1px 2px;
+  border-bottom: 0;
 }
 
 .label {
   padding: 0 6px;
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
   white-space: nowrap;
 }
 

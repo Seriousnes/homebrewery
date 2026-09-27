@@ -33,13 +33,16 @@
   padding: 0 12px;
   margin: 0 0 -1px;
   font: inherit;
-  font-weight: 500;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
   cursor: pointer;
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
-  border-radius: var(--hbui-radius-sm) var(--hbui-radius-sm) 0 0;
+  border-radius: 0;
   outline: 2px solid transparent;
 }
 
@@ -48,7 +51,7 @@
   margin: 0 -1px 0 0;
   border-right: 2px solid transparent;
   border-bottom: 0;
-  border-radius: var(--hbui-radius-sm) 0 0 var(--hbui-radius-sm);
+  border-radius: 0;
 }
 
 .tab:hover:not(:disabled) {
@@ -60,13 +63,15 @@
   box-shadow: inset 0 0 0 2px var(--hbui-color-focus);
 }
 
+/* The selected tab: upstream's selected editor tab, a darker grey with the text at full strength. */
 .tab[aria-selected='true'] {
-  color: var(--hbui-color-accent);
-  border-bottom-color: var(--hbui-color-accent);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-active);
+  border-bottom-color: var(--hbui-color-text);
 }
 
 .vertical .tab[aria-selected='true'] {
-  border-right-color: var(--hbui-color-accent);
+  border-right-color: var(--hbui-color-text);
 }
 
 .tab:disabled {

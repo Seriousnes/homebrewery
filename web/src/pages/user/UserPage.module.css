@@ -1,7 +1,7 @@
+/* The empty own list: upstream's .dataGroup box (uiPage.less), its links as green .colorButton()s. */
 .welcome {
-  padding: var(--hbui-space-4);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  padding: 6px 20px 15px;
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -12,20 +12,28 @@
 .welcome > .welcomeLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hbui-space-2) var(--hbui-space-4);
+  gap: var(--hbui-space-2);
   margin-top: var(--hbui-space-2);
 }
 
 .link {
-  font-weight: 600;
-  color: var(--hbui-color-accent);
-  text-underline-offset: 2px;
-  border-radius: var(--hbui-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hbui-control-height);
+  padding: 0 1.2em;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  line-height: 1.2;
+  color: var(--hbui-action-text);
+  text-decoration: none;
+  text-transform: uppercase;
+  background: var(--hbui-action);
   outline: 2px solid transparent;
+  transition: background-color var(--hbui-duration);
 }
 
 .link:hover {
-  color: var(--hbui-color-accent-hover);
+  background: var(--hbui-action-hover);
 }
 
 .link:focus-visible {
@@ -35,6 +43,7 @@
 /* Forced colours: only the focused link gets an outline (box-shadow rings are dropped, transparent outlines drawn). */
 @media (forced-colors: active) {
   .link {
+    border: 1px solid LinkText;
     outline: none;
   }
 

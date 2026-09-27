@@ -1,3 +1,5 @@
+/* Sign-in and sign-up forms in upstream's uiPage box (uiPage.less): square fields, green submit,
+   a grouped .dataGroup box for notes, errors as a red-ruled strip. */
 .form {
   display: flex;
   flex-direction: column;
@@ -12,8 +14,7 @@
   margin: 0;
   color: var(--hbui-color-danger);
   background: var(--hbui-color-danger-subtle);
-  border: 1px solid currentColor;
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid currentColor;
   overflow-wrap: anywhere;
 }
 
@@ -47,9 +48,8 @@
 }
 
 .card {
-  padding: var(--hbui-space-5);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  padding: 6px 20px 15px;
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -59,6 +59,10 @@
 
 /* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
 @media (forced-colors: active) {
+  .formError {
+    border: 1px solid CanvasText;
+  }
+
   .link:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;

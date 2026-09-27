@@ -1,4 +1,8 @@
-/* The list pages' controls and groups (upstream: listPage.less). App chrome: UI kit tokens only. */
+/*
+ * The list pages' controls and groups (upstream: listPage.less). The controls are upstream's #555
+ * strips (.sort-container, .tags-container) in both colour schemes; the strip re-points the kit
+ * tokens so the filter field inside it reads light on grey, like the preview toolbar's inputs.
+ */
 
 .listPage {
   display: flex;
@@ -8,33 +12,46 @@
 }
 
 .controls {
+  --hbui-color-text: #ffffff;
+  --hbui-color-text-muted: #cccccc;
+  --hbui-color-bg: var(--hbui-viewbar-input);
+  --hbui-color-border-strong: var(--hbui-viewbar-border);
+  --hbui-color-focus: #d3d3d3;
+
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hbui-space-3) var(--hbui-space-5);
+  gap: var(--hbui-space-2) var(--hbui-space-5);
   align-items: flex-end;
   justify-content: space-between;
-  padding: var(--hbui-space-3);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-lg);
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  color: var(--hbui-color-text);
+  background: var(--hbui-viewbar-bg);
+  border-top: 1px solid #666666;
+  border-bottom: 1px solid #666666;
 }
 
-/* Sort bar (upstream .sort-container). */
+/* Sort bar (upstream .sort-container): #CCC uppercase options on #555, the active one bold white on
+   #333. */
 .sortBar {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hbui-space-1);
-  align-items: center;
+  align-items: stretch;
   min-width: 0;
+  min-height: 30px;
+  font-family: var(--hbui-font);
+  color: #cccccc;
+  background: var(--hbui-viewbar-bg);
 }
 
 .sortLabel {
-  margin-right: var(--hbui-space-1);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-family: var(--hbui-font);
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
-  color: var(--hbui-color-text-muted);
+  font-weight: var(--hbui-label-weight);
+  color: #ffffff;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .sortButton {
@@ -42,33 +59,35 @@
   display: inline-flex;
   gap: 2px;
   align-items: center;
-  min-height: var(--hbui-control-height-sm);
-  padding: 0 var(--hbui-space-2);
+  min-height: 30px;
+  padding: 0 8px;
   margin: 0;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size-sm);
-  font-weight: 500;
-  color: var(--hbui-color-text);
+  font-weight: normal;
+  color: #cccccc;
+  text-transform: uppercase;
   cursor: pointer;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--hbui-radius);
+  border: 0;
+  border-radius: 0;
   outline: 2px solid transparent;
+  transition: background-color var(--hbui-duration);
 }
 
 .sortButton:hover {
-  background: var(--hbui-color-surface-hover);
+  background: var(--hbui-viewbar-hover);
 }
 
 .sortButton:focus-visible {
-  box-shadow: var(--hbui-focus-ring);
+  outline: 2px solid #d3d3d3;
+  outline-offset: -2px;
 }
 
 .sortButton[aria-pressed='true'] {
-  font-weight: 700;
-  color: var(--hbui-color-accent);
-  background: var(--hbui-color-accent-subtle);
-  border-color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  color: #ffffff;
+  background: var(--hbui-viewbar-active);
 }
 
 .filter {
@@ -76,40 +95,71 @@
   max-width: 24rem;
 }
 
+/* Tag filters (upstream .tags-container): a #555 strip of chips coloured by kind, each with a ×. */
 .tagFilters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hbui-space-1) var(--hbui-space-2);
+  gap: 5px 15px;
   align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 3px var(--hbui-space-3);
+  background: var(--hbui-viewbar-bg);
+  border-top: 1px solid #666666;
+  border-bottom: 1px solid #666666;
+}
+
+.tagFilters > .sortLabel {
+  padding: 0;
 }
 
 .tagFilter {
   box-sizing: border-box;
   display: inline-flex;
-  gap: var(--hbui-space-1);
+  gap: 3px;
   align-items: center;
   max-width: 100%;
-  min-height: var(--hbui-control-height-sm);
-  padding: 0 var(--hbui-space-2);
+  padding: 3px;
   margin: 0;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
-  color: var(--hbui-color-text);
+  font-weight: bold;
+  color: #ffffff;
   overflow-wrap: anywhere;
   cursor: pointer;
-  background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-accent);
-  border-radius: 999px;
+  background: #444444;
+  border: 1px solid #000000;
+  border-radius: var(--hbui-radius-sm);
   outline: 2px solid transparent;
 }
 
+.tagFilter[data-prefix='type' i] {
+  background: #008000;
+  border-color: #00a000;
+}
+
+.tagFilter[data-prefix='group' i] {
+  background: #505050;
+  border-color: #000000;
+}
+
+.tagFilter[data-prefix='meta' i] {
+  background: #000080;
+  border-color: #0000a0;
+}
+
+.tagFilter[data-prefix='system' i] {
+  background: #800000;
+  border-color: #a00000;
+}
+
 .tagFilter:hover {
-  background: var(--hbui-color-accent-subtle);
+  text-decoration: line-through;
 }
 
 .tagFilter:focus-visible {
-  box-shadow: var(--hbui-focus-ring);
+  outline: 2px solid #d3d3d3;
+  outline-offset: 1px;
 }
 
 .summary {
@@ -129,20 +179,21 @@
   padding: var(--hbui-space-3) var(--hbui-space-4);
   margin: 0;
   background: var(--hbui-color-info-subtle);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid var(--hbui-color-info);
 }
 
-/* Groups (upstream .brewCollection with its clickable h1). */
+/* Groups (upstream .brewCollection with its clickable h1; collapsed ones grey). */
 .group {
   min-width: 0;
 }
 
 .groupHeading {
-  margin: var(--hbui-space-3) 0 var(--hbui-space-2);
-  font-size: var(--hbui-font-size-xl);
-  font-weight: 650;
+  margin: var(--hbui-space-3) 0 var(--hbui-space-3);
+  font-size: 1.5em;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.25;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .groupToggle {
@@ -156,11 +207,12 @@
   font: inherit;
   color: inherit;
   text-align: left;
+  text-transform: inherit;
   overflow-wrap: anywhere;
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-radius: var(--hbui-radius);
+  border-radius: 0;
   outline: 2px solid transparent;
 }
 
@@ -177,17 +229,17 @@
 }
 
 .groupCount {
-  padding: 0 var(--hbui-space-2);
+  padding: 0 6px;
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: 999px;
+  background: var(--hbui-color-surface-hover);
+  border-radius: var(--hbui-radius-sm);
 }
 
 .empty {
   margin: var(--hbui-space-2) 0;
+  font-size: 1.1em;
   font-style: italic;
   color: var(--hbui-color-text-muted);
 }
@@ -196,7 +248,7 @@
 .items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  gap: var(--hbui-space-3);
+  gap: 15px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -221,7 +273,7 @@
 @media (forced-colors: active) {
   .sortButton[aria-pressed='true'],
   .tagFilter {
-    border-color: Highlight;
+    border: 1px solid Highlight;
   }
 
   /* Forced colours drop the box-shadow focus rings and draw the always-on transparent outlines, so every control

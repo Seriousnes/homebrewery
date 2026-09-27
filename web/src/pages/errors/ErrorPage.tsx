@@ -34,7 +34,7 @@ export function ErrorPage({ error, status, title, message, onRetry, details, chi
   const heading = title ?? content.title;
   const showRetry = onRetry && (content.transient || error === undefined);
   return (
-    <SitePage title={heading} data-testid="error-page">
+    <SitePage title={heading} className={styles.page} data-testid="error-page">
       <p className={styles.status}>{content.status > 0 ? `Error ${content.status}` : 'No connection'}</p>
       {content.status === 423 ? (
         <section className={styles.lock} aria-labelledby="lock-reason-heading">

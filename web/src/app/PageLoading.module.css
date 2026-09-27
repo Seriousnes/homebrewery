@@ -1,9 +1,16 @@
+/* Route loading: a spinner on the shell's steel backdrop (homebrew.less), not a white sheet. */
 .loading {
   display: flex;
   flex: 1 0 auto;
   align-items: center;
   justify-content: center;
   min-height: 12rem;
-  color: var(--hbui-color-text-muted);
-  background: var(--hbui-color-bg);
+  color: var(--hbui-chrome-text-muted);
+  background: var(--hbui-color-backdrop);
+}
+
+/* Before the shell exists: cover the viewport (and the body margin), as the shell does. */
+.fullScreen {
+  position: fixed;
+  inset: 0;
 }

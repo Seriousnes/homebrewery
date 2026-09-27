@@ -27,7 +27,7 @@ import type { FetchLike } from './resources';
  */
 export const CANVAS_PRESENTATION_CSS = String.raw`
 html {
-  background: #585858;
+  background: #2c3e50;
 }
 body {
   margin: 0;

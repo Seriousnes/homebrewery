@@ -34,7 +34,7 @@
   color: var(--hbui-color-text);
   background: var(--hbui-color-surface-raised);
   border: 1px solid var(--hbui-color-border);
-  border-left-width: 4px;
+  border-left-width: 5px;
   border-radius: var(--hbui-radius);
   box-shadow: var(--hbui-shadow-popover);
 }
@@ -82,7 +82,7 @@
 
 .title {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   overflow-wrap: anywhere;
 }
 

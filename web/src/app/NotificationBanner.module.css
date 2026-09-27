@@ -1,11 +1,22 @@
+/*
+ * Site notices (upstream: brewRenderer/notificationPopup/notificationPopup.less): a flat blue box
+ * with white text, a large faded info icon, a bold title and the dismiss button at the top right.
+ * Blue in both colour schemes; the box re-points the kit tokens for the dismiss button.
+ */
 .banner {
+  --hbui-color-text: var(--hbui-action-text);
+  --hbui-color-text-muted: var(--hbui-action-text);
+  --hbui-color-surface-hover: rgb(255 255 255 / 0.15);
+  --hbui-color-surface-active: rgb(255 255 255 / 0.25);
+  --hbui-color-bg: var(--hbui-action-info);
+  --hbui-color-focus: #ffffff;
+
   flex: none;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size);
   line-height: var(--hbui-line-height);
-  color: var(--hbui-color-text);
-  background: var(--hbui-color-info-subtle);
-  border-bottom: 1px solid var(--hbui-color-border);
+  color: var(--hbui-action-text);
+  background: var(--hbui-action-info);
 }
 
 .list {
@@ -21,19 +32,21 @@
   gap: var(--hbui-space-3);
   align-items: flex-start;
   max-width: 72rem;
-  padding: var(--hbui-space-2) var(--hbui-space-4);
+  padding: 10px var(--hbui-space-3) 10px var(--hbui-space-4);
   margin: 0 auto;
-  color: var(--hbui-color-text);
+  color: var(--hbui-action-text);
 }
 
 .notice + .notice {
-  border-top: 1px solid var(--hbui-color-border);
+  border-top: 1px solid rgb(255 255 255 / 0.35);
 }
 
 .notice > svg {
   flex: none;
+  width: 28px;
+  height: 28px;
   margin-top: 2px;
-  color: var(--hbui-color-info);
+  opacity: 0.8;
 }
 
 .text {
@@ -43,7 +56,8 @@
 
 .title {
   display: block;
-  font-weight: 650;
+  font-size: 1.1em;
+  font-weight: var(--hbui-label-weight);
 }
 
 .body {
@@ -54,6 +68,18 @@
 
 .dismiss {
   flex: none;
+  opacity: 0.8;
+}
+
+.dismiss:hover,
+.dismiss:focus-visible {
+  opacity: 1;
+}
+
+@media (forced-colors: active) {
+  .banner {
+    border-bottom: 1px solid CanvasText;
+  }
 }
 
 @media print {

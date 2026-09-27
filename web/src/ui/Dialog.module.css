@@ -1,3 +1,5 @@
+/* Upstream's modal boxes (lockNotification.less, metadataEditor.less): a dimmed backdrop, a square
+   grey box with the page shadow, and an uppercase heading over a grey rule. */
 .overlay {
   position: fixed;
   inset: 0;
@@ -19,9 +21,9 @@
   font-size: var(--hbui-font-size);
   line-height: var(--hbui-line-height);
   color: var(--hbui-color-text);
-  background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-lg);
+  background: var(--hbui-color-surface);
+  border: 0;
+  border-radius: var(--hbui-radius);
   outline: none;
   box-shadow: var(--hbui-shadow-dialog);
 }
@@ -43,14 +45,19 @@
   gap: var(--hbui-space-2);
   align-items: flex-start;
   justify-content: space-between;
-  padding: var(--hbui-space-4) var(--hbui-space-4) var(--hbui-space-2) var(--hbui-space-5);
+  padding: var(--hbui-space-4) var(--hbui-space-4) 0 var(--hbui-space-5);
 }
 
 .title {
-  margin: 4px 0 0;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 4px;
+  margin: 4px 0 var(--hbui-space-2);
   font-size: var(--hbui-font-size-lg);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.3;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .description {

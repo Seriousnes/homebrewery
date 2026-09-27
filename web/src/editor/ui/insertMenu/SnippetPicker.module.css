@@ -1,4 +1,16 @@
+/* Upstream's snippet menus (snippetbar.less): the #DDD menu colour and #999 hover in both schemes,
+   like the kit Menu. The popover re-points the kit tokens. */
 .panel {
+  --hbui-color-surface: var(--hbui-bar-bg);
+  --hbui-color-surface-hover: #c4c4c4;
+  --hbui-color-surface-active: #aaaaaa;
+  --hbui-color-text: var(--hbui-bar-text);
+  --hbui-color-text-muted: #333333;
+  --hbui-color-border: var(--hbui-bar-divider);
+  --hbui-color-border-strong: #808080;
+  --hbui-color-bg: #ffffff;
+  --hbui-color-focus: #2471a3;
+
   display: flex;
   flex-direction: column;
   gap: var(--hbui-space-2);
@@ -7,6 +19,7 @@
   height: 480px;
   padding: var(--hbui-space-2);
   overflow: hidden;
+  border-radius: 0;
 }
 
 .search {
@@ -24,6 +37,7 @@
   margin-top: var(--hbui-space-2);
 }
 
+/* Group headings: upstream's snippet menu labels (snippetbar.less), bold uppercase. */
 .heading,
 .subheading {
   position: sticky;
@@ -31,13 +45,14 @@
   z-index: 1;
   padding: 4px 8px 2px;
   font-size: var(--hbui-font-size-sm);
-  font-weight: 700;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
-  background: var(--hbui-color-surface-raised);
+  text-transform: uppercase;
+  background: var(--hbui-color-surface);
 }
 
 .subheading {
-  font-weight: 600;
+  font-size: 10px;
 }
 
 .option {
@@ -46,30 +61,37 @@
   gap: 2px 8px;
   align-items: baseline;
   padding: 5px 8px 5px 16px;
-  cursor: default;
+  cursor: pointer;
   user-select: none;
-  border-radius: var(--hbui-radius-sm);
 }
 
+.option:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+/* The highlighted snippet: upstream's menu hover, a darker grey. */
 .option[aria-selected='true'] {
-  background: var(--hbui-color-accent-subtle);
-  box-shadow: inset 2px 0 0 var(--hbui-color-accent);
+  background: var(--hbui-color-surface-active);
+  box-shadow: inset 3px 0 0 var(--hbui-color-text);
 }
 
 .option[aria-disabled='true'] {
   color: var(--hbui-color-text-muted);
 }
 
+/* Long unbroken names (some theme snippets) wrap instead of widening the list. */
 .name {
   flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .badge {
   padding: 0 6px;
   font-size: var(--hbui-font-size-sm);
   color: var(--hbui-color-text-muted);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-sm);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius-lg);
 }
 
 .hint {

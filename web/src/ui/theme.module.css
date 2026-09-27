@@ -3,17 +3,69 @@
  * custom properties on the .root class, which <UiRoot> and every UI portal container carry. The
  * prefix --hbui- keeps them apart from theme variables inside the brew canvas.
  *
- * Light by default, dark via prefers-color-scheme; data-color-scheme="light|dark" on the root
- * forces one.
+ * The look is upstream's pre-WYSIWYG chrome (legacy/shared/naturalcrit/styles and
+ * legacy/client/homebrew/**.less): Open Sans, square flat controls, bold uppercase labels, the
+ * flat-UI palette of colors.less (green actions, red danger, blue info), a #333 navbar, a #DDD
+ * snippet bar, a #555 preview toolbar and the steel backdrop behind the pages. Upstream colours that
+ * fail WCAG AA with their text are darkened within the same hue (green #27AE60 → #1D7A43, …).
+ *
+ * Light by default; dark via prefers-color-scheme uses upstream's dark greys (#333/#444/#555 of the
+ * navbar, dropdowns and preview toolbar). data-color-scheme="light|dark" on the root forces one.
+ * The chrome tokens (--hbui-chrome-*, --hbui-bar-*, --hbui-viewbar-*, --hbui-color-backdrop) are
+ * the same in both schemes, as upstream's chrome was.
  */
+
+/* Upstream's UI fonts (legacy/shared/naturalcrit/styles/fonts/fonts.css). Declared here, so the
+   chrome has them wherever a UiRoot renders; brews that ask for CodeBold/CodeLight get them too, as
+   upstream loaded them for the whole page. */
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: normal;
+  src: url('../fonts/open-sans-latin-400-normal.woff2') format('woff2');
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: bold;
+  src: url('../fonts/open-sans-latin-700-normal.woff2') format('woff2');
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'CodeLight';
+  font-style: normal;
+  src: url('../fonts/code-light.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'CodeBold';
+  font-style: normal;
+  src: url('../fonts/code-bold.otf') format('opentype');
+  font-display: swap;
+}
+
 .root {
-  --hbui-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --hbui-font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
-  --hbui-font-size: 14px;
-  --hbui-font-size-sm: 12px;
+  --hbui-font: 'Open Sans', sans-serif;
+  /* Headings of upstream's list and vault pages, and the "The Homebrewery" wordmark. */
+  --hbui-font-display: 'CodeBold', 'Open Sans', sans-serif;
+  --hbui-font-display-light: 'CodeLight', 'Open Sans', sans-serif;
+  --hbui-font-mono: 'Courier New', Courier, ui-monospace, monospace;
+  --hbui-font-size: 13px;
+  --hbui-font-size-sm: 11px;
   --hbui-font-size-lg: 16px;
   --hbui-font-size-xl: 20px;
-  --hbui-line-height: 1.45;
+  --hbui-line-height: 1.5;
+  /* Upstream's labels, buttons and menu items: 800 (rendered with the bold face), uppercase. */
+  --hbui-label-weight: 800;
+  --hbui-label-spacing: 0.02em;
 
   --hbui-space-1: 4px;
   --hbui-space-2: 8px;
@@ -22,116 +74,157 @@
   --hbui-space-5: 24px;
   --hbui-space-6: 32px;
 
-  --hbui-radius-sm: 4px;
-  --hbui-radius: 6px;
-  --hbui-radius-lg: 10px;
+  /* Upstream's controls are square; tags and grouped boxes have small rounded corners. */
+  --hbui-radius-sm: 3px;
+  --hbui-radius: 0;
+  --hbui-radius-lg: 5px;
 
-  --hbui-control-height: 32px;
-  --hbui-control-height-sm: 26px;
+  --hbui-control-height: 30px;
+  --hbui-control-height-sm: 25px;
 
-  --hbui-duration: 120ms;
+  --hbui-duration: 150ms;
 
   --hbui-z-layer: 1000;
   --hbui-z-toast: 1100;
 
-  /* Light */
+  /* Fixed chrome (both schemes). Navbar: navbar.less. */
+  --hbui-chrome-bg: #333333;
+  --hbui-chrome-hover: #444444;
+  --hbui-chrome-text: #ffffff;
+  --hbui-chrome-text-muted: #bbbbbb;
+  --hbui-chrome-divider: #666666;
+  --hbui-chrome-border: #888888;
+  /* Snippet bar above the editor (snippetbar.less): light grey, black bold uppercase. */
+  --hbui-bar-bg: #dddddd;
+  --hbui-bar-hover: #999999;
+  --hbui-bar-text: #000000;
+  --hbui-bar-text-disabled: #555555;
+  --hbui-bar-divider: #999999;
+  /* Preview toolbar (toolBar.less): mid grey, light text, darker hover and inputs. */
+  --hbui-viewbar-bg: #555555;
+  --hbui-viewbar-hover: #444444;
+  --hbui-viewbar-active: #333333;
+  --hbui-viewbar-text: #dddddd;
+  --hbui-viewbar-input: #3b3b3b;
+  --hbui-viewbar-border: #333333;
+  /* Steel backdrop behind the brew pages and site pages (homebrew.less), and the split divider
+     (splitPane.less). */
+  --hbui-color-backdrop: #2c3e50;
+  --hbui-divider: #bbbbbb;
+  --hbui-divider-hover: #999999;
+  --hbui-divider-dots: #666666;
+  /* Action buttons (.colorButton(@green) / (@red) / (@blueLight)): saturated with white text in
+     both schemes, as upstream's. */
+  --hbui-action: #1d7a43;
+  --hbui-action-hover: #17613a;
+  --hbui-action-danger: #c0392b;
+  --hbui-action-danger-hover: #a93226;
+  --hbui-action-info: #2471a3;
+  --hbui-action-info-hover: #1f618d;
+  --hbui-action-text: #ffffff;
+
+  /* Light: upstream's #F0F0F0 page boxes, #DDD/#CCC greys, #333 copy text (elements.less). */
   --hbui-color-bg: #ffffff;
-  --hbui-color-surface: #f4f4f6;
+  --hbui-color-surface: #f0f0f0;
   --hbui-color-surface-raised: #ffffff;
-  --hbui-color-surface-hover: #e9e9ee;
-  --hbui-color-surface-active: #dcdce3;
-  --hbui-color-text: #1c1c21;
-  --hbui-color-text-muted: #55555f;
-  --hbui-color-border: #d3d3da;
-  --hbui-color-border-strong: #85858f;
-  --hbui-color-accent: #9b1c1c;
-  --hbui-color-accent-hover: #7f1616;
+  --hbui-color-surface-hover: #dddddd;
+  --hbui-color-surface-active: #cccccc;
+  --hbui-color-text: #333333;
+  --hbui-color-text-muted: #555555;
+  --hbui-color-border: #bbbbbb;
+  --hbui-color-border-strong: #808080;
+  /* uiPage.less heading underline (slategrey). */
+  --hbui-color-heading-rule: #708090;
+  --hbui-color-accent: #1d7a43;
+  --hbui-color-accent-hover: #17613a;
   --hbui-color-accent-text: #ffffff;
-  --hbui-color-accent-subtle: #fbeaea;
-  --hbui-color-danger: #b42318;
-  --hbui-color-danger-hover: #912018;
+  --hbui-color-accent-subtle: #e8f6ee;
+  --hbui-color-danger: #c0392b;
+  --hbui-color-danger-hover: #a93226;
   --hbui-color-danger-text: #ffffff;
-  --hbui-color-danger-subtle: #fdecea;
-  --hbui-color-success: #1d6b36;
-  --hbui-color-success-subtle: #e6f4ea;
-  --hbui-color-warning: #7a4d00;
-  --hbui-color-warning-subtle: #fff3d6;
-  --hbui-color-info: #1a58a0;
-  --hbui-color-info-subtle: #e7f0fb;
-  --hbui-color-focus: #1a66d2;
-  --hbui-color-overlay: rgb(20 20 25 / 0.45);
-  --hbui-color-tooltip-bg: #26262c;
+  --hbui-color-danger-subtle: #fdedec;
+  --hbui-color-success: #1d7a43;
+  --hbui-color-success-subtle: #e8f6ee;
+  --hbui-color-warning: #a04000;
+  --hbui-color-warning-subtle: #fef5e7;
+  --hbui-color-info: #2471a3;
+  --hbui-color-info-subtle: #ebf5fb;
+  --hbui-color-focus: #2980b9;
+  --hbui-color-overlay: rgb(0 0 0 / 0.67);
+  --hbui-color-tooltip-bg: #383838;
   --hbui-color-tooltip-text: #ffffff;
 
-  --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.16), 0 1px 3px rgb(0 0 0 / 0.12);
-  --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.28);
-  --hbui-focus-ring: 0 0 0 2px var(--hbui-color-bg), 0 0 0 4px var(--hbui-color-focus);
+  --hbui-shadow-popover: 0 4px 5px rgb(0 0 0 / 0.35);
+  --hbui-shadow-dialog: 1px 4px 14px #000000;
+  --hbui-focus-ring: 0 0 0 1px var(--hbui-color-bg), 0 0 0 3px var(--hbui-color-focus);
 }
 
 @media (prefers-color-scheme: dark) {
   .root:not([data-color-scheme='light']) {
-    --hbui-color-bg: #1a1a1e;
-    --hbui-color-surface: #242429;
-    --hbui-color-surface-raised: #2c2c32;
-    --hbui-color-surface-hover: #35353c;
-    --hbui-color-surface-active: #414149;
-    --hbui-color-text: #ededf1;
-    --hbui-color-text-muted: #aeaeb9;
-    --hbui-color-border: #45454e;
-    --hbui-color-border-strong: #8d8d98;
-    --hbui-color-accent: #ff8f85;
-    --hbui-color-accent-hover: #ffaaa2;
-    --hbui-color-accent-text: #1a1a1e;
-    --hbui-color-accent-subtle: #3d2524;
-    --hbui-color-danger: #ff8a80;
-    --hbui-color-danger-hover: #ffa89f;
-    --hbui-color-danger-text: #1a1a1e;
-    --hbui-color-danger-subtle: #3e2322;
-    --hbui-color-success: #7fd49a;
-    --hbui-color-success-subtle: #1d3325;
-    --hbui-color-warning: #f3c465;
-    --hbui-color-warning-subtle: #382d17;
-    --hbui-color-info: #8ab8f5;
-    --hbui-color-info-subtle: #1c2a3d;
-    --hbui-color-focus: #7fb0ff;
-    --hbui-color-overlay: rgb(0 0 0 / 0.6);
-    --hbui-color-tooltip-bg: #ededf1;
-    --hbui-color-tooltip-text: #1a1a1e;
-    --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
-    --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
+    --hbui-color-bg: #333333;
+    --hbui-color-surface: #3b3b3b;
+    --hbui-color-surface-raised: #444444;
+    --hbui-color-surface-hover: #555555;
+    --hbui-color-surface-active: #666666;
+    --hbui-color-text: #eeeeee;
+    --hbui-color-text-muted: #bbbbbb;
+    --hbui-color-border: #555555;
+    --hbui-color-border-strong: #888888;
+    --hbui-color-heading-rule: #888888;
+    --hbui-color-accent: #2ecc71;
+    --hbui-color-accent-hover: #58d68d;
+    --hbui-color-accent-text: #111111;
+    --hbui-color-accent-subtle: #1e3b2a;
+    --hbui-color-danger: #f1948a;
+    --hbui-color-danger-hover: #f5b7b1;
+    --hbui-color-danger-text: #111111;
+    --hbui-color-danger-subtle: #4a2a27;
+    --hbui-color-success: #58d68d;
+    --hbui-color-success-subtle: #1e3b2a;
+    --hbui-color-warning: #f5b041;
+    --hbui-color-warning-subtle: #46361a;
+    --hbui-color-info: #5dade2;
+    --hbui-color-info-subtle: #1f3444;
+    --hbui-color-focus: #5dade2;
+    --hbui-color-overlay: rgb(0 0 0 / 0.67);
+    --hbui-color-tooltip-bg: #1e1e1e;
+    --hbui-color-tooltip-text: #ffffff;
+    --hbui-shadow-popover: 0 4px 5px rgb(0 0 0 / 0.6);
+    --hbui-shadow-dialog: 1px 4px 14px #000000;
   }
 }
 
 .root[data-color-scheme='dark'] {
-  --hbui-color-bg: #1a1a1e;
-  --hbui-color-surface: #242429;
-  --hbui-color-surface-raised: #2c2c32;
-  --hbui-color-surface-hover: #35353c;
-  --hbui-color-surface-active: #414149;
-  --hbui-color-text: #ededf1;
-  --hbui-color-text-muted: #aeaeb9;
-  --hbui-color-border: #45454e;
-  --hbui-color-border-strong: #8d8d98;
-  --hbui-color-accent: #ff8f85;
-  --hbui-color-accent-hover: #ffaaa2;
-  --hbui-color-accent-text: #1a1a1e;
-  --hbui-color-accent-subtle: #3d2524;
-  --hbui-color-danger: #ff8a80;
-  --hbui-color-danger-hover: #ffa89f;
-  --hbui-color-danger-text: #1a1a1e;
-  --hbui-color-danger-subtle: #3e2322;
-  --hbui-color-success: #7fd49a;
-  --hbui-color-success-subtle: #1d3325;
-  --hbui-color-warning: #f3c465;
-  --hbui-color-warning-subtle: #382d17;
-  --hbui-color-info: #8ab8f5;
-  --hbui-color-info-subtle: #1c2a3d;
-  --hbui-color-focus: #7fb0ff;
-  --hbui-color-overlay: rgb(0 0 0 / 0.6);
-  --hbui-color-tooltip-bg: #ededf1;
-  --hbui-color-tooltip-text: #1a1a1e;
-  --hbui-shadow-popover: 0 4px 16px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
-  --hbui-shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
+  --hbui-color-bg: #333333;
+  --hbui-color-surface: #3b3b3b;
+  --hbui-color-surface-raised: #444444;
+  --hbui-color-surface-hover: #555555;
+  --hbui-color-surface-active: #666666;
+  --hbui-color-text: #eeeeee;
+  --hbui-color-text-muted: #bbbbbb;
+  --hbui-color-border: #555555;
+  --hbui-color-border-strong: #888888;
+  --hbui-color-heading-rule: #888888;
+  --hbui-color-accent: #2ecc71;
+  --hbui-color-accent-hover: #58d68d;
+  --hbui-color-accent-text: #111111;
+  --hbui-color-accent-subtle: #1e3b2a;
+  --hbui-color-danger: #f1948a;
+  --hbui-color-danger-hover: #f5b7b1;
+  --hbui-color-danger-text: #111111;
+  --hbui-color-danger-subtle: #4a2a27;
+  --hbui-color-success: #58d68d;
+  --hbui-color-success-subtle: #1e3b2a;
+  --hbui-color-warning: #f5b041;
+  --hbui-color-warning-subtle: #46361a;
+  --hbui-color-info: #5dade2;
+  --hbui-color-info-subtle: #1f3444;
+  --hbui-color-focus: #5dade2;
+  --hbui-color-overlay: rgb(0 0 0 / 0.67);
+  --hbui-color-tooltip-bg: #1e1e1e;
+  --hbui-color-tooltip-text: #ffffff;
+  --hbui-shadow-popover: 0 4px 5px rgb(0 0 0 / 0.6);
+  --hbui-shadow-dialog: 1px 4px 14px #000000;
 }
 
 /* Reduced motion (WCAG 2.3.3): every chrome transition uses --hbui-duration. */

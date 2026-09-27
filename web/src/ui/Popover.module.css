@@ -10,9 +10,9 @@
   font-size: var(--hbui-font-size);
   line-height: var(--hbui-line-height);
   color: var(--hbui-color-text);
-  background: var(--hbui-color-surface-raised);
+  background: var(--hbui-color-surface);
   border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border-radius: var(--hbui-radius-lg);
   outline: none;
   box-shadow: var(--hbui-shadow-popover);
 }
