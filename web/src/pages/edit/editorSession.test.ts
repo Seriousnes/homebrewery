@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adoptSession, draftDiscardedAt, editorSessionKey, NO_SESSIONS } from './editorSession';
+import { adoptSession, draftDiscardedAt, editorSessionKey, NO_SESSIONS, localSessionId } from './editorSession';
 
 describe('editorSession', () => {
   it('keys /edit by editId and /new by its history entry', () => {
@@ -38,6 +38,13 @@ describe('editorSession', () => {
     const copied = adoptSession(created, 'new:k1', 'C', 'N');
     expect(editorSessionKey(copied, 'C', 'k2')).toBe('new:k1');
     expect(editorSessionKey(copied, 'N', 'k2')).not.toBe('new:k1');
+  });
+
+  it('keys /local by its local id; a new brew session adopts the id it was stored under (issue #4)', () => {
+    expect(editorSessionKey(NO_SESSIONS, undefined, 'k1', 'abc')).toBe('local:abc');
+    const adopted = adoptSession(NO_SESSIONS, 'new:k1', localSessionId('abc'));
+    expect(editorSessionKey(adopted, undefined, 'k2', 'abc')).toBe('new:k1');
+    expect(editorSessionKey(adopted, 'abc', 'k2')).toBe('edit:abc'); // an editId of the same text is another brew
   });
 
   it('reads the "Start over" time from the router state', () => {

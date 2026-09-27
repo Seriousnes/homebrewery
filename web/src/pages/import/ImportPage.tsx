@@ -7,8 +7,10 @@
 //                        is saved. Once the preview has laid the pages out, the report says how many
 //                        pages the clipped ones grew into (recordPaginatedPages).
 //   3. Create the brew   POST /api/brews (doc, style, snippets, meta, sourceMarkdown), then /edit/:editId.
-//                        Signed-out visitors get the sign-in dialog; the page keeps its state, and
-//                        sessionStorage keeps the text if they go to the sign-in or register page.
+//                        Signed out, the brew is a local brew in this browser instead (issue #4), then
+//                        /local/:localId; it can be uploaded after signing in. For the share-link
+//                        download, signed-out visitors get the sign-in dialog; the page keeps its state,
+//                        and sessionStorage keeps the text if they go to the sign-in or register page.
 import type { JSONContent } from '@tiptap/core';
 import { type ChangeEvent, type ComponentType, type ReactNode, useCallback, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -16,6 +18,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { type ApiError, isApiError, queryKeys, requestSignIn, useCreateBrew, useMe, useUpstreamImport } from '@/api';
 import { paths } from '@/app/paths';
 import { SitePage } from '@/app/SitePage';
+import { defaultLocalBrews, LOCAL_BREW_FORMAT, localMeta, newLocalBrewId, requestPersistentStorage } from '@/editor/local/localBrews';
+import { DOC_SCHEMA_VERSION } from '@/editor/schema/version';
 import { recordPaginatedPages, type ImportReportData } from '@/editor/import/importReport';
 import { ImportReportView, LazyImportPreview, reportHeadline, type ImportPreviewProps, type ImportPreviewSettled } from '@/editor/ui/importReport';
 import { Button, Icon, Spinner, Tabs, TextArea, TextField } from '@/ui';
@@ -258,17 +262,43 @@ export function ImportPage({ convert = defaultConvert, Preview = LazyImportPrevi
 
   // ─── Create ────────────────────────────────────────────────────────────────────────────────────
   const create = useCreateBrew({ meta: { errorPolicy: 'manual' } });
+  const [creatingLocal, setCreatingLocal] = useState(false);
   const createNow = () => {
-    if (conversion.state !== 'done' || create.isPending) return;
-    if (anonymous) {
-      pending.current = 'create';
-      requestSignIn(null);
-      return;
-    }
+    if (conversion.state !== 'done' || create.isPending || creatingLocal) return;
     const { conversion: result, source, id } = conversion;
     const doc = layout?.id === id ? layout.json() : result.result.doc;
     const body = createBrewRequest({ meta: result.meta, style: result.result.style, snippets: result.snippets }, doc, source.text);
     setCreateError(null);
+    if (anonymous) {
+      // No account: a local brew in this browser (issue #4), uploaded later if they sign in.
+      const now = Date.now();
+      const localId = newLocalBrewId();
+      setCreatingLocal(true);
+      void defaultLocalBrews()
+        .save({
+          v: LOCAL_BREW_FORMAT,
+          id: localId,
+          createdAt: now,
+          updatedAt: now,
+          docSchemaVersion: body.docSchemaVersion ?? DOC_SCHEMA_VERSION,
+          doc: body.doc as JSONContent,
+          style: body.style ?? '',
+          snippets: body.snippets ?? null,
+          meta: localMeta(body.meta),
+          sourceMarkdown: body.sourceMarkdown ?? null,
+        })
+        .then(
+          () => {
+            void requestPersistentStorage();
+            created.current = true;
+            clearImportSession();
+            void navigate(paths.localBrew(localId));
+          },
+          (error: unknown) => setCreateError(createProblem(error)),
+        )
+        .finally(() => setCreatingLocal(false));
+      return;
+    }
     create.mutate(body, {
       onSuccess: (brew) => {
         created.current = true;
@@ -545,18 +575,30 @@ export function ImportPage({ convert = defaultConvert, Preview = LazyImportPrevi
           {createError ? <Problem problem={createError} testId="import-create-error" /> : null}
           {anonymous ? (
             <p className={styles.note} data-testid="import-sign-in-note">
-              <Icon name="user" size={16} className={styles.noteIcon} />
+              <Icon name="device" size={16} className={styles.noteIcon} />
               <span>
-                Sign in to save the brew to your account; this page keeps your import while you do.{' '}
+                You're not signed in: the brew is kept in this browser (Brews on this device), and you can upload it to an account later.
+                To save it to your account now,{' '}
+                <Button size="sm" variant="ghost" onClick={() => requestSignIn(null)} data-testid="import-sign-in">
+                  sign in
+                </Button>{' '}
+                or{' '}
                 <Link className={styles.link} to={paths.register(paths.import)}>
-                  Create an account
-                </Link>
+                  create an account
+                </Link>{' '}
+                first; this page keeps your import while you do.
               </span>
             </p>
           ) : null}
           <div className={styles.createActions}>
-            <Button variant="primary" icon={anonymous ? 'user' : 'check'} loading={create.isPending} onClick={createNow} data-testid="import-create-button">
-              {anonymous ? 'Sign in and create the brew' : 'Create brew'}
+            <Button
+              variant="primary"
+              icon={anonymous ? 'device' : 'check'}
+              loading={create.isPending || creatingLocal}
+              onClick={createNow}
+              data-testid="import-create-button"
+            >
+              {anonymous ? 'Create brew on this device' : 'Create brew'}
             </Button>
           </div>
         </section>

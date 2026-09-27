@@ -212,9 +212,11 @@ runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
 - **R-7: Exported HTML.** The HTML export is no longer offered as a file (issue #2). It is sent to the PDF renderer,
   which treats it as untrusted (see [PDF export](#pdf-export)). The export serializer still strips scripts, handlers
   and unsafe URLs (`editor/export/serialize.ts`).
-- **R-8: Drafts on shared devices.** Unsaved work stays in the browser (IndexedDB drafts and local snapshots)
-  after sign-out. The save lane scopes the `/new` draft to its signed-in author (`Draft.ownerId`, SAVE-12). Whoever
-  uses the same browser profile next can still read what is stored there, as with any local data.
+- **R-8: Drafts and local brews on shared devices.** Unsaved work stays in the browser (IndexedDB drafts and local
+  snapshots) after sign-out. The save lane scopes the `/new` draft to its signed-in author (`Draft.ownerId`, SAVE-12).
+  Brews made without an account (the local brew library, `hb-local-brews`, issue #4) stay until they are uploaded or
+  deleted from "Brews on this device"; signing out does not remove them, and uploading always needs the user's choice.
+  Whoever uses the same browser profile next can still read what is stored there, as with any local data.
 - **R-9: The PDF renderer's Chromium runs without Chromium's own sandbox.** This is Playwright's default. Chromium's
   sandbox needs user namespaces, and Docker's default seccomp profile blocks them. With JavaScript off and no
   network, what remains exposed is HTML, CSS, font and image parsing by a current Chromium. The Chromium build

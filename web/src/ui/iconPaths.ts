@@ -72,6 +72,9 @@ export const ICONS = {
   trash: { d: 'M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3' },
   copy: { d: 'M9 9h11v11H9z M5 15H4V4h11v1' },
   download: { d: 'M12 4v11 M7 10l5 5 5-5 M5 20h14' },
+  upload: { d: 'M12 20V9 M7 14l5-5 5 5 M5 4h14' },
+  // A browser window (brews kept on this device).
+  device: { d: 'M3 5h18v14H3z M3 9h18 M6 7h.01 M8.5 7h.01' },
   settings: { d: 'M4 7h9 M17 7h3 M15 5v4 M4 17h3 M11 17h9 M9 15v4' },
   close: { d: 'M6 6l12 12 M18 6 6 18' },
   check: { d: 'M5 12.5l4.5 4.5L19 7' },

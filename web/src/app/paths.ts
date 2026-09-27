@@ -13,6 +13,10 @@ export const paths = {
   new: '/new',
   edit: (editId: string) => `/edit/${enc(editId)}`,
   share: (shareId: string) => `/share/${enc(shareId)}`,
+  /** "Brews on this device": the local brew library (issue #4). */
+  local: '/local',
+  /** A local brew's editor. */
+  localBrew: (localId: string) => `/local/${enc(localId)}`,
   user: (handle: string) => `/user/${enc(handle)}`,
   vault: '/vault',
   import: '/import',

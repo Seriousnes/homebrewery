@@ -9,6 +9,9 @@ What was actually built (interfaces, conventions, deviations): docs/implementati
 - User secrets: every project shares UserSecretsId "homebrewery" (set once in Directory.Build.props). e.g. dotnet user-secrets set <key> <value> --project src/Homebrewery.Api
 - Backend: src/ (.NET 10, ASP.NET Core minimal APIs, EF Core + Npgsql, PostgreSQL 18).
 Host-only run: docker compose up -d db, then dotnet run --project src/Homebrewery.Api (:5080)
+- Access model: sign-in is needed only to save brews to the cloud, publish, and share a private brew. Anyone can create brews
+in the browser (the local brew library, issue #4), keep any number, download them as PDF, and upload them to an account
+later (never automatically). Don't gate anything else behind sign-in without asking.
 - PDF export: POST /api/export/pdf renders the web client's HTML export with headless Chromium (Microsoft.Playwright).
 Host runs and dotnet test need that Chromium: npm --prefix web exec playwright install chromium (the same build).
 The Docker images install it; after a Microsoft.Playwright upgrade, docker compose build api. docs/implementation-notes.md "PDF export".

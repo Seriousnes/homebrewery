@@ -1,30 +1,40 @@
-// /new (plan §9, P7.2): a new brew. Its draft lives in IndexedDB (key 'new') and is loaded here,
-// so it survives a reload and the sign-in redirect. Saving needs an account (plan §1): the first
-// save POSTs, then the page moves to /edit/:editId with the same editor. A draft loaded here is
-// saved as soon as its signed-out author signs in (signInHandoff.ts); an older one is shown and
-// saved on the next edit. "Start over" discards it. Only its author gets a signed-in user's draft
-// (SAVE-12); a draft an earlier /new session in this tab turned into a brew is not loaded again,
-// and one whose create never answered continues that create chain (SAVE-8; newDraft.ts).
+// /new (plan §9, P7.2, issue #4): a new brew.
+//
+// Signed out, it is a local brew (web/src/pages/local): its first change stores it in this
+// browser's local brew library and the page moves to /local/:localId with the same editor. Nothing
+// goes to the cloud until the user signs in and uploads it. Signing in before typing anything
+// turns the page into a signed-in /new.
+//
+// Signed in, its draft lives in IndexedDB (key 'new') and is loaded here, so it survives a reload.
+// The first save POSTs, then the page moves to /edit/:editId with the same editor. A loaded draft
+// is saved on the next edit; "Start over" discards it. Only its author gets a signed-in user's
+// draft (SAVE-12); a draft an earlier /new session in this tab turned into a brew is not loaded
+// again, and one whose create never answered continues that create chain (SAVE-8; newDraft.ts).
+//
+// Before local brews, a signed-out visitor's brew was the 'new' draft too, saved to the cloud at
+// sign-in. Such a draft becomes a local brew here (migrateAnonymousNewDraft): signed out, /new then
+// opens it at /local/:localId; signed in, a toast points to it.
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
-import { queryKeys, requestSignIn, useMe } from '@/api';
+import { Navigate, useLocation, useNavigate } from 'react-router';
+import { queryKeys, useMe } from '@/api';
 import { PageLoading } from '@/app/PageLoading';
-import { locationPath, paths } from '@/app/paths';
+import { paths } from '@/app/paths';
 import { formatRelativeTime } from '@/app/relativeTime';
 import { LazyEditorApp } from '@/editor/EditorApp/LazyEditorApp';
 import { appBrewForNew, blankDoc, docForEditor } from '@/editor/EditorApp/editorAppModel';
+import { migrateAnonymousNewDraft } from '@/editor/local/localBrews';
 import { CreateChainContext, createChainOf } from '@/editor/save/createChain';
 import { type Draft, NEW_DRAFT_KEY, readDraft } from '@/editor/save/drafts';
 import { pendingNewBrewCreates } from '@/editor/save/newBrewCreates';
 import { defaultDraftStore } from '@/editor/save/stores';
-import { draftDiscardedAt, type NewPageState } from '@/pages/edit/editorSession';
+import { draftDiscardedAt, localSessionId, type NewPageState } from '@/pages/edit/editorSession';
 import { noteCreatedAfterLeaving } from '@/pages/edit/leftSession';
 import { useMountedRef } from '@/pages/edit/useMountedRef';
-import { Button, ConfirmDialog, Icon } from '@/ui';
+import { LocalBrewEditor } from '@/pages/local/LocalBrewEditor';
+import { Button, ConfirmDialog, Icon, toast } from '@/ui';
 import styles from './NewBrewSession.module.css';
 import { chooseNewDraft, waitForRunningCreates } from './newDraft';
-import { markAwaitingSignIn, saveLoadedDraft } from './signInHandoff';
 
 export interface NewBrewSessionProps {
   sessionKey: string;
@@ -33,19 +43,34 @@ export interface NewBrewSessionProps {
 }
 
 interface LoadedDraft {
+  kind: 'server';
   draft: Draft | null;
-  saveOnLoad: boolean;
   /** Another user's draft, loaded if its owner signs in here before anything is typed (SAVE-12). */
   withheld: Draft | null;
   /** Bumped when the editor mounts again with another draft. */
   generation: number;
 }
 
+/** Signed out: a local brew (migrated: the earlier anonymous draft, now a local brew to open). */
+interface LoadedLocal {
+  kind: 'local';
+  migrated: string | null;
+}
+
 export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
   const location = useLocation();
   const [discardedAt] = useState(() => draftDiscardedAt(location.state));
-  const [loaded, setLoaded] = useState<LoadedDraft | null>(null);
+  const [loaded, setLoaded] = useState<LoadedDraft | LoadedLocal | null>(null);
+  // A signed-out brew was stored (the URL moves to /local/:localId): this session stays local.
+  const storedLocal = useRef(false);
   const [waiting, setWaiting] = useState(false);
+  // Bumped to load the page again (signed in on a signed-out /new before typing).
+  const [reloads, setReloads] = useState(0);
+  const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  useEffect(() => {
+    navigateRef.current = navigate;
+  });
   // Who is signed in decides whose draft is loaded and whether it is saved at once: wait for it.
   const me = useMe({ meta: { errorPolicy: 'manual' } });
   const meReady = !me.isPending;
@@ -63,20 +88,41 @@ export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
       // be creating its brew from the 'new' draft (its unmount save): wait for that answer (SAVE-8).
       if (pendingNewBrewCreates().length) setWaiting(true);
       await waitForRunningCreates();
+      const migrated = await migrateAnonymousNewDraft(defaultDraftStore()).catch(() => null);
+      if (cancelled) return;
+      if (userId.current === null) {
+        setLoaded((previous) => previous ?? { kind: 'local', migrated });
+        return;
+      }
+      if (migrated) {
+        toast({
+          title: 'Your earlier draft is on this device',
+          description: 'It was kept as a local brew. Open “Brews on this device” to upload it to your account.',
+          tone: 'info',
+          action: { label: 'Open', onAction: () => void navigateRef.current(paths.localBrew(migrated)) },
+        });
+      }
       const stored = await readDraft(defaultDraftStore(), NEW_DRAFT_KEY).catch(() => null);
       if (cancelled) return;
       const choice = chooseNewDraft(stored, { discardedAt, userId: userId.current });
-      const saveOnLoad = saveLoadedDraft(choice.draft !== null, userId.current !== null);
-      setLoaded((previous) => previous ?? { draft: choice.draft, saveOnLoad, withheld: choice.withheld, generation: 0 });
+      setLoaded((previous) => previous ?? { kind: 'server', draft: choice.draft, withheld: choice.withheld, generation: 0 });
     })();
     return () => {
       cancelled = true;
     };
-  }, [meReady, discardedAt]);
+  }, [meReady, discardedAt, reloads]);
+
+  // Signed in on a signed-out /new before anything was typed: load it again as a signed-in /new.
+  useEffect(() => {
+    if (loaded?.kind === 'local' && !loaded.migrated && !storedLocal.current && currentUser) {
+      setLoaded(null);
+      setReloads((n) => n + 1);
+    }
+  }, [loaded, currentUser]);
 
   // The withheld draft's owner signed in on this page: if the stored draft is still theirs (nothing
   // was typed here meanwhile), it comes back, saved on their next edit like any earlier draft.
-  const withheld = loaded?.withheld ?? null;
+  const withheld = loaded?.kind === 'server' ? loaded.withheld : null;
   useEffect(() => {
     if (!withheld || !currentUser || withheld.ownerId !== currentUser) return;
     let cancelled = false;
@@ -86,8 +132,8 @@ export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
         if (cancelled) return;
         const unchanged = stored !== null && stored.updatedAt === withheld.updatedAt && stored.ownerId === currentUser;
         setLoaded((l) => {
-          if (!l || l.withheld !== withheld) return l;
-          return unchanged ? { draft: stored, saveOnLoad: false, withheld: null, generation: l.generation + 1 } : { ...l, withheld: null };
+          if (!l || l.kind !== 'server' || l.withheld !== withheld) return l;
+          return unchanged ? { kind: 'server', draft: stored, withheld: null, generation: l.generation + 1 } : { ...l, withheld: null };
         });
       });
     return () => {
@@ -96,14 +142,23 @@ export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
   }, [withheld, currentUser]);
 
   if (!loaded) return <PageLoading label={waiting ? 'Saving your previous brew…' : 'Loading your draft…'} />;
-  return (
-    <NewBrewEditor key={loaded.generation} draft={loaded.draft} saveOnLoad={loaded.saveOnLoad} sessionKey={sessionKey} adopt={adopt} />
-  );
+  if (loaded.kind === 'local') {
+    if (loaded.migrated) return <Navigate to={paths.localBrew(loaded.migrated)} replace />;
+    return (
+      <LocalBrewEditor
+        brew={null}
+        onStored={(localId) => {
+          storedLocal.current = true;
+          adopt(sessionKey, localSessionId(localId));
+        }}
+      />
+    );
+  }
+  return <NewBrewEditor key={loaded.generation} draft={loaded.draft} sessionKey={sessionKey} adopt={adopt} />;
 }
 
-function NewBrewEditor({ draft, saveOnLoad, sessionKey, adopt }: { draft: Draft | null; saveOnLoad: boolean } & NewBrewSessionProps) {
+function NewBrewEditor({ draft, sessionKey, adopt }: { draft: Draft | null } & NewBrewSessionProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const me = useMe({ meta: { errorPolicy: 'manual' } });
   const mounted = useMountedRef();
@@ -132,16 +187,10 @@ function NewBrewEditor({ draft, saveOnLoad, sessionKey, adopt }: { draft: Draft 
   }, [discarding, navigate]);
 
   const signedIn = Boolean(me.data);
-  // A signed-out visitor's draft waits for their sign-in (also through the sign-in page).
-  const anonymous = me.isSuccess && !signedIn;
-  useEffect(() => {
-    if (anonymous && !created) markAwaitingSignIn();
-  }, [anonymous, created]);
 
   const banner = created ? null : (
     <>
-      {anonymous ? <SignInNotice returnTo={locationPath(location)} /> : null}
-      {draft ? <DraftNotice draft={draft} waitsForEdit={signedIn && !saveOnLoad} onStartOver={() => setConfirmOpen(true)} /> : null}
+      {draft ? <DraftNotice draft={draft} waitsForEdit={signedIn} onStartOver={() => setConfirmOpen(true)} /> : null}
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
@@ -162,7 +211,6 @@ function NewBrewEditor({ draft, saveOnLoad, sessionKey, adopt }: { draft: Draft 
         content={initial.content}
         brew={initial.brew}
         initialMetaInput={initial.metaInput}
-        unsavedOnLoad={saveOnLoad}
         recent="edit"
         autoFocus
         heading={created ? (title) => `Editing ${title}` : 'New brew'}
@@ -184,29 +232,6 @@ function NewBrewEditor({ draft, saveOnLoad, sessionKey, adopt }: { draft: Draft 
         data-testid="editor-app"
       />
     </CreateChainContext.Provider>
-  );
-}
-
-function SignInNotice({ returnTo }: { returnTo: string }) {
-  const titleId = useId();
-  return (
-    <section className={styles.notice} aria-labelledby={titleId} data-testid="new-sign-in-notice">
-      <Icon name="user" size={20} className={styles.icon} />
-      <div className={styles.text}>
-        <h2 id={titleId} className={styles.title}>
-          Sign in to save
-        </h2>
-        <p className={styles.message}>Your brew is kept in this browser until you sign in; then it is saved to your account.</p>
-      </div>
-      <div className={styles.actions}>
-        <Button size="sm" variant="primary" onClick={() => requestSignIn(null)} data-testid="new-sign-in">
-          Sign in
-        </Button>
-        <Link className={styles.link} to={paths.register(returnTo)}>
-          Create an account
-        </Link>
-      </div>
-    </section>
   );
 }
 

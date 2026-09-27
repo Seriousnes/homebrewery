@@ -42,6 +42,11 @@ export interface MetadataEditorProps {
   onRequestReview?: () => Promise<BrewLockInfo>;
   /** The lock to show (default brew.lock), e.g. after a review request. */
   lock?: BrewLockInfo | null;
+  /**
+   * A local brew (issue #4): kept in this browser only. Authors and publishing need the cloud, so
+   * those sections are replaced by a note.
+   */
+  local?: boolean;
 }
 
 const TAG_OPTIONS: ComboboxOption[] = TAG_SUGGESTIONS.map((tag) => {
@@ -70,6 +75,7 @@ export function MetadataEditor({
   onDelete,
   onRequestReview,
   lock = brew.lock,
+  local = false,
 }: MetadataEditorProps) {
   const ids = useId();
   const context = { baseUrl };
@@ -366,37 +372,50 @@ export function MetadataEditor({
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby={`${ids}-authors`}>
-        <h3 id={`${ids}-authors`} className={styles.sectionTitle}>
-          Authors
-        </h3>
-        <AuthorsField
-          authors={draft.authors}
-          editable={canManageAuthors(brew.role)}
-          onChange={(authors) => {
-            markEdited('authors');
-            emit('authors', { authors });
-          }}
-          error={errorOf('authors')}
-        />
-      </section>
+      {local ? (
+        <section className={styles.section} aria-labelledby={`${ids}-local`} data-testid="meta-local-note">
+          <h3 id={`${ids}-local`} className={styles.sectionTitle}>
+            On this device
+          </h3>
+          <p className={styles.muted}>
+            This brew is kept in this browser only. Sign in and upload it to your account to publish it, share it or add authors.
+          </p>
+        </section>
+      ) : (
+        <>
+          <section className={styles.section} aria-labelledby={`${ids}-authors`}>
+            <h3 id={`${ids}-authors`} className={styles.sectionTitle}>
+              Authors
+            </h3>
+            <AuthorsField
+              authors={draft.authors}
+              editable={canManageAuthors(brew.role)}
+              onChange={(authors) => {
+                markEdited('authors');
+                emit('authors', { authors });
+              }}
+              error={errorOf('authors')}
+            />
+          </section>
 
-      <section className={styles.section} aria-labelledby={`${ids}-privacy`}>
-        <h3 id={`${ids}-privacy`} className={styles.sectionTitle}>
-          Privacy
-        </h3>
-        <Switch
-          label="Published"
-          checked={draft.published}
-          onChange={(e) => {
-            markEdited('published');
-            emit('published', { published: e.target.checked });
-          }}
-          hint="Published brews are searchable in the Vault and listed on your user page. Unpublished brews are not, but anyone with the share link can still read them. You can unpublish at any time."
-          data-testid="meta-published"
-        />
-        {errorOf('published') ? <p className={styles.errorText}>{errorOf('published')}</p> : null}
-      </section>
+          <section className={styles.section} aria-labelledby={`${ids}-privacy`}>
+            <h3 id={`${ids}-privacy`} className={styles.sectionTitle}>
+              Privacy
+            </h3>
+            <Switch
+              label="Published"
+              checked={draft.published}
+              onChange={(e) => {
+                markEdited('published');
+                emit('published', { published: e.target.checked });
+              }}
+              hint="Published brews are searchable in the Vault and listed on your user page. Unpublished brews are not, but anyone with the share link can still read them. You can unpublish at any time."
+              data-testid="meta-published"
+            />
+            {errorOf('published') ? <p className={styles.errorText}>{errorOf('published')}</p> : null}
+          </section>
+        </>
+      )}
 
       {onDelete && brew.editId ? (
         <section className={styles.section} aria-labelledby={`${ids}-delete`}>

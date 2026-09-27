@@ -2811,3 +2811,86 @@ TESTS
 - Chromium runs without its own sandbox (Playwright's default, which Docker needs without a seccomp profile). JavaScript is off and the network is closed, which removes most of the attack surface; see security.md R-9.
 - Image size: the runtime image grows by about 750 MB: 608 MB for the headless shell with its system libraries and fonts, and about 140 MB for Playwright's Node driver in the app folder (`.playwright/node/linux-*`, which `Playwright.CreateAsync` starts). The Dockerfile bind-mounts the CLI for the install step (a copied file would stay in its layer) and makes the published driver executable for the app user (it comes out of the package as 744, owned by root).
 - Measured in the production image: the first PDF about 1.9 s (Chromium start included), then 0.3–0.7 s for the 3-page inn export, 2.5 s for the 4-page chrome export (24 MB of images). The container used about 280 MB after its first PDFs.
+
+## Local brews: anonymous brews in the browser, uploaded later (issue #4)
+
+Access model (the user's): sign-in is needed only to save brews to the cloud, to publish, and to share a private brew. The share link needs a brew in the cloud; anyone with the link can open it, as before. Anyone can create brews in the browser, keep any number of them, download them as PDF, and upload them to an account later. Nothing is uploaded without the user choosing it.
+
+Deviation from P7.2: a signed-out /new no longer keeps its brew in the 'new' draft to save it at sign-in. The signInHandoff.ts module and its "Sign in to save" notice are gone.
+
+### Interfaces
+LIBRARY (web/src/editor/local/localBrews.ts; small: the navbar, the prompt and the import page import it)
+- IndexedDB `hb-local-brews` (store `brews`: id → `LocalBrew { v: 1, id, createdAt, updatedAt, docSchemaVersion, doc, style, snippets, meta: LocalBrewMeta { title, description, tags, lang, theme }, sourceMarkdown? }`) and `hb-local-brew-index` (store `summaries`: id → `LocalBrewSummary { id, title, theme, pages, createdAt, updatedAt }`). localStorage was not used: it holds about 5 MB per site. Each store is a `fallbackStore` (memory when IndexedDB fails: `persistent()` false).
+- `LocalBrewLibrary { list() (newest first; reads summaries; repairs the index from the brews' keys: missing summaries rebuilt, orphans dropped), count() (keys only), get(id) (null when missing or malformed: isLocalBrew), save(brew), remove(id), persistent() }`. `defaultLocalBrews()` (memory only without IndexedDB, as in jsdom), `setDefaultLocalBrews(lib | null)` for tests, `createLocalBrewLibrary(brews, index)`.
+- `onLocalBrewsChanged(listener)` (in-tab; save and remove). `newLocalBrewId()` (16 [A-Za-z0-9]), `LOCAL_BREW_ID` (/^[\w-]{1,64}$/), `localMeta(partial)` (defaults: lang 'en', theme '5ePHB'), `countPages(doc)`, `summaryOf(brew)`.
+- `requestPersistentStorage(storage?)`: `navigator.storage.persist()` once per storage object, after the first brew is stored. It resolves true, false, or null when the API is missing.
+- `migrateAnonymousNewDraft(drafts, lib?)`: the 'new' draft with no ownerId and no createKey (the anonymous /new brew of earlier versions) becomes local brew `draft-<updatedAt base36>` (so two tabs write one brew) and the draft is deleted. /new (both states) and /local run it.
+- `KeyValueStore.keys()` is new (idb-keyval `keys`; fallbackStore merges both stores; memoryStore).
+
+SAVING (EditorApp saving 'local'; web/src/editor/local/useLocalSave.ts)
+- `EditorAppSaving = 'server' | 'local' | 'none'`. `EditorApp` prop `local: EditorAppLocalBrew { id (null for a new brew), createdAt?, updatedAt?, sourceMarkdown?, onCreated?(id), onUpload?(id) }`. `appBrewForLocal(brew?)` in editorAppModel.ts.
+- `useLocalSave({ editor, enabled, localId, createdAt?, sourceMarkdown?, lastSavedAt?, getContent: () => { style, snippets, meta }, watch, onCreated?, library?, delayMs = 1000 })` returns `{ status: 'idle'|'dirty'|'saving'|'saved'|'error', localId, lastSavedAt, error, persistent, saveNow(), stop(), resume() }`.
+  - What is dirty: author transactions (dirty.ts `isDirtyDispatch`) and changes of the watched values (EditorApp watches style, snippets and the metadata draft's title, description, tags, lang and theme).
+  - When it writes: 1 s after the last change, on Mod-S, on pagehide or visibilitychange → hidden, and on unmount (with the editor's last state if it is already destroyed). One write at a time.
+  - `settleNow` runs before each write, so stored pages match the editor. The PDF of a listed brew is made from them.
+  - A new brew gets its id on its first write; then `requestPersistentStorage()` and `onCreated(id)` run.
+- `LocalSaveStatus` (toolbar, data-testid `save-status`; wording in `localStatus.ts` `localStatusInfo`): "Not saved yet", "Unsaved changes", "Saving…", "Saved on this device", "Couldn’t save" + Retry, "Not kept" (warning) when `persistent` is false. Actions: "Upload" (`local-upload`) when signed in and stored, "Sign in to upload" (`local-sign-in`) when signed out.
+- Upload from the editor (EditorApp `uploadLocal`): `saveNow()`, then `stop()` and `editor.setEditable(false)`, then `local.onUpload(id)`. If that throws, `resume()` and editable again.
+- The Properties dialog opens for local brews too: `MetadataDialog`/`MetadataEditor` prop `local` hides Authors, Published and Delete, and shows a note (`meta-local-note`). The dialog description is "Changes are saved on this device."
+
+PAGES AND ROUTES
+- `paths.local` ('/local'), `paths.localBrew(id)`. The editor layout route has a new child `local/:localId`. `editorSessionKey(sessions, editId, locationKey, localId?)` keys it `local:<id>` (`localSessionId(id)`). A signed-out /new brew adopts that key when its first write stores it, so the move to /local/:localId keeps the editor mounted. BrewSession picks LocalBrewSession, NewBrewSession or EditBrewSession from the URL it mounted with.
+- `LocalBrewSession` (/local/:localId): loads the brew. If it is missing: `local-brew-missing` page. If its schema version is newer: NewerVersionPage.
+- `LocalBrewEditor({ brew, onStored? })`: EditorApp in 'local' mode.
+  - `onUpload` calls `uploadLocalBrew`, seeds the cloud brew's query (`seedCreatedBrew`), shows the toast "Uploaded to your account" and goes to /edit/:editId (replace).
+  - A 401 opens the sign-in prompt; other errors toast "Couldn’t upload the brew", and the brew stays.
+  - Signed out, a dismissible (per tab, sessionStorage `hb-local-notice-dismissed`) `local-notice` explains where the brew is kept, with Sign in (`local-notice-sign-in`), Create an account and a link to /local.
+- NewBrewSession (/new):
+  - Every visit runs the migration first.
+  - Signed out: a migrated draft is opened at /local/:id. Otherwise `LocalBrewEditor brew={null}`.
+  - Signing in before anything is stored reloads the page as a signed-in /new.
+  - Signed in: as before (the 'new' draft, SAVE-8, SAVE-12), except a loaded draft is always saved on its next edit (`saveOnLoad` is gone). A migrated draft gets an info toast with "Open".
+- /local, "Brews on this device" (web/src/pages/local/index.tsx, `local-brews-page`):
+  - The list: `local-brew-item` rows (data-local-id) with a title link, "N pages · edited <relative>", PDF (exportStoredBrewPdf from the stored brew), Upload (signed in; `local-brew-upload`) and Delete (confirm; `local-brew-delete`).
+  - "Upload all to my account" (`local-upload-all`), the empty state (`local-empty`), the not-kept warning (`local-not-kept`), and a sign-in hint when signed out (`local-page-sign-in`).
+  - It refreshes on library changes, window focus and visibility.
+- `LocalBrewsSignInPrompt` (in AppShell): `me` going from null to a user in this tab, with local brews present, opens the dialog "You have N brews on this device" (`local-brews-prompt`). Its buttons are Later, Review (/local) and Upload all (`uploadLocalBrews`, then a summary toast). A page loaded while already signed in is not asked.
+- Import page: signed out, "Create brew on this device" saves a local brew (doc, style, snippets, cleaned metadata, sourceMarkdown) and opens /local/:id. The upstream-link download still needs sign-in.
+- Navbar New panel: "Brews on this device" (`nav-local-brews`). User page (own list): `user-local-brews` note "N brews are only on this device" with a link.
+- `exportStoredBrewPdf(brew: StoredBrew)`: `StoredBrew` is `{ doc, docSchemaVersion, style, meta: { title, lang, theme } }`, so both BrewForEdit and LocalBrew fit.
+
+UPLOAD (web/src/editor/local/upload.ts)
+- `uploadRequest(brew)`: POST /api/brews body with doc, docSchemaVersion, style, snippets, meta (published: false), and sourceMarkdown when present.
+- `uploadKey(brew)` is `local-brew-<id>-<updatedAt base36>`. A retry of the same content gets the brew the first request created (SAVE-8 idempotency). An edit since then gets a new key, because the API answers 422 to a reused key with another body.
+- `uploadLocalBrew(id, { library?, client?, signal? })` removes the local copy after the create. `uploadLocalBrews(ids, options)` uploads one at a time and returns `{ uploaded, failed }`. `uploadProblem(error)` gives the message.
+- Icons: `upload`, `device` (ui/iconPaths.ts).
+
+TESTS
+- Vitest:
+  - localBrews.test.ts: library, index repair, listeners, ids, meta, persist request, migration.
+  - upload.test.ts: body, key, removal, failure keeps the brew, partial "upload all".
+  - localStatus.test.ts.
+  - editorSession.test.ts: local keys.
+  - pages/local/localPage.test.tsx: list order, signed-out hint, empty state, delete, upload one and all with a failure.
+  - MetadataDialog.test.tsx: local mode.
+  - appRoutes.test.tsx, the whole app:
+    - signed-out /new stores a local brew with the same editor, the URL moves, nothing is POSTed, sign-in shows the prompt, and "Upload all" creates the brew;
+    - signing in before typing gives a signed-in /new;
+    - the earlier anonymous draft is migrated and opened at /local/:id, not uploaded.
+  - ImportPage.test.tsx: signed-out create makes a local brew.
+- Playwright:
+  - e2e/flows/pages.spec.ts, real API and IndexedDB:
+    - a signed-out brew survives a reload at /local/:localId, is listed, and downloads as a 1-page PDF rendered by the API;
+    - two signed-out brews, then signing in through the navbar: the prompt, nothing uploaded until "Upload all", then both in the account and /local empty;
+    - the editor's Upload opens /edit/:editId, and the old /local URL says the brew is gone;
+    - signed in, "Start over" discards a draft whose POST was aborted.
+  - e2e/save/recovery.spec.ts: IndexedDB blocked; the signed-out brew is kept in memory across in-app navigation, and the status says "Not kept".
+  - e2e/save/idempotent-create.spec.ts: `local-notice`.
+  - e2e/a11y/axe.spec.ts: /local signed out and signed in, and the sign-in dialog opened from `local-notice-sign-in`.
+  - e2e/security/csp.spec.ts: /new stores a local brew and /local lists it under the production CSP.
+
+### Notes for later phases
+- Local brews are per browser profile: no sync between devices. Two tabs on the same local brew: the last write wins (no conflict detection).
+- The editor keeps no local history snapshots for local brews (LocalHistoryDialog is for cloud brews).
+- Upstream-link import stays sign-in only (plan §8.3); opening it to anonymous users would need the proxy's rate limit per client address.
+- Recent brews (navbar) don't list local brews; /local does.

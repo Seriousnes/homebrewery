@@ -242,7 +242,7 @@ test('the policy is enforced and violations are heard (canary)', async ({ contex
   expect(events.find((v) => v.directive === 'img-src')?.blocked).toBe('http://images.csp-e2e.test/blocked.png');
 });
 
-test('the home page (the welcome brew) and a new brew', async ({ context, page, request }) => {
+test('the home page (the welcome brew), a new brew kept on this device, and Brews on this device', async ({ context, page, request }) => {
   const violations = await setUp(context, request);
 
   await visit(page, '/');
@@ -252,6 +252,11 @@ test('the home page (the welcome brew) and a new brew', async ({ context, page, 
   await waitForCanvas(page);
   await page.locator('.hb-canvas .ProseMirror').click();
   await page.keyboard.type('Typed on /new under the policy.');
+  // Signed out: a local brew (issue #4), stored in IndexedDB; the page moves to /local/:localId.
+  await expect(page).toHaveURL(/\/local\/[\w-]+$/, LOAD);
+  await settle(page);
+  await visit(page, '/local');
+  await expect(page.getByTestId('local-brew-item')).toHaveCount(1, LOAD);
   await settle(page);
 
   expect(violations).toEqual([]);

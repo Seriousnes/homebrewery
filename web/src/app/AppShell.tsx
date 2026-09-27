@@ -8,6 +8,7 @@ import { Outlet, useNavigation } from 'react-router';
 import { Navbar } from '@/ported/navbar/Navbar';
 import { focusElement, UiRoot } from '@/ui';
 import styles from './AppShell.module.css';
+import { LocalBrewsSignInPrompt } from './LocalBrewsSignInPrompt';
 import { NavbarSlotsContext } from './navbarSlotsContext';
 import { NotificationBanner } from './NotificationBanner';
 import { useRouteFocus } from './useRouteFocus';
@@ -40,6 +41,7 @@ export function AppShell() {
           {loading ? <div className={styles.progress} aria-hidden="true" data-testid="route-loading" /> : null}
         </header>
         <NotificationBanner focusAfterLast={() => focusElement(mainRef.current)} />
+        <LocalBrewsSignInPrompt />
         <main id={MAIN_CONTENT_ID} ref={mainRef} tabIndex={-1} className={styles.main} aria-busy={loading || undefined}>
           <Outlet />
         </main>

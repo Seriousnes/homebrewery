@@ -1,6 +1,6 @@
-// Autosave on the app's real pages (/new, /edit/:editId) over the fake brew API of
-// web/src/pages/routeTesting.tsx: a signed-out visitor's new brew (APP-9) and leaving a brew whose
-// changes can't be saved (SAVE-2). Real timers, with the app's autosave timings scaled down (see
+// Autosave on the app's real pages (/new, /edit/:editId, /local/:localId) over the fake brew API of
+// web/src/pages/routeTesting.tsx: a signed-out visitor's new brew (a local brew, issue #4) and
+// leaving a brew whose changes can't be saved (SAVE-2). Real timers, with the app's autosave timings scaled down (see
 // DELAY below) so that a test with two save cycles stays well within the 5 s test timeout.
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,10 +21,12 @@ import {
   typeInEditor,
   type BrewServer,
 } from '@/pages/routeTesting';
+import { createLocalBrewLibrary, defaultLocalBrews, type LocalBrew, type LocalBrewSummary, setDefaultLocalBrews } from '@/editor/local/localBrews';
 import { clearToasts, toastStore } from '@/ui';
 import { NEW_DRAFT_KEY, readDraft, type Draft } from './drafts';
 import { resetNewBrewCreates } from './newBrewCreates';
 import { defaultDraftStore } from './stores';
+import { memoryStore } from './kvStore';
 import { draftOf } from './testing';
 import type * as UseAutosaveModule from './useAutosave';
 
@@ -68,6 +70,8 @@ beforeEach(async () => {
   localStorage.clear();
   sessionStorage.clear();
   await clearDrafts();
+  // A persistent local brew library, fresh for every test.
+  setDefaultLocalBrews(createLocalBrewLibrary(Object.assign(memoryStore<LocalBrew>(), { persistent: () => true }), memoryStore<LocalBrewSummary>()));
   loader.loadThemeChain.mockImplementation((theme: string) => Promise.resolve(chainOf(theme)));
   loader.applyThemeStyles.mockImplementation(
     (): Promise<AppliedThemeStyles> => Promise.resolve({ slot: 's', links: [], sheets: [], failed: [], skippedCss: 0, dispose: vi.fn() }),
@@ -87,34 +91,55 @@ const wait = (ms: number) => act(() => new Promise((resolve) => setTimeout(resol
 const conflictDialog = () => screen.queryByRole('alertdialog', { name: 'This brew was changed somewhere else' });
 const leaveDialog = () => screen.findByRole('alertdialog', { name: 'Leave without saving?' });
 
-describe('/new while nobody is signed in (APP-9)', () => {
-  it('keeps the draft and sends nothing, even when the page is shown again; signing in creates the brew', async () => {
+describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () => {
+  it('is stored in this browser on its first change (same editor, URL /local/:localId), sends nothing, and is uploaded only when the user chooses', async () => {
     const server = createBrewServer({ me: null });
-    const { queryClient } = renderApp({ url: '/new', me: null });
+    const { queryClient, router } = renderApp({ url: '/new', me: null });
     await waitForEditor();
+    const editor = appEditor();
     typeInEditor('My secret draft');
-    await wait(DELAY + 300);
-    for (let i = 0; i < 3; i++) {
-      act(() => {
-        document.dispatchEvent(new Event('visibilitychange'));
-      });
-    }
-    await wait(100);
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\/[\w-]+$/), { timeout: 3000 });
+    const localId = router.state.location.pathname.split('/')[2]!;
+    expect(appEditor()).toBe(editor); // the editor stayed mounted
+    await waitFor(() => expect(screen.getByTestId('save-status')).toHaveAttribute('data-status', 'saved'));
+    expect(docText((await defaultLocalBrews().get(localId))?.doc)).toContain('My secret draft');
+    expect(await readDraft(defaultDraftStore(), NEW_DRAFT_KEY)).toBeNull();
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
-    expect(screen.getByTestId('save-status')).toHaveAttribute('data-status', 'signedOut');
-    expect(docText((await readDraft(defaultDraftStore(), 'new'))?.doc)).toContain('My secret draft');
-    // The draft is where /new reloads it from: leaving asks nothing.
+    // Saved on this device: leaving asks nothing.
     const unload = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(false);
 
-    // Signed in (the sign-in dialog, another tab): the brew is created once.
+    // Signed in (the sign-in dialog, another tab): nothing is uploaded by itself; the user is asked.
     server.me = ALICE;
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), ALICE);
     });
+    const prompt = await screen.findByRole('dialog', { name: 'You have 1 brew on this device' });
+    await wait(DELAY + 300);
+    expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
+    act(() => {
+      within(prompt).getByRole('button', { name: 'Upload all' }).click();
+    });
     await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
     expect(docText(server.brews.get('newA')?.doc)).toContain('My secret draft');
+    await waitFor(async () => expect(await defaultLocalBrews().count()).toBe(0));
+  });
+
+  it('signing in before typing anything turns the page into a signed-in /new', async () => {
+    const server = createBrewServer({ me: null });
+    const { queryClient, router } = renderApp({ url: '/new', me: null });
+    await waitForEditor();
+    server.me = ALICE;
+    act(() => {
+      queryClient.setQueryData(queryKeys.account.me(), ALICE);
+    });
+    await waitFor(() => expect(screen.getByTestId('editor-app')).not.toHaveAttribute('data-local-id'));
+    await waitForEditor();
+    typeInEditor('Straight to the cloud');
+    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']), { timeout: 3000 });
+    expect(router.state.location.pathname).toBe('/edit/newA');
+    expect(await defaultLocalBrews().count()).toBe(0);
   });
 });
 
@@ -246,18 +271,20 @@ describe("the 'new' draft belongs to its author (SAVE-12)", () => {
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]); // an earlier draft waits for an edit
   });
 
-  it("an anonymous visitor's draft goes to whoever signs in (the sign-in hand-off), and is written as theirs from then on", async () => {
-    await storeNewDraft({ ownerId: null });
+  it("an anonymous visitor's draft from before local brews becomes a local brew, opened at /local/:localId, and is not uploaded at sign-in", async () => {
+    const draft = await storeNewDraft({ ownerId: null });
     const server = createBrewServer({ me: null });
-    const { queryClient } = renderApp({ url: '/new', me: null });
+    const { queryClient, router } = renderApp({ url: '/new', me: null });
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/local/draft-${draft.updatedAt.toString(36)}`), { timeout: 3000 });
     await waitForEditor();
     expect(docText(appEditor()!.getJSON())).toContain('Leftover words');
+    expect(await readDraft(defaultDraftStore(), NEW_DRAFT_KEY)).toBeNull();
     server.me = BOB;
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), BOB);
     });
-    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
-    expect(docText(server.brews.get('newA')?.doc)).toContain('Leftover words');
+    expect(await screen.findByRole('dialog', { name: 'You have 1 brew on this device' })).toBeInTheDocument();
+    expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
   });
 });
 

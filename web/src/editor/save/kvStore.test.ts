@@ -8,7 +8,7 @@ function brokenStore<T>(): KeyValueStore<T> {
   const fail = (): never => {
     throw new DOMException('The operation is insecure.', 'SecurityError');
   };
-  return { get: fail, getMany: fail, set: fail, setMany: fail, del: fail, delMany: fail, entries: fail };
+  return { get: fail, getMany: fail, set: fail, setMany: fail, del: fail, delMany: fail, entries: fail, keys: fail };
 }
 
 /** A store that works until `full` is set, then refuses writes (quota). */
