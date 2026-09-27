@@ -134,6 +134,26 @@ public sealed class RateLimitTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Anonymous_pdf_exports_are_limited_per_client_ip()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var renderer = new PdfExportEndpointTests.FakeRenderer { Respond = _ => Task.FromResult(new PdfRenderResult([37, 80, 68, 70], 0, 0)) };
+        await using var host = WithLimits(pdf: 1, configure: b => b
+            .UseSetting("FORWARDEDHEADERS_ENABLED", "true")
+            .ConfigureTestServices(s => s.Replace(ServiceDescriptor.Singleton<IPdfRenderer>(renderer))));
+        using var client = host.CreateClient();
+
+        using var a1 = await ExportPdfFromAsync(client, "203.0.113.1", ct);
+        using var a2 = await ExportPdfFromAsync(client, "203.0.113.1", ct);
+        using var b1 = await ExportPdfFromAsync(client, "203.0.113.2", ct);
+
+        Assert.Equal(HttpStatusCode.OK, a1.StatusCode);
+        await AssertTooManyRequestsAsync(a2, ct);
+        Assert.Equal(HttpStatusCode.OK, b1.StatusCode);
+        Assert.Equal(2, renderer.Received.Count);
+    }
+
+    [Fact]
     public void Invalid_limits_stop_the_host()
     {
         using var host = api.Factory.WithWebHostBuilder(b => b.UseSetting("RateLimits:Writes:PermitLimit", "0"));
@@ -157,6 +177,13 @@ public sealed class RateLimitTests(ApiFixture api)
     private static Task<HttpResponseMessage> LogoutFromAsync(HttpClient client, string ip, CancellationToken ct)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/account/logout");
+        request.Headers.Add("X-Forwarded-For", ip);
+        return client.SendAsync(request, ct);
+    }
+
+    private static Task<HttpResponseMessage> ExportPdfFromAsync(HttpClient client, string ip, CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/export/pdf") { Content = JsonContent.Create(new { html = "<p>x</p>" }) };
         request.Headers.Add("X-Forwarded-For", ip);
         return client.SendAsync(request, ct);
     }

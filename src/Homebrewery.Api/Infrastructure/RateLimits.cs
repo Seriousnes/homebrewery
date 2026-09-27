@@ -13,7 +13,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// <list type="bullet">
 /// <item><see cref="Auth"/>: the <c>/api/auth/*</c> endpoints (login, register, password reset, …), per client IP.</item>
 /// <item><see cref="Import"/>: the upstream import proxy, per signed-in user.</item>
-/// <item><see cref="Pdf"/>: PDF export (<c>POST /api/export/pdf</c>), per signed-in user.</item>
+/// <item><see cref="Pdf"/>: PDF export (<c>POST /api/export/pdf</c>), per signed-in user or, signed out, per client IP.</item>
 /// <item>A global limiter for writes (POST, PUT, PATCH, DELETE) on every path, per client IP.</item>
 /// </list>
 /// A rejected request gets 429 problem+json with a <c>Retry-After</c> header. The client IP is the connection's
@@ -111,7 +111,7 @@ public sealed class RateLimitSettings
     /// <summary>Per user on the import proxy. Default: 10 per minute.</summary>
     public WindowLimit Import { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) };
 
-    /// <summary>Per user on PDF export. Default: 10 per minute.</summary>
+    /// <summary>Per user on PDF export, per client IP for anonymous callers. Default: 10 per minute.</summary>
     public WindowLimit Pdf { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) };
 
     /// <summary>Per client IP for every POST, PUT, PATCH and DELETE. Default: 120 per minute.</summary>

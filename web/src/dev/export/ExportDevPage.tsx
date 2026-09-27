@@ -38,7 +38,7 @@ type Loaded = { state: 'loading' } | { state: 'ready'; content: JSONContent; css
 /**
  * /dev/export[?doc=inn|external|a5|s1|chrome][&fixture=<S3 fixture>][&theme=5ePHB][&css=<brew CSS>]
  * [&editable=1]: a read-only canvas (as the share page shows a brew; `editable=1` for the editor's
- * DOM) with pagination, the "Download PDF" button (it needs the API and a signed-in session) and a
+ * DOM) with pagination, the "Download PDF" button (it needs the API) and a
  * Print button. window.__hbExport.exportHtml gives the HTML export that the PDF is rendered from.
  * `fixture` imports an S3 fixture with hbfmToDoc (its CSS becomes the brew CSS).
  * data-theme-status is "ready" once the canvas is.
@@ -117,7 +117,7 @@ export function ExportDevPage() {
           <strong>/dev/export</strong>
           <Toolbar label="Export" data-testid="export-toolbar">
             <IconButton icon="print" label="Print" tooltip="bottom" disabled={!editor} onClick={() => void print()} data-testid="print" />
-            <DownloadPdfButton editor={editor} chain={chain} userCss={css} lang={lang} title={title} signedIn />
+            <DownloadPdfButton editor={editor} chain={chain} userCss={css} lang={lang} title={title} />
           </Toolbar>
           <span data-testid="canvas-status">{loaded.state === 'error' ? loaded.message : frameStatus}</span>
         </header>

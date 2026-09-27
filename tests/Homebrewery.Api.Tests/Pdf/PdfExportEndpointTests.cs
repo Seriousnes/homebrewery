@@ -55,7 +55,7 @@ public sealed class PdfExportEndpointTests(PdfExportEndpointTests.PdfHost host) 
     }
 
     [Fact]
-    public async Task Anonymous_callers_get_401_and_nothing_is_rendered()
+    public async Task Anonymous_callers_get_the_pdf_too()
     {
         var ct = TestContext.Current.CancellationToken;
         host.Renderer.Respond = _ => Task.FromResult(new PdfRenderResult(Pdf, 0, 0));
@@ -63,7 +63,25 @@ public sealed class PdfExportEndpointTests(PdfExportEndpointTests.PdfHost host) 
 
         using var response = await anonymous.PostAsJsonAsync("/api/export/pdf", new { html = Html }, ct);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/pdf", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(Pdf, await response.Content.ReadAsByteArrayAsync(ct));
+        Assert.Equal(Html, Assert.Single(host.Renderer.Received));
+    }
+
+    [Fact]
+    public async Task Another_origin_gets_403_and_nothing_is_rendered()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        host.Renderer.Respond = _ => Task.FromResult(new PdfRenderResult(Pdf, 0, 0));
+        using var client = host.Factory.CreateClient();
+        client.DefaultRequestHeaders.Remove("Origin");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/export/pdf") { Content = JsonContent.Create(new { html = Html }) };
+        request.Headers.Add("Origin", "https://evil.example");
+
+        using var response = await client.SendAsync(request, ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Empty(host.Renderer.Received);
     }
 

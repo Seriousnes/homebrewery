@@ -695,7 +695,7 @@ export interface paths {
         put?: never;
         /**
          * The exported brew (self-contained HTML) rendered as a PDF.
-         * @description Renders `html` with headless Chromium: JavaScript off, page size from the HTML's `@page` rule, one brew page per sheet. https images, fonts and stylesheets of other sites are fetched from public addresses within per-render limits; every other request is blocked. The `X-Pdf-Missing-Files` header counts the files that are not in the PDF. The body may be gzip-compressed and is capped at 20 MB. 400 when `html` is empty, 503 (with Retry-After when busy) when the renderer is busy or unavailable, 500 when the render fails or times out. Rate limited per user (429).
+         * @description Renders `html` with headless Chromium: JavaScript off, page size from the HTML's `@page` rule, one brew page per sheet. https images, fonts and stylesheets of other sites are fetched from public addresses within per-render limits; every other request is blocked. The `X-Pdf-Missing-Files` header counts the files that are not in the PDF. The body may be gzip-compressed and is capped at 20 MB. 400 when `html` is empty, 503 (with Retry-After when busy) when the renderer is busy or unavailable, 500 when the render fails or times out. No account needed; rate limited per user, or per client address when signed out (429).
          */
         post: operations["ExportPdf"];
         delete?: never;
@@ -2298,15 +2298,6 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Payload Too Large */

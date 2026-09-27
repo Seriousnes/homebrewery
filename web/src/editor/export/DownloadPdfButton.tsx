@@ -1,11 +1,9 @@
 // "Download PDF" (issue #2, replaces P6.4's "Export HTML"): the app bar's button that saves the
-// brew as a PDF. The browser builds the self-contained HTML export; the API renders it. Signed-in
-// users only (the render runs on the server): anyone else gets the sign-in prompt. The export code
-// loads on the first click (it is not needed to edit or read a brew).
+// brew as a PDF. The browser builds the self-contained HTML export; the API renders it. Anyone can
+// use it, signed in or not (share pages are read without an account). The export code loads on
+// the first click (it is not needed to edit or read a brew).
 import type { Editor } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
-import { requestSignIn } from '@/api/events';
-import { ApiError } from '@/api/errors';
 import type { ThemeChain } from '@/editor/canvas/themeLoader';
 import { IconButton, toast } from '@/ui';
 import type { ExportSource } from './exportHtml';
@@ -20,15 +18,13 @@ export interface DownloadPdfButtonProps {
   userCss: string;
   lang: string;
   title: string;
-  /** false: a click asks the reader to sign in. */
-  signedIn: boolean;
   /** Replaces exportBrewPdf (tests). */
   exportBrew?: (source: ExportSource, options: PdfExportOptions) => Promise<PdfExportResult>;
   /** Replaces downloadFile (tests). */
   download?: (file: Blob, filename: string) => void;
 }
 
-export function DownloadPdfButton({ editor, chain, userCss, lang, title, signedIn, exportBrew, download }: DownloadPdfButtonProps) {
+export function DownloadPdfButton({ editor, chain, userCss, lang, title, exportBrew, download }: DownloadPdfButtonProps) {
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -37,10 +33,6 @@ export function DownloadPdfButton({ editor, chain, userCss, lang, title, signedI
 
   const run = async () => {
     if (!editor || editor.isDestroyed || !chain || busy) return;
-    if (!signedIn) {
-      requestSignIn();
-      return;
-    }
     const controller = new AbortController();
     abortRef.current = controller;
     setBusy(true);
@@ -53,8 +45,7 @@ export function DownloadPdfButton({ editor, chain, userCss, lang, title, signedI
       toast({ id: EXPORT_TOAST_ID, ...exportSummary(result, files.formatBytes) });
     } catch (error) {
       if (controller.signal.aborted) return;
-      if (error instanceof ApiError && error.status === 401) requestSignIn(error);
-      else toast({ id: EXPORT_TOAST_ID, ...exportFailure(error) });
+      toast({ id: EXPORT_TOAST_ID, ...exportFailure(error) });
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       if (!controller.signal.aborted) setBusy(false);

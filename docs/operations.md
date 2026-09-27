@@ -95,7 +95,7 @@ string separated by commas, semicolons or spaces.
 | `ForwardedHeaders:KnownProxies` (list) | empty = any peer | Addresses of trusted proxies. |
 | `RateLimits:Auth:PermitLimit`, `:Window` | 20 per `00:01:00` (Development 1000) | `/api/auth/*`, per client address. |
 | `RateLimits:Import:PermitLimit`, `:Window` | 10 per `00:01:00` (Development 100) | Upstream brew import, per signed-in user. |
-| `RateLimits:Pdf:PermitLimit`, `:Window` | 10 per `00:01:00` (Development 100) | PDF export, per signed-in user. |
+| `RateLimits:Pdf:PermitLimit`, `:Window` | 10 per `00:01:00` (Development 100) | PDF export, per signed-in user, or per client address when signed out. |
 | `RateLimits:Writes:PermitLimit`, `:Window` | 120 per `00:01:00` (Development 10000) | Every POST/PUT/PATCH/DELETE, per client address. |
 | `Pdf:MaxConcurrentRenders` | `2` | PDF renders at the same time (each is a Chromium page). See [PDF export](#pdf-export). |
 | `Pdf:QueueTimeout` | `00:00:10` | How long a PDF export waits for a free render slot before it gets 503 with `Retry-After`. |
@@ -390,7 +390,7 @@ Fixed windows, kept in memory per app instance (they are not shared between inst
 | --- | --- | --- |
 | `Auth` | 20 per minute per client address | `/api/auth/*` (register, sign in, …) |
 | `Import` | 10 per minute per user | `GET /api/import/homebrewery/{shareId}` |
-| `Pdf` | 10 per minute per user | `POST /api/export/pdf` |
+| `Pdf` | 10 per minute per user (signed out: per client address) | `POST /api/export/pdf` |
 | `Writes` | 120 per minute per client address | every POST, PUT, PATCH and DELETE |
 
 A rejected request gets `429` problem+json with a `Retry-After` header. Configure with
@@ -402,7 +402,7 @@ forwarded headers must be on; otherwise every user shares the proxy's address an
 
 "Download PDF" (editor, share page) and a brew item's PDF download (user page) send the brew's self-contained HTML
 export to `POST /api/export/pdf`. The app renders it with headless Chromium ([Microsoft.Playwright](https://github.com/microsoft/playwright-dotnet),
-Apache-2.0) and answers the PDF. Signed-in users only.
+Apache-2.0) and answers the PDF. No account is needed: signed-out readers of a share page download PDFs too.
 
 - Chromium starts on the first export (about a second), not with the app, and again after a crash. `/healthz` does
   not check it. A missing or broken Chromium logs `PDF export: Chromium could not be started` (Error) and the

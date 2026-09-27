@@ -68,12 +68,10 @@ interface ShareOptions {
   style?: string;
   /** The lazy image answers once it opens. */
   imageGate?: ImageGate;
-  /** The reader is signed in (READER); default: anonymous. */
-  signedIn?: boolean;
 }
 
-/** The share page of a brew. */
-async function openShare(page: Page, { style = '', imageGate, signedIn = false }: ShareOptions = {}): Promise<void> {
+/** The share page of a brew, for a reader who is not signed in. */
+async function openShare(page: Page, { style = '', imageGate }: ShareOptions = {}): Promise<void> {
   await blockOtherSites(page);
   await page.route(
     (url) => url.pathname.startsWith('/share/'),
@@ -88,7 +86,7 @@ async function openShare(page: Page, { style = '', imageGate, signedIn = false }
     async (route) => {
       const { pathname } = new URL(route.request().url());
       const json = (body: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
-      if (pathname === '/api/account/me') return signedIn ? json(READER) : route.fulfill({ status: 204 });
+      if (pathname === '/api/account/me') return route.fulfill({ status: 204 });
       if (pathname === '/api/notifications/active') return json([]);
       if (pathname === `/api/brews/share/${SHARE_ID}`) return json(shareBrew(style));
       return route.fulfill({ status: 404, contentType: 'application/problem+json', body: JSON.stringify({ title: 'Not found', status: 404 }) });
@@ -146,8 +144,8 @@ async function visibleChrome(page: Page): Promise<string[]> {
   });
 }
 
-test('share page: "Download PDF" renders the export of the page and downloads one sheet per page', async ({ page, browser }, testInfo) => {
-  await openShare(page, { signedIn: true });
+test('share page: a reader who is not signed in downloads the PDF, one sheet per page', async ({ page, browser }, testInfo) => {
+  await openShare(page);
   const endpoint = await stubPdfEndpoint(page, browser);
   const button = page.getByTestId('download-pdf');
   await expect(button).toHaveAccessibleName('Download PDF');
@@ -158,6 +156,7 @@ test('share page: "Download PDF" renders the export of the page and downloads on
   const [download] = await Promise.all([page.waitForEvent('download', LOAD_TIMEOUT), button.click()]);
   expect(download.suggestedFilename()).toBe('A Shared Brew.pdf');
   await expect(page.getByText('Downloaded “A Shared Brew.pdf”', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Sign in' })).toHaveCount(0);
   const pages = await page.locator('.hb-canvas .pages > .page').count();
   const sheets = pdfSheets(readFileSync(await download.path()));
   expect(sheets).toHaveLength(pages);
@@ -188,14 +187,6 @@ test('share page: "Download PDF" renders the export of the page and downloads on
   } finally {
     await offline.context.close();
   }
-});
-
-test('share page: a reader who is not signed in is asked to sign in, and nothing is rendered', async ({ page, browser }) => {
-  await openShare(page);
-  const endpoint = await stubPdfEndpoint(page, browser);
-  await page.getByTestId('download-pdf').click();
-  await expect(page.getByRole('dialog', { name: 'Sign in' })).toBeVisible();
-  expect(endpoint.requests).toEqual([]);
 });
 
 test('share page: Print waits for lazy images, then prints only the pages, one per sheet', async ({ page, browserName }) => {
@@ -269,7 +260,7 @@ test("share page: the brew's @page size is honoured when printing", async ({ pag
   }
 });
 
-test('home page: "Download PDF" is in the Brew toolbar, keyboard operable, and axe-clean', async ({ page, browser }) => {
+test('home page (signed in): "Download PDF" is in the Brew toolbar, keyboard operable, and axe-clean', async ({ page, browser }) => {
   await blockOtherSites(page);
   await page.route(
     (url) => url.pathname.startsWith('/api/'),

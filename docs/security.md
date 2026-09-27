@@ -30,7 +30,7 @@ Who attacks, and how:
 | An author of a malicious brew | Brew content that other people view: document JSON (attributes, links, images), raw HTML, user CSS, user themes, metadata in link previews. Targets: viewers of the share page, the vault and co-authors. |
 | Another website | CSRF against the API, clickjacking (framing the editor), reading API responses cross-origin. |
 | An anonymous client | Brute force and enumeration on the auth endpoints, abuse of the import proxy, large or deeply nested requests. |
-| A signed-in user sending HTML to the PDF renderer | Server-side request forgery (the server's network, cloud metadata), attacks on the headless browser, resource exhaustion. See [PDF export](#pdf-export). |
+| Anyone sending HTML to the PDF renderer (no account needed) | Server-side request forgery (the server's network, cloud metadata), attacks on the headless browser, resource exhaustion. See [PDF export](#pdf-export). |
 | A signed-in non-admin | Mass assignment (setting `lock`, `authors`, `published` through a save), admin endpoints, other people's brews. |
 | The network | Session theft over plain HTTP. |
 
@@ -132,9 +132,14 @@ comes from the app with its headers, and in dev mode the pages come from Vite wi
 `POST /api/export/pdf` (issue #2) renders HTML that the client sends, so the HTML is untrusted input to a browser that
 runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
 
-- Access: signed-in users only (the endpoint audit), `RateLimits:Pdf` per user, at most `Pdf:MaxConcurrentRenders`
-  renders at once (others wait `Pdf:QueueTimeout`, then 503), `Pdf:RenderTimeout` per render, a 20 MB body cap after
-  decompression.
+- Access: anyone, signed in or not. Share pages are read without an account, and their readers download PDFs. The
+  endpoint is POST only to carry the HTML and stores nothing, so it is one of `EndpointAuditTests.AnonymousWrites`
+  (which also checks that it is rate limited). SameOriginWriteGuard still requires the site's Origin, so other sites
+  cannot use a visitor's browser to call it, and the response is not readable cross-origin.
+- Limits: `RateLimits:Pdf` per user, or per client address when signed out (behind a proxy this needs correct
+  forwarded headers, R-3), the global write limit per client address, at most `Pdf:MaxConcurrentRenders` renders at
+  once (others wait `Pdf:QueueTimeout`, then 503), `Pdf:RenderTimeout` per render, and a 20 MB body cap after
+  decompression. Many addresses together can still keep the render slots busy for everyone (R-11).
 - No scripts: each render has a fresh browser context with JavaScript disabled (and service workers blocked). The
   exported HTML also carries a CSP without scripts, and the client strips active content, but the server does not
   rely on that.
@@ -182,7 +187,7 @@ runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
 | SR-10 | Secrets | No secrets in `appsettings.json` or the image. The Development connection string (the local compose password) is used only in Development. The image runs as a non-root user, and the Data Protection keys live in a 0700 volume directory. | OK. See R-5. |
 | SR-11 | Dependencies | `npm audit --omit=dev`: 0 vulnerabilities. `dotnet list package --vulnerable --include-transitive`: none (Api, Core, Data, tests). | OK on 2026-09-26. Re-run before releases; Dependabot is configured. |
 | SR-12 | Cookies | HttpOnly, SameSite=Lax, and Secure on HTTPS (`Auth:CookieSecurePolicy`, `Always` possible). Data Protection keys persist, so sign-ins survive restarts. | OK: `AuthCookieTests`, `DataProtectionTests`. See R-4. |
-| SR-13 | Rate limits | Auth 20/min per IP, writes 120/min per IP, import and PDF export 10/min per user. Rejected anonymous writes count too. Identity locks an account out after repeated failed sign-ins. | OK: `RateLimitTests`. See R-3. |
+| SR-13 | Rate limits | Auth 20/min per IP, writes 120/min per IP, import 10/min per user, PDF export 10/min per user or (signed out) per IP. Rejected anonymous writes count too. Identity locks an account out after repeated failed sign-ins. | OK: `RateLimitTests`. See R-3. |
 | SR-14 | Error leakage | problem+json everywhere. Exception details only in Development. `/register` does not reveal existing accounts. | OK: `ProblemDetailsTests`, `RegisterPrivacy`. |
 
 ## Residual risks
@@ -217,6 +222,10 @@ runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
   non-root user.
 - **R-10: Other sites see the server fetch.** Images and fonts that a brew links on other sites are fetched from the
   server's address when someone exports a PDF (as R-2 describes for viewers).
+- **R-11: Anyone can use the PDF renderer.** Without an account, a client can make the server render HTML of its
+  own (not only brews) and fetch up to `Pdf:MaxRemoteFiles` public https files per render, within the per-address
+  rate limit. Clients on many addresses can keep the render slots busy, so exports queue and then get 503. Lower
+  `RateLimits:Pdf` or `Pdf:MaxRemoteFiles`, or put a proxy-level limit in front of `/api/export/pdf`, if that happens.
 
 ## Rules for new code
 
@@ -226,4 +235,5 @@ runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
   (`SecurityHeaders.DocumentPolicy`, its tests and this document).
 - Server-rendered HTML must encode every value (`HtmlEncoder.Default`), as `ShareShell` does.
 - New endpoints: writes need authorization, and admin routes go under `/api/admin` (the endpoint audit test fails
-  otherwise).
+  otherwise). A write that stores nothing may be anonymous only when it is rate limited and listed in
+  `EndpointAuditTests.AnonymousWrites` with its reason (today: `POST /api/export/pdf`).

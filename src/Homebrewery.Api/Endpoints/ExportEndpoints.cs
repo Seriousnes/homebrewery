@@ -26,8 +26,11 @@ public static class ExportEndpoints
     {
         var export = api.MapGroup("/export").WithTags("Export");
 
+        // Anyone may export (share pages are read without an account). It is a POST only to carry the HTML: it stores
+        // nothing, so it is one of EndpointAuditTests' listed anonymous writes. The rate limit is per user, or per
+        // client address for anonymous callers; SameOriginWriteGuard still requires the site's own Origin.
         export.MapPost("/pdf", ExportPdfAsync)
-            .RequireAuthorization()
+            .AllowAnonymous()
             .RequireRateLimiting(RateLimits.Pdf)
             .WithMetadata(new RequestSizeLimit(MaxRequestBytes))
             .WithName("ExportPdf")
@@ -38,10 +41,10 @@ public static class ExportEndpoints
                 "within per-render limits; every other request is blocked. The `" + MissingFilesHeader + "` header " +
                 "counts the files that are not in the PDF. The body may be gzip-compressed and is capped at 20 MB. " +
                 "400 when `html` is empty, 503 (with Retry-After when busy) when the renderer is busy or unavailable, " +
-                "500 when the render fails or times out. Rate limited per user (429).")
+                "500 when the render fails or times out. No account needed; rate limited per user, or per client " +
+                "address when signed out (429).")
             .Produces<Stream>(StatusCodes.Status200OK, "application/pdf")
             .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)

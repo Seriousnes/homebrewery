@@ -535,7 +535,6 @@ export function EditorApp({
               userCss={style}
               lang={lang}
               title={title}
-              signedIn={signedIn}
             />
           }
           propertiesRef={propertiesRef}

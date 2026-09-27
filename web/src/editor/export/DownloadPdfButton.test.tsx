@@ -3,7 +3,6 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/api/errors';
-import { onSignInRequired } from '@/api/events';
 import { clearToasts, toastStore } from '@/ui';
 import { DownloadPdfButton } from './DownloadPdfButton';
 import type { PdfExportOptions, PdfExportResult } from './exportPdf';
@@ -31,11 +30,11 @@ afterEach(() => {
 
 describe('DownloadPdfButton', () => {
   it('waits for the editor and the theme', () => {
-    const { rerender } = render(<DownloadPdfButton editor={null} chain={chain} userCss="" lang="en" title="T" signedIn />);
+    const { rerender } = render(<DownloadPdfButton editor={null} chain={chain} userCss="" lang="en" title="T" />);
     expect(button()).toBeDisabled();
-    rerender(<DownloadPdfButton editor={editor} chain={null} userCss="" lang="en" title="T" signedIn />);
+    rerender(<DownloadPdfButton editor={editor} chain={null} userCss="" lang="en" title="T" />);
     expect(button()).toBeDisabled();
-    rerender(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" signedIn />);
+    rerender(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" />);
     expect(button()).toBeEnabled();
   });
 
@@ -44,7 +43,7 @@ describe('DownloadPdfButton', () => {
     const exportBrew = vi.fn((_source: unknown, _options: PdfExportOptions) => new Promise<PdfExportResult>((resolve) => (finish = resolve)));
     const download = vi.fn();
     const user = userEvent.setup();
-    render(<DownloadPdfButton editor={editor} chain={chain} userCss=".page {}" lang="fr" title="Mon grimoire" signedIn exportBrew={exportBrew} download={download} />);
+    render(<DownloadPdfButton editor={editor} chain={chain} userCss=".page {}" lang="fr" title="Mon grimoire" exportBrew={exportBrew} download={download} />);
     await user.click(button());
     await vi.waitFor(() => expect(exportBrew).toHaveBeenCalledTimes(1));
     expect(exportBrew.mock.calls[0]![0]).toBe(editor);
@@ -63,36 +62,17 @@ describe('DownloadPdfButton', () => {
     expect(toasts()).toEqual([expect.objectContaining({ id: EXPORT_TOAST_ID, tone: 'success', title: 'Downloaded “My brew.pdf”', description: '3 pages, 2 KB.' })]);
   });
 
-  it('asks a reader who is not signed in to sign in, and exports nothing', async () => {
-    const prompts: unknown[] = [];
-    const stop = onSignInRequired((event) => prompts.push(event.error));
-    const exportBrew = vi.fn();
-    const user = userEvent.setup();
-    render(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" signedIn={false} exportBrew={exportBrew} />);
-    await user.click(button());
-    stop();
-    expect(prompts).toEqual([null]);
-    expect(exportBrew).not.toHaveBeenCalled();
-  });
-
-  it('turns a 401 into the sign-in prompt and other failures into an error toast', async () => {
-    const prompts: unknown[] = [];
-    const stop = onSignInRequired((event) => prompts.push(event.error));
-    const expired = new ApiError({ kind: 'http', status: 401, title: 'Unauthorized' });
-    const exportBrew = vi.fn().mockRejectedValueOnce(expired).mockRejectedValueOnce(new Error('The theme could not be loaded.'));
+  it('needs no account and turns failures into an error toast', async () => {
+    const exportBrew = vi.fn().mockRejectedValueOnce(new Error('The theme could not be loaded.'));
     const download = vi.fn();
     const user = userEvent.setup();
-    render(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" signedIn exportBrew={exportBrew} download={download} />);
-
-    await user.click(button());
-    await vi.waitFor(() => expect(prompts).toEqual([expired]));
-    expect(toasts()).toEqual([]);
-    await vi.waitFor(() => expect(button()).toBeEnabled());
+    render(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" exportBrew={exportBrew} download={download} />);
     await user.click(button());
     await vi.waitFor(() => expect(toasts()).toHaveLength(1));
-    stop();
+    expect(exportBrew).toHaveBeenCalledOnce();
     expect(toasts()[0]).toMatchObject({ tone: 'error', title: "Couldn't make the PDF", description: 'The theme could not be loaded.' });
     expect(download).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(button()).toBeEnabled());
   });
 
   it('cancels the export when it goes away', async () => {
@@ -104,7 +84,7 @@ describe('DownloadPdfButton', () => {
     });
     const download = vi.fn();
     const user = userEvent.setup();
-    const { unmount } = render(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" signedIn exportBrew={exportBrew} download={download} />);
+    const { unmount } = render(<DownloadPdfButton editor={editor} chain={chain} userCss="" lang="en" title="T" exportBrew={exportBrew} download={download} />);
     await user.click(button());
     await vi.waitFor(() => expect(signal).toBeDefined());
     unmount();

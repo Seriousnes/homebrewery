@@ -27,7 +27,7 @@ export function exportSummary(
   return { title: `Downloaded “${result.filename}”`, description: parts.join(' '), tone: missing ? 'warning' : 'success' };
 }
 
-/** The toast after a failed export (a 401 asks for sign-in instead). */
+/** The toast after a failed export. */
 export function exportFailure(error: unknown): ExportToast {
   const title = "Couldn't make the PDF";
   if (!(error instanceof ApiError)) return { title, description: error instanceof Error ? error.message : String(error), tone: 'error' };
