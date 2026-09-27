@@ -10,6 +10,7 @@
 //
 // Plain Node (type stripping only): deploy/stack/stack.mjs imports this file too.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -143,7 +144,13 @@ export function dockerSlug(text: string): string {
   return slug || 'detached';
 }
 
-/** The dev stack's compose project: hb-<branch> (hb-<worktree folder> on a detached HEAD). */
+/**
+ * The dev stack's compose project: hb-<branch> when the branch name is already docker-safe, else
+ * hb-<slug>-<hash of the branch> (a lossy slug: feature/foo and feature-foo, or two names cut at 40
+ * characters, must not share a project), and hb-<worktree folder>-<hash of its path> on a detached HEAD.
+ */
 export function stackName(info: WorktreeInfo = worktreeInfo()): string {
-  return `hb-${dockerSlug(info.branch ?? path.basename(info.root))}`;
+  const slug = dockerSlug(info.branch ?? path.basename(info.root));
+  if (info.branch === slug) return `hb-${slug}`;
+  return `hb-${slug}-${createHash('sha256').update(info.branch ?? info.root).digest('hex').slice(0, 8)}`;
 }

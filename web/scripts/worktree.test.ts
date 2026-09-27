@@ -72,6 +72,19 @@ describe('ports, folders and names', () => {
     expect(dockerSlug('///')).toBe('detached');
     expect(dockerSlug('x'.repeat(60))).toHaveLength(40);
     expect(stackName({ root: 'D:/p/homebrewery.pdf-export', commonDir: null, main: false, branch: 'pdf-export', slot: 2 })).toBe('hb-pdf-export');
-    expect(stackName({ root: 'D:/p/homebrewery.x', commonDir: null, main: false, branch: null, slot: 2 })).toBe('hb-homebrewery-x');
+  });
+
+  it('keeps stack names of different branches and detached worktrees apart', () => {
+    const info = (branch: string | null, root = 'D:/p/homebrewery.x') => ({ root, commonDir: null, main: false, branch, slot: 2 });
+    expect(stackName(info('pdf-export'))).toBe('hb-pdf-export');
+    expect(stackName(info('feature/foo'))).toMatch(/^hb-feature-foo-[0-9a-f]{8}$/);
+    expect(stackName(info('feature/foo'))).toBe(stackName(info('feature/foo')));
+    expect(stackName(info('feature/foo'))).not.toBe(stackName(info('feature-foo')));
+    expect(stackName(info('Feature-Foo'))).not.toBe(stackName(info('feature-foo')));
+    const long = 'x'.repeat(40);
+    expect(stackName(info(`${long}-a`))).not.toBe(stackName(info(`${long}-b`)));
+    expect(stackName(info(null, 'D:/a/homebrewery'))).toMatch(/^hb-homebrewery-[0-9a-f]{8}$/);
+    expect(stackName(info(null, 'D:/a/homebrewery'))).not.toBe(stackName(info(null, 'D:/b/homebrewery')));
+    expect(stackName(info(null, 'D:/a/homebrewery'))).not.toBe(stackName(info('homebrewery')));
   });
 });
