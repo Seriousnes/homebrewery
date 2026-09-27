@@ -24,7 +24,9 @@ public static class PdfSetup
                 ConnectCallback = RemoteFileFetcher.ConnectToPublicAddressAsync,
                 UseProxy = false,                                           // a proxy would connect for us, unchecked
                 UseCookies = false,
-                AllowAutoRedirect = true,                                   // each hop connects through the callback
+                // Each hop connects through the callback. SocketsHttpHandler never follows https to http: the
+                // redirect comes back as a 3xx, which the fetcher leaves out.
+                AllowAutoRedirect = true,
                 MaxAutomaticRedirections = 3,
                 AutomaticDecompression = DecompressionMethods.All,          // the size cap counts decompressed bytes
                 ConnectTimeout = TimeSpan.FromSeconds(5),

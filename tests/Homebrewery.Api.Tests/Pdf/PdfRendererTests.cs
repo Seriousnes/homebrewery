@@ -93,6 +93,22 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
     }
 
     [Fact]
+    public async Task Each_render_has_its_own_budget_for_other_sites_bytes()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var fetcher = new FakeFetcher();
+        fetcher.Reset(_ => new RemoteFile(Png, "image/png"));
+        await using var renderer = fixture.Create(fetcher, new PdfOptions { MaxRemoteBytes = Png.Length });
+
+        var two = await renderer.RenderAsync(Html(
+            "<div class=\"page\"><img src=\"https://images.example/a.png\"><img src=\"https://images.example/b.png\"></div>"), ct);
+        var one = await renderer.RenderAsync(Html("<div class=\"page\"><img src=\"https://images.example/c.png\"></div>"), ct);
+
+        Assert.Equal((1, 1), (two.RemoteFiles, two.MissingFiles));   // the budget holds one of the two
+        Assert.Equal((1, 0), (one.RemoteFiles, one.MissingFiles));   // and the next render starts with a full one
+    }
+
+    [Fact]
     public async Task No_request_reaches_the_network_on_its_own()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -180,10 +196,12 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
             _respond = respond;
         }
 
-        public Task<RemoteFile?> FetchAsync(Uri uri, string? userAgent, CancellationToken ct)
+        /// <summary>Takes a file's bytes from the budget like <see cref="RemoteFileFetcher"/>; null when it does not fit.</summary>
+        public async Task<RemoteFile?> FetchAsync(Uri uri, string? userAgent, RemoteByteBudget budget, CancellationToken ct)
         {
             Requested.Enqueue(uri.AbsoluteUri);
-            return _respond(uri, ct);
+            var file = await _respond(uri, ct);
+            return file is not null && budget.TryTake(file.Body.Length) ? file : null;
         }
     }
 }

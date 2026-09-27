@@ -156,8 +156,8 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
             }
 
             request.Headers.TryGetValue("user-agent", out var userAgent);
-            var file = await fetcher.FetchAsync(uri, userAgent, ct);
-            if (file is null || !render.TakeBytes(file.Body.Length))
+            var file = await fetcher.FetchAsync(uri, userAgent, render.Bytes, ct);
+            if (file is null)
             {
                 render.CountMissing();
                 await route.AbortAsync("failed");
@@ -248,11 +248,11 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
     {
         private int _documentTaken;
         private int _slots;
-        private long _bytes;
         private int _fetched;
         private int _missing;
 
         public string Html { get; } = html;
+        public RemoteByteBudget Bytes { get; } = new(settings.MaxRemoteBytes);
         public int Fetched => Volatile.Read(ref _fetched);
         public int Missing => Volatile.Read(ref _missing);
 
@@ -260,8 +260,6 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
         public bool TakeDocument() => Interlocked.Exchange(ref _documentTaken, 1) == 0;
 
         public bool TakeFileSlot() => Interlocked.Increment(ref _slots) <= settings.MaxRemoteFiles;
-
-        public bool TakeBytes(long bytes) => Interlocked.Add(ref _bytes, bytes) <= settings.MaxRemoteBytes;
 
         public void CountFetched() => Interlocked.Increment(ref _fetched);
 
