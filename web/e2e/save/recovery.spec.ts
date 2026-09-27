@@ -104,7 +104,7 @@ test('leaving a conflict through an in-app link asks first, and the changes come
   expect(storedText(server, brew)).toContain('Base theirs');
 });
 
-test('a browser that refuses IndexedDB keeps /new in memory across in-app navigation, and says so (SAVE-11)', async ({ page, context }) => {
+test('a browser that refuses IndexedDB keeps a signed-out brew in memory across in-app navigation, and says so (SAVE-11, issue #4)', async ({ page, context }) => {
   const server = await installFakeServer(context);
   server.signedIn = false;
   // Firefox with site data blocked: indexedDB.open throws.
@@ -117,14 +117,16 @@ test('a browser that refuses IndexedDB keeps /new in memory across in-app naviga
     });
   });
   await openEditorPage(page, '/new');
-  await expect(page.getByTestId('drafts-not-kept')).toBeVisible();
   await typeAt(page, 'Kept for this visit');
+  // A local brew (signed out): stored in the page's memory, and the status says it isn't kept.
+  await expect(page).toHaveURL(/\/local\/[\w-]+$/, SAVE_TIMEOUT);
+  await expect(page.getByTestId('save-status-label')).toHaveText('Not kept', SAVE_TIMEOUT);
   await page.getByRole('link', { name: 'Create an account' }).click();
   await expect(page).toHaveURL(/\/register/, PAGE_READY);
   await page.goBack();
   await waitForEditor(page);
   expect(await editorTexts(page)).toEqual(['Kept for this visit']);
-  await expect(page.getByTestId('drafts-not-kept')).toBeVisible();
+  await expect(page.getByTestId('save-status-label')).toHaveText('Not kept');
   // Nobody is signed in: nothing was sent (APP-9).
   expect(server.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
 });

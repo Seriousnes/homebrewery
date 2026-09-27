@@ -97,7 +97,7 @@ export function exportDocument(source: ExportSource): PMNode {
 }
 
 /** A file name for `title`: characters that file systems reject replaced, at most 100 characters. */
-export function exportFileName(title: string | undefined): string {
+export function exportFileName(title: string | undefined, extension: 'html' | 'pdf' = 'html'): string {
   const base = (title ?? '')
     .normalize('NFC')
     // eslint-disable-next-line no-control-regex -- control characters are not allowed in file names
@@ -107,7 +107,7 @@ export function exportFileName(title: string | undefined): string {
     .slice(0, 100)
     .replace(/[\s.]+$/, '')
     .replace(/^[\s.]+/, '');
-  return `${base || 'brew'}.html`;
+  return `${base || 'brew'}.${extension}`;
 }
 
 /**

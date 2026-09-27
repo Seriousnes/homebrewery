@@ -27,16 +27,19 @@ function page(load: () => Promise<{ default: ComponentType }>): RouteObject['laz
  */
 export const pageRoutes: RouteObject[] = [
   { index: true, lazy: page(() => import('@/pages/home')) },
-  // /new and /edit/:editId: one editor route (a pathless layout), so a new brew's first save can
-  // move the URL to /edit/:editId without remounting the editor (web/src/pages/edit).
+  // /new, /edit/:editId and /local/:localId: one editor route (a pathless layout), so a new brew's
+  // first save can move the URL to /edit/:editId (or /local/:localId, signed out) without
+  // remounting the editor (web/src/pages/edit).
   {
     id: 'editor',
     lazy: page(() => import('@/pages/edit')),
     children: [
       { path: 'new', element: null },
       { path: 'edit/:editId', element: null },
+      { path: 'local/:localId', element: null },
     ],
   },
+  { path: 'local', lazy: page(() => import('@/pages/local')) },
   { path: 'share/:shareId', lazy: page(() => import('@/pages/share')) },
   { path: 'user/:handle', lazy: page(() => import('@/pages/user')) },
   { path: 'vault', lazy: page(() => import('@/pages/vault')) },

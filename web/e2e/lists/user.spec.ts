@@ -1,6 +1,7 @@
 // /user/:handle against a real API (plan §9, P7.3): what visitors and the owner see, upstream's
 // client-side sort and filter (in the URL), and the brew actions (share link, edit, clone,
-// download, delete / remove / decline). Run with node e2e/lists/run-lists.mjs.
+// download as PDF, delete / remove / decline). Run with node e2e/lists/run-lists.mjs. The PDF is
+// rendered by the API's Chromium (the Microsoft.Playwright build; docs/testing.md).
 import { readFile } from 'node:fs/promises';
 import {
   addViews,
@@ -80,9 +81,9 @@ test('a visitor sees the published brews; sort, filter and tags follow the URL a
   expect(await axeViolations(page)).toEqual([]);
 });
 
-test('the owner sees every group; Edit links; Download gives the JSON file; Delete removes the brew', async ({ account, page, browserName, baseURL }) => {
+test('the owner sees every group; Edit links; Delete removes the brew', async ({ account, page, baseURL }) => {
   const [alice, bob] = await Promise.all([account({ browser: true }), account()]);
-  const [own, notes] = await Promise.all([
+  const [own] = await Promise.all([
     createBrew(alice.request, baseURL!, { title: 'Mine to delete' }),
     createBrew(alice.request, baseURL!, { title: 'Unpublished notes', published: false, pages: 2 }),
   ]);
@@ -92,9 +93,6 @@ test('the owner sees every group; Edit links; Download gives the JSON file; Dele
   ]);
   await saveAs(alice.request, baseURL!, shared.editId); // alice accepts: invited → author
 
-  // A real download in Chromium; in Firefox the app's download is recorded, not started (see captureDownloads).
-  const realDownload = browserName === 'chromium';
-  await captureDownloads(page, { blockDownloads: !realDownload });
   await page.goto(`/user/${alice.handle}`, DOM_READY);
   await expect(page.getByRole('heading', { level: 1, name: 'Your brews' })).toBeVisible(LOAD_TIMEOUT);
   expect(await groupTitles(page, 'published')).toEqual(['Mine to delete', 'Shared campaign']);
@@ -103,24 +101,6 @@ test('the owner sees every group; Edit links; Download gives the JSON file; Dele
   await expect(page.getByRole('link', { name: 'Edit Mine to delete' })).toHaveAttribute('href', `/edit/${own.editId}`);
   await expect(brewItem(page, 'Shared campaign').getByRole('link', { name: bob.handle })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
-
-  // Download: the stored brew as JSON (no view counted: the editor endpoint).
-  const downloadButton = page.getByRole('button', { name: 'Download Unpublished notes' });
-  let text: string | undefined;
-  if (realDownload) {
-    const [download] = await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
-    expect(download.suggestedFilename()).toBe('Unpublished notes.json');
-    text = await readFile(await download.path(), 'utf8');
-    expect((await capturedBlobs(page))[0]).toBe(text);
-  } else {
-    await downloadButton.click();
-    expect(await blockedDownloads(page)).toEqual(['Unpublished notes.json']);
-    text = (await capturedBlobs(page))[0];
-  }
-  const file = JSON.parse(text!) as { format: string; shareId: string; doc: { content: unknown[] } };
-  expect(file.format).toBe('homebrewery-brew');
-  expect(file.shareId).toBe(notes.shareId);
-  expect(file.doc.content).toHaveLength(2);
 
   // Delete (the only author): gone for good; focus moves to the next brew.
   await page.getByRole('button', { name: 'Delete Mine to delete' }).click();
@@ -132,6 +112,33 @@ test('the owner sees every group; Edit links; Download gives the JSON file; Dele
   await expect(page.getByRole('link', { name: 'Shared campaign', exact: true })).toBeFocused();
   await expect(page.getByRole('region', { name: 'Notifications' })).toContainText('“Mine to delete” was deleted.');
   expect(await authorsOf(alice.request, own.editId)).toBeNull();
+});
+
+test('Download gives the stored brew as a PDF, one sheet per page', async ({ account, page, browserName, baseURL }) => {
+  const alice = await account({ browser: true });
+  await createBrew(alice.request, baseURL!, { title: 'Unpublished notes', published: false, pages: 2 });
+
+  // A real download in Chromium; in Firefox the app's download is recorded, not started (see captureDownloads).
+  const realDownload = browserName === 'chromium';
+  await captureDownloads(page, { blockDownloads: !realDownload });
+  await page.goto(`/user/${alice.handle}`, DOM_READY);
+  const downloadButton = page.getByRole('button', { name: 'Download Unpublished notes as PDF' });
+  await expect(downloadButton).toBeVisible(LOAD_TIMEOUT);
+
+  // The browser exports the stored brew (no view counted: the editor endpoint), the API renders it.
+  let pdf: string;
+  if (realDownload) {
+    const [download] = await Promise.all([page.waitForEvent('download', LOAD_TIMEOUT), downloadButton.click()]);
+    expect(download.suggestedFilename()).toBe('Unpublished notes.pdf');
+    pdf = await readFile(await download.path(), 'latin1');
+  } else {
+    await downloadButton.click();
+    expect(await blockedDownloads(page, 1, LOAD_TIMEOUT)).toEqual(['Unpublished notes.pdf']);
+    pdf = (await capturedBlobs(page, 1, LOAD_TIMEOUT))[0]!;
+  }
+  expect(pdf.startsWith('%PDF-')).toBe(true);
+  expect(pdf.match(/\/Type\s*\/Page(?![a-zA-Z])/g)).toHaveLength(2);
+  await expect(page.getByRole('region', { name: 'Notifications' })).toContainText('Downloaded “Unpublished notes.pdf”');
 });
 
 test('Remove leaves a co-authored brew to its other author; Decline drops an invitation', async ({ account, page, baseURL }) => {

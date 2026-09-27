@@ -11,6 +11,7 @@ import { type BrewSummary, normalizeHandle, queryKeys, type UserBrewList, useMe,
 import { PageLoading } from '@/app/PageLoading';
 import { paths } from '@/app/paths';
 import { SitePage } from '@/app/SitePage';
+import { defaultLocalBrews, onLocalBrewsChanged } from '@/editor/local/localBrews';
 import { ErrorPage } from '@/pages/errors';
 import { BrewItem } from '@/ported/brewItem/BrewItem';
 import { useBrewActions } from '@/ported/brewItem/useBrewActions';
@@ -90,6 +91,7 @@ function UserBrewsList({ list, signedIn }: { list: UserBrewList; signedIn: boole
 
   return (
     <SitePage title={title} width="wide" lead={list.own ? 'Other people see your published brews here. Unpublished brews and invitations are visible only to you.' : undefined} data-testid="user-page">
+      {list.own ? <LocalBrewsNote /> : null}
       <div ref={listRef}>
         <ListPage
           groups={groups}
@@ -145,4 +147,24 @@ function focusNeighbour(root: HTMLElement | null, brew: BrewSummary): (() => voi
       root.querySelector<HTMLElement>('[data-group-toggle]');
     target?.focus();
   };
+}
+
+/** The owner's brews still in this browser only (issue #4): a link to upload them. */
+function LocalBrewsNote() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const read = () =>
+      void defaultLocalBrews()
+        .count()
+        .then(setCount, () => setCount(0));
+    read();
+    return onLocalBrewsChanged(read);
+  }, []);
+  if (count === 0) return null;
+  return (
+    <p className={styles.localNote} data-testid="user-local-brews">
+      {count === 1 ? '1 brew is' : `${formatCount(count)} brews are`} only on this device, not in your account.{' '}
+      <Link to={paths.local}>Review and upload</Link>
+    </p>
+  );
 }

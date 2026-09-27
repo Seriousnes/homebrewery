@@ -132,27 +132,18 @@ test('a Homebrewery share link downloads through the proxy and creates a brew', 
   expect(await editorTexts(page)).toEqual(['Linked Lair', 'Downloaded from upstream.']);
 });
 
-test('anonymous: "Create" asks to sign in, then creates the brew', async ({ page, baseURL, request }) => {
-  const email = await registerOnly(request, baseURL!, uniqueEmail('import-anon'));
+test('anonymous: "Create" keeps the brew on this device (issue #4), with nothing sent', async ({ page }) => {
   const creates = recordCreates(page);
   await openImport(page);
-  await pasteAndPreview(page, simpleBrew('Signed-in Later'));
+  await pasteAndPreview(page, simpleBrew('Kept Locally'));
   await waitForReport(page);
-  await expect(page.getByTestId('import-sign-in-note')).toBeVisible();
-  await page.getByRole('button', { name: 'Sign in and create the brew' }).click();
-
-  const dialog = page.getByTestId('sign-in-prompt');
-  await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Email').fill(email);
-  await dialog.getByLabel('Password').fill(PASSWORD);
-  await dialog.getByRole('button', { name: 'Sign in' }).click();
-  // Signed in, the create the dialog interrupted goes on by itself.
-  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, LOAD_TIMEOUT);
+  await expect(page.getByTestId('import-sign-in-note')).toContainText('the brew is kept in this browser');
+  await page.getByRole('button', { name: 'Create brew on this device' }).click();
+  await expect(page).toHaveURL(/\/local\/[\w-]+$/, LOAD_TIMEOUT);
   await waitForEditor(page);
-  expect(creates).toHaveLength(1);
-  const brew = await storedBrew(page);
-  expect(brew.sourceMarkdown).toBe(simpleBrew('Signed-in Later'));
-  expect(await editorTexts(page)).toEqual(['Signed-in Later', 'Imported words.']);
+  expect(await editorTexts(page)).toEqual(['Kept Locally', 'Imported words.']);
+  await expect(page.getByTestId('save-status-label')).toHaveText('Saved on this device');
+  expect(creates).toHaveLength(0);
 });
 
 test('anonymous: the pasted text and its preview survive a trip to the sign-in page', async ({ page, baseURL, request }) => {

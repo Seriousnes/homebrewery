@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +22,8 @@ namespace Homebrewery.Api.Tests.Security;
 
 /// <summary>
 /// P8.3 review of plan §14 ("upstream behaviour to drop") against the endpoint table itself, so routes added later are
-/// checked too: every admin route needs the Admin role, every write outside the Identity endpoints needs a signed-in
-/// user, there is no broadcast stream, a fresh install has no default admin, and the session never reaches scripts.
+/// checked too: every admin route needs the Admin role, every write outside the Identity endpoints and the listed
+/// anonymous writes needs a signed-in user, there is no broadcast stream, a fresh install has no default admin, and the session never reaches scripts.
 /// </summary>
 [Collection(ApiCollection.Name)]
 public sealed class EndpointAuditTests(ApiFixture api)
@@ -44,14 +45,24 @@ public sealed class EndpointAuditTests(ApiFixture api)
         });
     }
 
+    /// <summary>
+    /// POSTs that anyone may call. They change nothing on the server (POST only carries a large body), are rate limited,
+    /// and SameOriginWriteGuard still requires the site's Origin. Adding one is a security decision: docs/security.md.
+    /// </summary>
+    private static readonly HashSet<string> AnonymousWrites = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "POST /api/export/pdf",     // the PDF of a brew's HTML export; share pages are read without an account
+    };
+
     // §14: writes must be tied to an account (CSRF and authz rest on it). The Identity endpoints (register, login,
-    // password reset, ...) are the only anonymous writes.
+    // password reset, ...) and AnonymousWrites are the only anonymous writes.
     [Fact]
     public void Every_write_outside_the_identity_endpoints_requires_a_signed_in_user()
     {
         var writes = Endpoints
             .Where(e => e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Any(RateLimits.IsWrite) == true)
             .Where(e => !Pattern(e).StartsWith("/api/auth/", StringComparison.OrdinalIgnoreCase))
+            .Where(e => !AnonymousWrites.Contains(Describe(e)))
             .ToList();
 
         Assert.NotEmpty(writes);
@@ -59,6 +70,19 @@ public sealed class EndpointAuditTests(ApiFixture api)
         {
             Assert.True(e.Metadata.GetOrderedMetadata<IAuthorizeData>().Count > 0, $"{Describe(e)} does not require authorization.");
             Assert.Null(e.Metadata.GetMetadata<IAllowAnonymous>());
+        });
+    }
+
+    [Fact]
+    public void The_listed_anonymous_writes_exist_allow_anonymous_callers_and_are_rate_limited()
+    {
+        var byName = Endpoints.ToLookup(Describe, StringComparer.OrdinalIgnoreCase);
+
+        Assert.All(AnonymousWrites, name =>
+        {
+            var endpoint = Assert.Single(byName[name]);
+            Assert.NotNull(endpoint.Metadata.GetMetadata<IAllowAnonymous>());
+            Assert.NotNull(endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>());
         });
     }
 

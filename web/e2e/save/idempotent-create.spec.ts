@@ -188,7 +188,7 @@ test("a signed-in user's leftover /new draft is not offered to another user, and
   expect((await bobPage.request.post('/api/account/logout', origin)).ok()).toBe(true);
   await openEditorPage(bobPage, '/new');
   expect(await editorTexts(bobPage)).toEqual(['']);
-  await expect(bobPage.getByTestId('new-sign-in-notice')).toBeVisible();
+  await expect(bobPage.getByTestId('local-notice')).toBeVisible();
   await expect(bobPage.getByTestId('new-draft-notice')).toHaveCount(0);
   await bobPage.close();
 
