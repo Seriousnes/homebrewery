@@ -28,7 +28,7 @@ export function NewBrewNavItem() {
         <li>
           <Link className={styles.panelLink} to={paths.local} data-testid="nav-local-brews">
             Brews on this device
-            <span className={styles.panelHint}>Brews made in this browser, to open, download or upload to your account.</span>
+            <span className={styles.panelHint}>Open, download or upload brews kept in this browser.</span>
           </Link>
         </li>
       </ul>

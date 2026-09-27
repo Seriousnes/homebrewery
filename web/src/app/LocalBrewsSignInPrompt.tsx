@@ -45,7 +45,18 @@ export function LocalBrewsSignInPrompt() {
   const uploadAll = async () => {
     setUploading(true);
     try {
-      const ids = (await defaultLocalBrews().list()).map((b) => b.id);
+      let ids: string[];
+      try {
+        ids = (await defaultLocalBrews().list()).map((b) => b.id);
+      } catch (error) {
+        // The brews stay where they are; the dialog stays open to try again.
+        toast({
+          title: 'Couldn’t read the brews on this device',
+          description: `${error instanceof Error ? error.message : String(error)} Nothing was uploaded; try again.`,
+          tone: 'error',
+        });
+        return;
+      }
       const result = await uploadLocalBrews(ids);
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       setOpen(false);

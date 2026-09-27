@@ -33,6 +33,8 @@ test.describe('navbar', () => {
     await expect(panel.getByRole('link', { name: /^New brew/ })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(panel.getByRole('link', { name: /^Import a brew/ })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(panel.getByRole('link', { name: /^Brews on this device/ })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
     await expect(newTrigger).toBeFocused();
@@ -40,6 +42,8 @@ test.describe('navbar', () => {
     // Tab out of an open panel continues with the next nav item.
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('group', { name: 'New brew' })).toBeVisible();
+    // Through its three links, then out.
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('group', { name: 'New brew' })).toBeHidden();

@@ -2848,13 +2848,13 @@ PAGES AND ROUTES
 - NewBrewSession (/new):
   - Every visit runs the migration first.
   - Signed out: a migrated draft is opened at /local/:id. Otherwise `LocalBrewEditor brew={null}`.
-  - Signing in before anything is stored reloads the page as a signed-in /new.
+  - Signing in before anything is typed reloads the page as a signed-in /new. Once the author has typed (EditorAppLocalBrew `onEdited`, from the local save leaving 'idle'), the page stays local even if the first write hasn't landed yet (review fix).
   - Signed in: as before (the 'new' draft, SAVE-8, SAVE-12), except a loaded draft is always saved on its next edit (`saveOnLoad` is gone). A migrated draft gets an info toast with "Open".
 - /local, "Brews on this device" (web/src/pages/local/index.tsx, `local-brews-page`):
   - The list: `local-brew-item` rows (data-local-id) with a title link, "N pages · edited <relative>", PDF (exportStoredBrewPdf from the stored brew), Upload (signed in; `local-brew-upload`) and Delete (confirm; `local-brew-delete`).
   - "Upload all to my account" (`local-upload-all`), the empty state (`local-empty`), the not-kept warning (`local-not-kept`), and a sign-in hint when signed out (`local-page-sign-in`).
   - It refreshes on library changes, window focus and visibility.
-- `LocalBrewsSignInPrompt` (in AppShell): `me` going from null to a user in this tab, with local brews present, opens the dialog "You have N brews on this device" (`local-brews-prompt`). Its buttons are Later, Review (/local) and Upload all (`uploadLocalBrews`, then a summary toast). A page loaded while already signed in is not asked.
+- `LocalBrewsSignInPrompt` (in AppShell): `me` going from null to a user in this tab, with local brews present, opens the dialog "You have N brews on this device" (`local-brews-prompt`). Its buttons are Later, Review (/local) and Upload all (`uploadLocalBrews`, then a summary toast). If the library can't be read, a toast says so and the dialog stays open. A page loaded while already signed in is not asked.
 - Import page: signed out, "Create brew on this device" saves a local brew (doc, style, snippets, cleaned metadata, sourceMarkdown) and opens /local/:id. The upstream-link download still needs sign-in.
 - Navbar New panel: "Brews on this device" (`nav-local-brews`). User page (own list): `user-local-brews` note "N brews are only on this device" with a link.
 - `exportStoredBrewPdf(brew: StoredBrew)`: `StoredBrew` is `{ doc, docSchemaVersion, style, meta: { title, lang, theme } }`, so both BrewForEdit and LocalBrew fit.
@@ -2862,7 +2862,7 @@ PAGES AND ROUTES
 UPLOAD (web/src/editor/local/upload.ts)
 - `uploadRequest(brew)`: POST /api/brews body with doc, docSchemaVersion, style, snippets, meta (published: false), and sourceMarkdown when present.
 - `uploadKey(brew)` is `local-brew-<id>-<updatedAt base36>`. A retry of the same content gets the brew the first request created (SAVE-8 idempotency). An edit since then gets a new key, because the API answers 422 to a reused key with another body.
-- `uploadLocalBrew(id, { library?, client?, signal? })` removes the local copy after the create. `uploadLocalBrews(ids, options)` uploads one at a time and returns `{ uploaded, failed }`. `uploadProblem(error)` gives the message.
+- `uploadLocalBrew(id, { library?, client?, signal? })` removes the local copy after the create. An editor that has the brew open in this tab (`registerActiveLocalEditor` in activeEditors.ts; EditorApp registers a stored local brew) gets `prepareUpload()` first: it stores pending changes, stops writing and turns read-only. Resolving false aborts the upload. Afterwards the editor gets `uploaded(created)` (EditorAppLocalBrew `onUploaded`: LocalBrewEditor opens /edit/:editId) or `uploadFailed()` (writes and edits again). This covers the editor's Upload, the sign-in prompt's Upload all and /local (review fix: Upload all over an open editor with unsaved changes). Other tabs are not coordinated. `uploadLocalBrews(ids, options)` uploads one at a time and returns `{ uploaded, failed }`. `uploadProblem(error)` gives the message.
 - Icons: `upload`, `device` (ui/iconPaths.ts).
 
 TESTS

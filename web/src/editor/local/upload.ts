@@ -5,6 +5,7 @@
 // answers 422 to a reused key with another body, so an edit since then needs a key of its own).
 // The local copy is removed once the cloud has it.
 import { ApiError, type ApiClient, type BrewForEdit, createBrew, type CreateBrewRequest, describeApiError } from '@/api';
+import { activeLocalEditor } from './activeEditors';
 import { defaultLocalBrews, type LocalBrew, type LocalBrewLibrary } from './localBrews';
 
 /** The Idempotency-Key of a local brew's upload (at most 128 characters: the API's limit). */
@@ -30,15 +31,25 @@ export interface UploadOptions {
 }
 
 /**
- * Uploads local brew `id` and removes it from this device. Returns the created brew. Throws an Error
- * when the brew is gone (another tab uploaded or deleted it), or the API error.
+ * Uploads local brew `id` and removes it from this device. Returns the created brew. An editor that
+ * has the brew open in this tab stores its changes and stops writing first (activeEditors.ts), and
+ * is told the outcome. Throws an Error when the brew is gone (another tab uploaded or deleted it) or
+ * the open editor couldn't store it, or the API error.
  */
 export async function uploadLocalBrew(id: string, { library = defaultLocalBrews(), client, signal }: UploadOptions = {}): Promise<BrewForEdit> {
-  const brew = await library.get(id);
-  if (!brew) throw new Error('This brew is no longer on this device.');
-  const created = await createBrew(uploadRequest(brew), { client, signal, idempotencyKey: uploadKey(brew) });
-  await library.remove(id);
-  return created;
+  const editor = activeLocalEditor(id);
+  if (editor && !(await editor.prepareUpload())) throw new Error('The open brew couldn’t be saved on this device first. Try again.');
+  try {
+    const brew = await library.get(id);
+    if (!brew) throw new Error('This brew is no longer on this device.');
+    const created = await createBrew(uploadRequest(brew), { client, signal, idempotencyKey: uploadKey(brew) });
+    await library.remove(id);
+    editor?.uploaded(created);
+    return created;
+  } catch (error) {
+    editor?.uploadFailed();
+    throw error;
+  }
 }
 
 export interface UploadAllResult {

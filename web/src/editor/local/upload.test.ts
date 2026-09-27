@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/api/errors';
 import { jsonResponse, mockApi, problemResponse } from '@/api/testing';
 import { memoryStore } from '../save/kvStore';
+import { registerActiveLocalEditor } from './activeEditors';
 import { createLocalBrewLibrary, LOCAL_BREW_FORMAT, type LocalBrew, type LocalBrewSummary, localMeta } from './localBrews';
 import { uploadKey, uploadLocalBrew, uploadLocalBrews, uploadProblem } from './upload';
 
@@ -66,6 +67,43 @@ describe('uploadLocalBrew', () => {
     expect(uploadKey(brew('a'))).toBe(uploadKey(brew('a')));
     expect(uploadKey({ id: 'a', updatedAt: 2 })).not.toBe(uploadKey({ id: 'a', updatedAt: 3 }));
     expect(uploadKey({ id: 'x'.repeat(64), updatedAt: Date.now() }).length).toBeLessThanOrEqual(128);
+  });
+});
+
+describe('an editor that has the brew open', () => {
+  it('stores its changes and stops before the upload, then is told the outcome', async () => {
+    mockApi(() => jsonResponse(created('e1'), 201));
+    const library = await libraryWith(brew('a'));
+    const order: string[] = [];
+    const stop = registerActiveLocalEditor('a', {
+      prepareUpload: async () => {
+        order.push('prepare');
+        await library.save(brew('a', { style: '.page { color: blue; }' })); // what the editor still had
+        return true;
+      },
+      uploaded: (b) => order.push(`uploaded ${b.editId}`),
+      uploadFailed: () => order.push('failed'),
+    });
+    const api = mockApi(() => jsonResponse(created('e1'), 201));
+    await uploadLocalBrew('a', { library });
+    stop();
+    expect(order).toEqual(['prepare', 'uploaded e1']);
+    expect(api.last().json).toMatchObject({ style: '.page { color: blue; }' });
+  });
+
+  it('does not upload when the editor could not store its changes, and hears about a failed upload', async () => {
+    const api = mockApi(() => problemResponse(500, { title: 'Server error' }));
+    const library = await libraryWith(brew('a'));
+    const failed = vi.fn();
+    let ready = false;
+    const stop = registerActiveLocalEditor('a', { prepareUpload: () => Promise.resolve(ready), uploaded: vi.fn(), uploadFailed: failed });
+    await expect(uploadLocalBrew('a', { library })).rejects.toThrow('couldn’t be saved on this device first');
+    expect(api.requests).toHaveLength(0);
+    ready = true;
+    await expect(uploadLocalBrew('a', { library })).rejects.toBeInstanceOf(ApiError);
+    stop();
+    expect(failed).toHaveBeenCalledOnce();
+    expect(await library.get('a')).not.toBeNull();
   });
 });
 

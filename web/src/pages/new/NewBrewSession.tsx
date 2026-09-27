@@ -61,7 +61,8 @@ export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
   const location = useLocation();
   const [discardedAt] = useState(() => draftDiscardedAt(location.state));
   const [loaded, setLoaded] = useState<LoadedDraft | LoadedLocal | null>(null);
-  // A signed-out brew was stored (the URL moves to /local/:localId): this session stays local.
+  // The signed-out brew was edited (it is stored a moment later, then the URL moves to
+  // /local/:localId): this session stays local even if the user signs in meanwhile.
   const storedLocal = useRef(false);
   const [waiting, setWaiting] = useState(false);
   // Bumped to load the page again (signed in on a signed-out /new before typing).
@@ -147,6 +148,9 @@ export function NewBrewSession({ sessionKey, adopt }: NewBrewSessionProps) {
     return (
       <LocalBrewEditor
         brew={null}
+        onEdited={() => {
+          storedLocal.current = true;
+        }}
         onStored={(localId) => {
           storedLocal.current = true;
           adopt(sessionKey, localSessionId(localId));

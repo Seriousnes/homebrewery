@@ -37,6 +37,7 @@ import { registerBeforeSignOut } from '@/app/signOutHooks';
 import { type PanelId, useUiStore } from '@/app/uiStore';
 import { usePageTitle } from '@/app/usePageTitle';
 import { createCanvasGate } from '@/editor/canvas/canvasState';
+import { registerActiveLocalEditor } from '@/editor/local/activeEditors';
 import { localMeta } from '@/editor/local/localBrews';
 import { LocalSaveStatus } from '@/editor/local/LocalSaveStatus';
 import { useLocalSave } from '@/editor/local/useLocalSave';
@@ -94,8 +95,15 @@ export interface EditorAppLocalBrew {
   sourceMarkdown?: string | null;
   /** A new brew was stored under `id`. */
   onCreated?: (id: string) => void;
-  /** "Upload" (signed in): everything is stored first, then this uploads brew `id`. */
+  /** The author changed the brew (before its first write stores it). */
+  onEdited?: () => void;
+  /**
+   * "Upload" (signed in): uploads brew `id` (uploadLocalBrew, which first lets this editor store its
+   * changes and stop writing; see editor/local/activeEditors.ts).
+   */
   onUpload?: (id: string) => Promise<void>;
+  /** The brew was uploaded (from here, the sign-in prompt or Brews on this device): open the cloud brew. */
+  onUploaded?: (created: BrewForEdit) => void;
 }
 
 export interface EditorAppProps {
@@ -354,24 +362,45 @@ export function EditorApp({
   const [uploading, setUploading] = useState(false);
   const onUpload = local?.onUpload;
   const uploadLocal = async () => {
-    if (!onUpload || uploading) return;
-    setUploading(true);
+    if (!onUpload || uploading || !localSave.localId) return;
     try {
-      // Everything typed so far goes up: store it first, then freeze the brew while it uploads.
-      if (!(await localSave.saveNow()) || !localSave.localId) return;
-      localSave.stop();
-      editor?.setEditable(false);
-      try {
-        await onUpload(localSave.localId);
-      } catch {
-        // The page reported it; the brew stays local and editable.
-        localSave.resume();
-        if (editor && !editor.isDestroyed) editor.setEditable(true);
-      }
-    } finally {
-      setUploading(false);
+      await onUpload(localSave.localId);
+    } catch {
+      // The page reported it; the brew stays local and editable (uploadFailed below).
     }
   };
+  // An upload of this brew, from anywhere in this tab, first stores what the editor has and
+  // freezes it; afterwards the page opens the cloud brew, or the editor writes again.
+  const { saveNow: storeLocalNow, stop: stopLocal, resume: resumeLocal, localId: storedLocalId, status: localStatus } = localSave;
+  const localCallbacks = useRef({ onUploaded: local?.onUploaded, onEdited: local?.onEdited });
+  useEffect(() => {
+    localCallbacks.current = { onUploaded: local?.onUploaded, onEdited: local?.onEdited };
+  });
+  useEffect(() => {
+    if (!localMode || !editable || !storedLocalId) return;
+    return registerActiveLocalEditor(storedLocalId, {
+      prepareUpload: async () => {
+        if (!(await storeLocalNow())) return false;
+        stopLocal();
+        if (editor && !editor.isDestroyed) editor.setEditable(false);
+        setUploading(true);
+        return true;
+      },
+      uploaded: (created) => {
+        setUploading(false);
+        localCallbacks.current.onUploaded?.(created);
+      },
+      uploadFailed: () => {
+        resumeLocal();
+        if (editor && !editor.isDestroyed) editor.setEditable(true);
+        setUploading(false);
+      },
+    });
+  }, [localMode, editable, storedLocalId, storeLocalNow, stopLocal, resumeLocal, editor]);
+  // The author typed: a signed-out /new must not be swapped for a signed-in one any more.
+  useEffect(() => {
+    if (localMode && localStatus !== 'idle') localCallbacks.current.onEdited?.();
+  }, [localMode, localStatus]);
 
   // A save answered 401: the session is gone. Autosave calls the API directly, so the query
   // client's 401 policy (`me` = null) never saw it: apply it here. The navbar then offers "Sign

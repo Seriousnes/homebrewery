@@ -126,6 +126,43 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     await waitFor(async () => expect(await defaultLocalBrews().count()).toBe(0));
   });
 
+  it('Upload all from the prompt stores and uploads what the open editor still had, and opens the cloud brew', async () => {
+    const server = createBrewServer({ me: null });
+    const { queryClient, router } = renderApp({ url: '/new', me: null });
+    await waitForEditor();
+    typeInEditor('First words');
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByTestId('save-status')).toHaveAttribute('data-status', 'saved'));
+    typeInEditor(' and more'); // not stored yet when the prompt uploads
+    server.me = ALICE;
+    act(() => {
+      queryClient.setQueryData(queryKeys.account.me(), ALICE);
+    });
+    const prompt = await screen.findByRole('dialog', { name: 'You have 1 brew on this device' });
+    act(() => {
+      within(prompt).getByRole('button', { name: 'Upload all' }).click();
+    });
+    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
+    expect(docText(server.brews.get('newA')?.doc)).toContain('First words and more');
+    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'));
+    await wait(1300); // past the local save delay: nothing is written back
+    expect(await defaultLocalBrews().count()).toBe(0);
+  });
+
+  it('signing in right after typing (before the brew is stored) keeps it local and keeps the text', async () => {
+    const server = createBrewServer({ me: null });
+    const { queryClient, router } = renderApp({ url: '/new', me: null });
+    await waitForEditor();
+    typeInEditor('Typed just before signing in');
+    server.me = ALICE;
+    act(() => {
+      queryClient.setQueryData(queryKeys.account.me(), ALICE);
+    });
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//), { timeout: 3000 });
+    expect(docText(appEditor()!.getJSON())).toContain('Typed just before signing in');
+    expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
+  });
+
   it('signing in before typing anything turns the page into a signed-in /new', async () => {
     const server = createBrewServer({ me: null });
     const { queryClient, router } = renderApp({ url: '/new', me: null });

@@ -21,9 +21,11 @@ export interface LocalBrewEditorProps {
   brew: LocalBrew | null;
   /** A new brew was stored under `localId` (before the URL moves to it). */
   onStored?: (localId: string) => void;
+  /** The author changed the brew (it will be stored in a moment). */
+  onEdited?: () => void;
 }
 
-export function LocalBrewEditor({ brew, onStored }: LocalBrewEditorProps) {
+export function LocalBrewEditor({ brew, onStored, onEdited }: LocalBrewEditorProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const me = useMe({ meta: { errorPolicy: 'manual' } });
@@ -42,12 +44,16 @@ export function LocalBrewEditor({ brew, onStored }: LocalBrewEditorProps) {
       onStored?.(localId);
       void navigate(paths.localBrew(localId), { replace: true });
     },
+    onEdited,
+    // Uploaded from here, the sign-in prompt or Brews on this device: open the cloud brew.
+    onUploaded: (created) => {
+      seedCreatedBrew(queryClient, created);
+      void navigate(paths.edit(created.editId), { replace: true });
+    },
     onUpload: async (localId) => {
       try {
         const created = await uploadLocalBrew(localId);
-        seedCreatedBrew(queryClient, created);
         toast({ title: 'Uploaded to your account', description: `“${displayTitle(created.meta.title)}” is saved in the cloud now.`, tone: 'success' });
-        void navigate(paths.edit(created.editId), { replace: true });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) requestSignIn(error);
         else toast({ title: 'Couldn’t upload the brew', description: `${uploadProblem(error)} It is still on this device.`, tone: 'error' });
