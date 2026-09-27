@@ -68,7 +68,7 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
     {
         var ct = TestContext.Current.CancellationToken;
         var font = await File.ReadAllBytesAsync(Path.Combine(SchemaManifestTests.RepositoryRoot(),
-            "web", "src", "editor", "canvas", "fonts", "open-sans-latin-400-normal.woff2"), ct);
+            "web", "src", "fonts", "open-sans-latin-400-normal.woff2"), ct);
         fixture.Fetcher.Reset(uri => uri.AbsolutePath switch
         {
             "/red.png" => new RemoteFile(Png, "image/png"),
