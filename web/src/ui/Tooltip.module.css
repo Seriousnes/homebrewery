@@ -3,6 +3,8 @@
   display: contents;
 }
 
+/* Upstream's tooltips (legacy/shared/naturalcrit/styles/tooltip.less): a square #383838 box, white
+   12px text. */
 .tooltip {
   position: fixed;
   top: 0;
@@ -12,15 +14,14 @@
   gap: 8px;
   align-items: baseline;
   max-width: 280px;
-  padding: 4px 8px;
+  padding: 8px 10px;
   font-family: var(--hbui-font);
-  font-size: var(--hbui-font-size-sm);
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.2;
   color: var(--hbui-color-tooltip-text);
   overflow-wrap: anywhere;
   background: var(--hbui-color-tooltip-bg);
-  border-radius: var(--hbui-radius-sm);
-  box-shadow: var(--hbui-shadow-popover);
+  border-radius: 0;
 }
 
 .shortcut {

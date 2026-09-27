@@ -1,3 +1,5 @@
+/* Tag lists (upstream: metadataEditor.less .list .tag, tagInput.less): #DDD chips with 0.5em
+   corners, tinted by tag kind as upstream's suggestions; same colours in both schemes. */
 .tagInput {
   display: flex;
   flex-direction: column;
@@ -14,51 +16,62 @@
 }
 
 .readOnlyLabel {
-  font-weight: 500;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
 }
 
 .list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
 .chip {
+  --hbui-color-text: #333333;
+  --hbui-color-surface-hover: #bbbbbb;
+  --hbui-color-surface-active: #aaaaaa;
+  --hbui-color-focus: #2471a3;
+
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: 999px;
+  font-size: 0.95em;
+  color: #333333;
+  background: #dddddd;
+  border: 0;
+  border-radius: 0.5em;
 }
 
 .chip[data-tone='type'] {
-  background: var(--hbui-color-success-subtle);
+  background: #c4e2c4;
 }
 
 .chip[data-tone='system'] {
-  background: var(--hbui-color-accent-subtle);
+  background: #e7caca;
 }
 
 .chip[data-tone='meta'] {
-  background: var(--hbui-color-info-subtle);
+  background: #c9c9e7;
 }
 
 .chip[data-tone='group'] {
-  background: var(--hbui-color-surface-active);
+  background: #cccccc;
 }
 
 .chip[data-tone='owner'] {
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
+  background: #ecf0f1;
 }
 
 .chipText {
   min-width: 0;
   max-width: 280px;
-  padding: 2px 4px 2px 10px;
+  padding: 0.35em 4px 0.35em 0.5em;
   margin: 0;
   overflow: hidden;
   font: inherit;
@@ -67,12 +80,12 @@
   white-space: nowrap;
   background: transparent;
   border: 0;
-  border-radius: 999px 0 0 999px;
+  border-radius: 0.5em 0 0 0.5em;
 }
 
 span.chipText {
-  padding-right: 10px;
-  border-radius: 999px;
+  padding-right: 0.5em;
+  border-radius: 0.5em;
 }
 
 button.chipText {
@@ -89,8 +102,7 @@ button.chipText:focus-visible {
 }
 
 .remove {
-  margin-right: 2px;
-  border-radius: 999px;
+  border-radius: 0 0.5em 0.5em 0;
 }
 
 .editing {
@@ -109,7 +121,7 @@ button.chipText:focus-visible {
   color-scheme: light dark;
   background: var(--hbui-color-bg);
   border: 1px solid var(--hbui-color-focus);
-  border-radius: 999px;
+  border-radius: 0.5em;
   outline: none;
   box-shadow: 0 0 0 1px var(--hbui-color-focus);
 }

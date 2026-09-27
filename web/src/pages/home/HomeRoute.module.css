@@ -21,33 +21,46 @@
 }
 
 
-/* The floating "Create your own" link (legacy homePage.less). */
+/* The floating "Create your own" link (legacy homePage.less a.floatingNewButton): a square orange
+   box with a heavy shadow. Upstream's @orange #D35400 is darkened to #BA4A00 for AA white text. */
 .floating {
   position: absolute;
-  right: var(--hbui-space-6);
-  bottom: var(--hbui-space-6);
+  right: 70px;
+  bottom: 50px;
   z-index: 2;
   display: inline-flex;
-  gap: var(--hbui-space-2);
+  gap: 0.5em;
   align-items: center;
-  padding: var(--hbui-space-3) var(--hbui-space-4);
+  padding: 1em;
   font-family: var(--hbui-font);
-  font-size: var(--hbui-font-size);
-  font-weight: 600;
-  color: var(--hbui-color-accent-text);
+  font-size: 1.5em;
+  font-weight: normal;
+  line-height: 1.2;
+  color: #ffffff;
   text-decoration: none;
-  background: var(--hbui-color-accent);
-  border-radius: var(--hbui-radius-lg);
-  box-shadow: var(--hbui-shadow-popover);
+  white-space: nowrap;
+  background: #ba4a00;
+  border-radius: 0;
+  box-shadow: 3px 3px 15px #000000;
+  transition: background-color var(--hbui-duration);
 }
 
 .floating:hover {
-  background: var(--hbui-color-accent-hover);
+  background: #873600;
 }
 
 .floating:focus-visible {
-  outline: none;
-  box-shadow: var(--hbui-focus-ring);
+  outline: 3px solid #ffffff;
+  outline-offset: -6px;
+}
+
+/* Narrow screens: smaller, and out of the way of the pages. */
+@media (max-width: 720px) {
+  .floating {
+    right: var(--hbui-space-4);
+    bottom: var(--hbui-space-4);
+    font-size: 1.1em;
+  }
 }
 
 @media print {

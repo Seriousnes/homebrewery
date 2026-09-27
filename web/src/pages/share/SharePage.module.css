@@ -5,7 +5,9 @@
   align-items: center;
   padding: 0 var(--hbui-space-2);
   font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

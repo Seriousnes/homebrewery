@@ -1,4 +1,6 @@
-/* /import (P6.1, P6.3): source tabs, the report beside the preview, and the create bar. */
+/* /import (P6.1, P6.3): source tabs, the report beside the preview, and the create bar, in
+   upstream's uiPage look (uiPage.less): bold uppercase step headings over a slate rule, .dataGroup
+   boxes, square fields, messages as ruled strips. */
 .step {
   margin: 0 0 var(--hbui-space-6);
 }
@@ -13,25 +15,28 @@
 }
 
 .stepTitle {
+  padding-bottom: 2px;
   margin: 0 0 var(--hbui-space-3);
-  font-size: var(--hbui-font-size-xl);
-  font-weight: 650;
+  font-size: 1.5em;
+  font-weight: var(--hbui-label-weight);
+  line-height: 1.3;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
   outline: none;
 }
 
 .stepHeader .stepTitle {
+  flex: 1 1 auto;
   margin: 0;
 }
 
 .stepTitle:focus-visible {
-  border-radius: var(--hbui-radius-sm);
   box-shadow: var(--hbui-focus-ring);
 }
 
 .tabs {
-  padding: var(--hbui-space-4);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  padding: 6px 20px 15px;
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -69,7 +74,10 @@
 }
 
 .fieldLabel {
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
 }
 
 .fieldHint {
@@ -86,7 +94,7 @@
   color: var(--hbui-color-text);
   background: var(--hbui-color-bg);
   border: 1px dashed var(--hbui-color-border-strong);
-  border-radius: var(--hbui-radius);
+  border-radius: 0;
 }
 
 .fileInput:focus-visible {
@@ -115,8 +123,7 @@
   align-items: flex-start;
   padding: var(--hbui-space-2) var(--hbui-space-3);
   background: var(--hbui-color-danger-subtle);
-  border: 1px solid var(--hbui-color-danger);
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid var(--hbui-color-danger);
 }
 
 .problemIcon {
@@ -127,7 +134,7 @@
 
 .problemTitle {
   margin: 0;
-  font-weight: 650;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-danger);
 }
 
@@ -143,8 +150,8 @@
 }
 
 .link {
-  font-weight: 600;
-  color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-info);
 }
 
 .converting {
@@ -153,8 +160,7 @@
   align-items: center;
   padding: var(--hbui-space-4);
   color: var(--hbui-color-text-muted);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -180,8 +186,10 @@
 
 .previewTitle {
   margin: 0 0 var(--hbui-space-3);
-  font-size: var(--hbui-font-size-lg);
-  font-weight: 650;
+  font-size: 1.25em;
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .previewBox {
@@ -216,8 +224,8 @@
   padding: var(--hbui-space-3) var(--hbui-space-4);
   margin: 0 calc(-1 * var(--hbui-space-2));
   background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-lg);
+  border: 2px solid var(--hbui-color-border-strong);
+  border-radius: 0;
   box-shadow: var(--hbui-shadow-popover);
 }
 
@@ -240,12 +248,14 @@
 
 .facts dt {
   font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
 }
 
 .facts dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   overflow-wrap: anywhere;
 }
 

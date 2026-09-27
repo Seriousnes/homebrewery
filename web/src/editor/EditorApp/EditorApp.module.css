@@ -65,12 +65,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Stands in for the snippet-bar toolbar (kit Toolbar) while the editor loads. */
 .placeholderBar {
-  min-height: 40px;
-  border-bottom: 1px solid var(--hbui-color-border);
+  min-height: 35px;
+  background: var(--hbui-bar-bg);
+  border-bottom: 1px solid var(--hbui-bar-divider);
 }
 
-/* The lock banner (BrewForEdit.lock). */
+/* The lock banner (BrewForEdit.lock): upstream's lockNotification.less notice, flat and square
+   with bold Open Sans headings. */
 .lock {
   display: flex;
   flex-wrap: wrap;
@@ -81,7 +84,7 @@
   color: var(--hbui-color-text);
   background: var(--hbui-color-warning-subtle);
   border: 1px solid var(--hbui-color-border);
-  border-inline-start: 4px solid var(--hbui-color-warning);
+  border-inline-start: 5px solid var(--hbui-color-warning);
   border-radius: var(--hbui-radius);
 }
 
@@ -97,8 +100,8 @@
 
 .lockTitle {
   margin: 0;
-  font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-size: var(--hbui-font-size-lg);
+  font-weight: var(--hbui-label-weight);
 }
 
 .lockMessage {

@@ -3,7 +3,7 @@
   box-sizing: border-box;
   padding: var(--hbui-space-2) 0;
   font-family: var(--hbui-font);
-  font-size: var(--hbui-font-size);
+  font-size: 12px;
   line-height: 1.35;
   color: var(--hbui-color-text);
 }
@@ -33,7 +33,7 @@
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: var(--hbui-radius-sm);
+  border-radius: 0;
 }
 
 .link:hover {
@@ -47,12 +47,12 @@
 }
 
 .pageLink {
-  font-weight: 700;
+  font-weight: var(--hbui-label-weight);
 }
 
 .pageLink[aria-current='location'] {
-  background: var(--hbui-color-accent-subtle);
-  box-shadow: inset 3px 0 0 var(--hbui-color-accent);
+  background: var(--hbui-color-surface-active);
+  box-shadow: inset 3px 0 0 var(--hbui-color-text);
 }
 
 .link[data-depth='1'] {

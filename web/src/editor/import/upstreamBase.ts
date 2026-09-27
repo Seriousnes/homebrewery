@@ -6,8 +6,8 @@
 // Used by the import probe (canvas/probe.ts) and the S3 legacy-render harness, which lay out
 // upstream's HTML without the editor's canvas.css. canvas.css reproduces the same base for the
 // editor (its "Upstream base styles" section).
-import openSans400 from '../canvas/fonts/open-sans-latin-400-normal.woff2?url';
-import openSans700 from '../canvas/fonts/open-sans-latin-700-normal.woff2?url';
+import openSans400 from '../../fonts/open-sans-latin-400-normal.woff2?url';
+import openSans700 from '../../fonts/open-sans-latin-700-normal.woff2?url';
 
 const OPEN_SANS_RANGE =
   'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
@@ -15,7 +15,7 @@ const OPEN_SANS_RANGE =
 /**
  * Open Sans, upstream's base font (legacy/shared/naturalcrit/styles/fonts/fonts.css), for
  * documents that don't get EditorCanvas.module.css's @font-face rules: the probe iframe and the
- * S3 harness frames. Same files (web/src/editor/canvas/fonts) and ranges as the editor.
+ * S3 harness frames. Same files (web/src/fonts) and ranges as the editor.
  */
 export const OPEN_SANS_CSS = [
   [openSans400, 'normal'],

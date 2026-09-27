@@ -7,7 +7,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--hbui-color-border);
+  border: 1px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius);
 }
 
@@ -28,9 +28,11 @@
   margin: 0;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size-sm);
-  color: var(--hbui-color-danger);
-  background: var(--hbui-color-danger-subtle);
-  border: 1px solid var(--hbui-color-danger);
+  font-weight: var(--hbui-label-weight);
+  /* Upstream's errorBar.less: white on red. */
+  color: var(--hbui-action-text);
+  background: var(--hbui-action-danger);
+  border: 0;
   border-radius: var(--hbui-radius);
 }
 
@@ -41,6 +43,7 @@
   min-height: 12rem;
   font-family: var(--hbui-font);
   color: var(--hbui-color-text-muted);
-  border: 1px solid var(--hbui-color-border);
+  background: var(--hbui-color-backdrop);
+  border: 1px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius);
 }

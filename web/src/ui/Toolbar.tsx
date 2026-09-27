@@ -8,6 +8,8 @@ export interface ToolbarProps extends Omit<ComponentPropsWithRef<'div'>, 'role'>
   /** The toolbar's accessible name. */
   label: string;
   orientation?: RovingOrientation;
+  /** 'bar' (default): upstream's light snippet bar. 'view': upstream's darker preview toolbar. */
+  tone?: 'bar' | 'view';
 }
 
 /**
@@ -15,7 +17,7 @@ export interface ToolbarProps extends Omit<ComponentPropsWithRef<'div'>, 'role'>
  * when vertical) move between items, Home/End jump. Text inputs inside keep their arrow keys.
  * Items are any focusable descendants (buttons, IconButtons, MenuButtons, selects).
  */
-export function Toolbar({ label, orientation = 'horizontal', className, children, onKeyDown, onFocus, ref, ...rest }: ToolbarProps) {
+export function Toolbar({ label, orientation = 'horizontal', tone = 'bar', className, children, onKeyDown, onFocus, ref, ...rest }: ToolbarProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
@@ -54,7 +56,7 @@ export function Toolbar({ label, orientation = 'horizontal', className, children
       role="toolbar"
       aria-label={label}
       aria-orientation={orientation}
-      className={clsx(styles.toolbar, orientation === 'vertical' && styles.vertical, className)}
+      className={clsx(styles.toolbar, tone === 'view' && styles.viewbar, orientation === 'vertical' && styles.vertical, className)}
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
     >

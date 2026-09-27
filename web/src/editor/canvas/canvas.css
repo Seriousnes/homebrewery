@@ -222,9 +222,9 @@
 }
 
 /* Oversized pages (one block taller than a column; set by pagination, rendered by PageView):
-   hooks for the warning. */
+   hooks for the warning, in upstream's errorBar red (errorBar.less). */
 .hb-canvas .page.hb-oversized {
-  outline: 3px dashed #c62828;
+  outline: 3px dashed #c0392b;
   outline-offset: -3px;
 }
 .hb-canvas .page > .hb-oversized-badge {
@@ -232,11 +232,12 @@
   right: 4px;
   z-index: 1000;
   padding: 2px 8px;
-  font: 600 12px/1.4 system-ui, sans-serif;
+  font: 800 11px/1.4 'Open Sans', sans-serif;
   color: #fff;
   text-indent: 0;
-  background: #c62828;
-  border-radius: 4px;
+  text-transform: uppercase;
+  background: #c0392b;
+  border-radius: 0;
   pointer-events: auto;
 }
 

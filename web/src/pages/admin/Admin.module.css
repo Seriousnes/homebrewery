@@ -1,37 +1,46 @@
-/* Admin pages (P7.4). App chrome: UI kit tokens only (plan §5). */
+/* Admin pages (P7.4), in the look of upstream's admin tools (legacy/client/admin/admin.less):
+   bordered tab buttons, grouped boxes, teal table heads with zebra rows, bold dt labels. */
 
 /* ─── Section navigation ─────────────────────────────────────────────────────────────────── */
 
 .nav {
   margin: 0 0 var(--hbui-space-5);
-  border-bottom: 1px solid var(--hbui-color-border);
 }
 
 .navList {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hbui-space-1);
+  gap: 6px;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
+/* Upstream's .tabs button: #EEE with a #444 rule and 5px corners, inverted under the pointer, the
+   current one #CCC with a 2px rule and underlined. Same colours in both schemes. */
 .navLink {
+  box-sizing: border-box;
   display: inline-flex;
   gap: var(--hbui-space-2);
   align-items: center;
   min-height: var(--hbui-control-height);
-  padding: var(--hbui-space-1) var(--hbui-space-3);
-  margin-bottom: -1px;
-  color: var(--hbui-color-text-muted);
+  padding: 0 var(--hbui-space-3);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  color: #000000;
   text-decoration: none;
-  border-bottom: 2px solid transparent;
-  border-radius: var(--hbui-radius-sm) var(--hbui-radius-sm) 0 0;
+  text-transform: uppercase;
+  background: #eeeeee;
+  border: 1px solid #444444;
+  border-radius: var(--hbui-radius-lg);
+  transition:
+    background-color var(--hbui-duration),
+    color var(--hbui-duration);
 }
 
 .navLink:hover {
-  color: var(--hbui-color-text);
-  background: var(--hbui-color-surface-hover);
+  color: #eeeeee;
+  background: #444444;
 }
 
 .navLink:focus-visible {
@@ -40,9 +49,10 @@
 }
 
 .navLink[aria-current='page'] {
-  font-weight: 600;
-  color: var(--hbui-color-text);
-  border-bottom-color: var(--hbui-color-accent);
+  color: #000000;
+  text-decoration: underline;
+  background: #cccccc;
+  border-width: 2px;
 }
 
 .badge {
@@ -52,19 +62,20 @@
   font-size: var(--hbui-font-size-sm);
   font-weight: 600;
   line-height: 1.5;
-  color: var(--hbui-color-accent-text);
+  color: var(--hbui-action-text);
   text-align: center;
-  background: var(--hbui-color-accent);
-  border-radius: 999px;
+  text-decoration: none;
+  background: var(--hbui-action-danger);
+  border-radius: var(--hbui-radius-sm);
 }
 
 /* ─── Cards and sections ─────────────────────────────────────────────────────────────────── */
 
+/* Upstream's .dataGroup (uiPage.less): a 2px rule with 5px corners. */
 .card {
-  padding: var(--hbui-space-5);
+  padding: 6px 20px 15px;
   margin: 0 0 var(--hbui-space-5);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -79,19 +90,23 @@
 
 .cardTitle {
   margin: 0;
-  font-size: var(--hbui-font-size-xl);
+  font-size: 1.5em;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.3;
+  text-transform: uppercase;
   outline: none;
 }
 
 .cardTitle:focus-visible {
-  border-radius: var(--hbui-radius-sm);
   box-shadow: var(--hbui-focus-ring);
 }
 
 .subTitle {
   margin: var(--hbui-space-5) 0 var(--hbui-space-2);
-  font-size: var(--hbui-font-size-lg);
+  font-size: 1.25em;
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .text {
@@ -151,21 +166,23 @@
   display: flex;
   flex-direction: column;
   gap: var(--hbui-space-1);
-  padding: var(--hbui-space-4);
+  padding: var(--hbui-space-3) var(--hbui-space-4);
   background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border: 1px solid var(--hbui-color-border-strong);
 }
 
 .statLabel {
   margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
 }
 
 .statValue {
   margin: 0;
   font-size: 1.75rem;
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.2;
 }
 
@@ -187,9 +204,14 @@
   display: contents;
 }
 
+/* Upstream's dl: bold dt labels, right-aligned, with a trailing colon. */
 .facts dt {
-  font-weight: 600;
-  color: var(--hbui-color-text-muted);
+  font-weight: var(--hbui-label-weight);
+  text-align: right;
+}
+
+.facts dt::after {
+  content: ' :';
 }
 
 .facts dd {
@@ -256,7 +278,6 @@
   width: fit-content;
   color: var(--hbui-color-info);
   cursor: pointer;
-  border-radius: var(--hbui-radius-sm);
 }
 
 .codes > summary:focus-visible {
@@ -288,8 +309,7 @@
   position: relative;
   max-width: 100%;
   overflow-x: auto;
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border: 1px solid var(--hbui-color-border-strong);
 }
 
 .tableWrap:focus-visible {
@@ -305,8 +325,9 @@
 
 .table caption {
   padding: var(--hbui-space-2) var(--hbui-space-3);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   text-align: left;
+  text-transform: uppercase;
 }
 
 .srOnlyStatus,
@@ -324,22 +345,36 @@
 
 .table th,
 .table td {
-  padding: var(--hbui-space-2) var(--hbui-space-3);
+  padding: 5px 10px;
   text-align: left;
   vertical-align: top;
   border-top: 1px solid var(--hbui-color-border);
+  border-right: 1px solid var(--hbui-color-border);
 }
 
+.table th:last-child,
+.table td:last-child {
+  border-right: 0;
+}
+
+/* Upstream's thead: pale teal over a 2px rule, black bold text (both schemes). */
 .table thead th {
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
-  color: var(--hbui-color-text-muted);
+  font-weight: var(--hbui-label-weight);
+  color: #000000;
+  text-transform: uppercase;
   white-space: nowrap;
+  background: rgb(193 236 230);
+  border-bottom: 2px solid #333333;
+}
+
+/* Zebra rows (upstream #DDD, lighter here so the coloured pills and links keep their contrast). */
+.table tbody tr:nth-child(even) {
   background: var(--hbui-color-surface);
 }
 
 .table tbody th {
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
 }
 
 .table .num {
@@ -364,13 +399,14 @@
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  padding: 0 8px;
-  font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: var(--hbui-label-weight);
   line-height: 1.6;
+  text-transform: uppercase;
   white-space: nowrap;
-  border: 1px solid var(--hbui-color-border);
-  border-radius: 999px;
+  border: 1px solid currentColor;
+  border-radius: var(--hbui-radius-sm);
 }
 
 .pillNeutral {
@@ -406,26 +442,31 @@
 
 /* ─── Messages ───────────────────────────────────────────────────────────────────────────── */
 
+/* Upstream's .error: bold white on red (both schemes); buttons inside keep the light grey colours. */
 .error {
+  --hbui-color-text: #333333;
+  --hbui-color-surface-hover: #dddddd;
+  --hbui-color-surface-active: #cccccc;
+  --hbui-color-border: #bbbbbb;
+
   display: flex;
   gap: var(--hbui-space-3);
   align-items: flex-start;
   padding: var(--hbui-space-3) var(--hbui-space-4);
   margin: 0 0 var(--hbui-space-4);
-  background: var(--hbui-color-danger-subtle);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  color: var(--hbui-action-text);
+  background: var(--hbui-action-danger);
 }
 
 .error > svg {
   flex: none;
   margin-top: 2px;
-  color: var(--hbui-color-danger);
+  color: var(--hbui-action-text);
 }
 
 .errorTitle {
   margin: 0;
-  font-weight: 650;
+  font-weight: var(--hbui-label-weight);
 }
 
 .errorText {
@@ -437,9 +478,9 @@
   margin: 0;
   color: var(--hbui-color-text-muted);
   text-align: center;
+  font-style: italic;
   background: var(--hbui-color-bg);
-  border: 1px dashed var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border: 1px dashed var(--hbui-color-border-strong);
 }
 
 .loading {
@@ -454,8 +495,7 @@
   padding: var(--hbui-space-4);
   margin: 0 0 var(--hbui-space-4);
   background: var(--hbui-color-warning-subtle);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid var(--hbui-color-warning);
 }
 
 .lockBoxTitle {
@@ -464,6 +504,8 @@
   align-items: center;
   margin: 0 0 var(--hbui-space-3);
   font-size: var(--hbui-font-size-lg);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 /* ─── Notification preview ───────────────────────────────────────────────────────────────── */
@@ -474,13 +516,13 @@
 
 .previewCaption {
   margin: 0 0 var(--hbui-space-2);
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .previewFrame {
   overflow: hidden;
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
 }
 
 .previewClose {
@@ -519,22 +561,26 @@
   margin: 0 0 var(--hbui-space-4);
 }
 
+/* A link that looks like upstream's green .colorButton(). */
 .linkButton {
   display: inline-flex;
   gap: var(--hbui-space-2);
   align-items: center;
   min-height: var(--hbui-control-height);
-  padding: 0 var(--hbui-space-3);
-  font-weight: 500;
-  color: var(--hbui-color-accent-text);
+  padding: 0 1.2em;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-action-text);
   text-decoration: none;
-  background: var(--hbui-color-accent);
+  text-transform: uppercase;
+  background: var(--hbui-action);
   border: 1px solid transparent;
-  border-radius: var(--hbui-radius);
+  border-radius: 0;
+  transition: background-color var(--hbui-duration);
 }
 
 .linkButton:hover {
-  background: var(--hbui-color-accent-hover);
+  background: var(--hbui-action-hover);
 }
 
 .linkButton:focus-visible {
@@ -542,23 +588,25 @@
   box-shadow: var(--hbui-focus-ring);
 }
 
-/* A row action that navigates: looks like a small secondary button. */
+/* A row action that navigates: a small grey button, as the kit's. */
 .rowLink {
   display: inline-flex;
   align-items: center;
   min-height: var(--hbui-control-height-sm);
-  padding: 0 var(--hbui-space-2);
-  font-size: var(--hbui-font-size-sm);
-  font-weight: 500;
+  padding: 0 0.8em;
+  font-size: 10px;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text);
   text-decoration: none;
-  background: var(--hbui-color-surface-raised);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  text-transform: uppercase;
+  background: var(--hbui-color-surface-hover);
+  border: 1px solid transparent;
+  border-radius: 0;
+  transition: background-color var(--hbui-duration);
 }
 
 .rowLink:hover {
-  background: var(--hbui-color-surface-hover);
+  background: var(--hbui-color-surface-active);
 }
 
 .rowLink:focus-visible {

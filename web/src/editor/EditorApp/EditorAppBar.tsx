@@ -68,7 +68,7 @@ export function EditorAppBar({ mode, editor, tracker, toggleRefs, onProperties, 
   };
 
   return (
-    <Toolbar label={editable ? 'Brew' : 'Viewing'} className={styles.bar} data-testid="editor-app-bar">
+    <Toolbar label={editable ? 'Brew' : 'Viewing'} tone="view" className={styles.bar} data-testid="editor-app-bar">
       <ToolbarGroup label="Panels">
         {PANEL_TOGGLES.filter((t) => editable || !t.edit).map((t) => toggle(t.id, t.icon, t.label))}
         {panelToggles}

@@ -1,4 +1,6 @@
-/* Inspector (P3.5). App chrome: CSS module classes only, UI kit tokens (--hbui-*). */
+/* Inspector (P3.5). App chrome: CSS module classes only, UI kit tokens (--hbui-*). Upstream's
+   properties panel look (metadataEditor.less): bold uppercase labels, square controls, tags with
+   rounded corners, selected items in a darker grey. */
 
 .inspector {
   box-sizing: border-box;
@@ -52,7 +54,8 @@
 .targetTitle {
   margin: 0;
   font-size: var(--hbui-font-size-lg);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .note {
@@ -66,14 +69,19 @@
   flex-direction: column;
   gap: var(--hbui-space-3);
   min-width: 0;
-  padding-top: var(--hbui-space-3);
-  border-top: 1px solid var(--hbui-color-border);
+  padding-top: var(--hbui-space-2);
 }
 
+/* Section headings: metadataEditor.less h2, bold over a grey rule. */
 .groupTitle {
+  padding-bottom: 2px;
   margin: 0;
-  font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
+  border-bottom: 2px solid var(--hbui-color-border-strong);
 }
 
 /* Breadcrumbs */
@@ -116,7 +124,7 @@
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--hbui-radius-sm);
+  border-radius: 0;
   outline: 2px solid transparent;
 }
 
@@ -129,9 +137,9 @@
 }
 
 .crumbCurrent {
-  font-weight: 600;
-  background: var(--hbui-color-accent-subtle);
-  border-color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  background: var(--hbui-color-surface-active);
+  border-color: var(--hbui-color-border-strong);
 }
 
 .crumbClasses {
@@ -150,9 +158,13 @@
   min-width: 0;
 }
 
+/* metadataEditor.less field labels: small, bold, uppercase. */
 .fieldLabel {
   padding: 0;
-  font-weight: 500;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
 }
 
 .fieldset {
@@ -209,9 +221,9 @@
   padding: 0 2px 0 8px;
   font-family: var(--hbui-font-mono);
   font-size: var(--hbui-font-size-sm);
-  background: var(--hbui-color-surface-raised);
+  background: var(--hbui-color-surface-hover);
   border: 1px solid var(--hbui-color-border-strong);
-  border-radius: 999px;
+  border-radius: var(--hbui-radius-lg);
 }
 
 .chipText {
@@ -232,13 +244,13 @@
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--hbui-radius-sm);
   outline: 2px solid transparent;
 }
 
 .chipRemove:hover {
   color: var(--hbui-color-text);
-  background: var(--hbui-color-surface-hover);
+  background: var(--hbui-color-surface-active);
 }
 
 .chipRemove:focus-visible {
@@ -290,7 +302,7 @@
   left: 0;
   box-sizing: border-box;
   max-height: 240px;
-  padding: 4px;
+  padding: 0;
   margin: 0;
   overflow: auto;
   font-family: var(--hbui-font-mono);
@@ -310,17 +322,17 @@
 .option {
   padding: 4px 8px;
   cursor: pointer;
-  border-radius: var(--hbui-radius-sm);
 }
 
 .option:hover {
   background: var(--hbui-color-surface-hover);
 }
 
+/* The active suggestion: blue with white text, as upstream's dropdown hover (metadataEditor.less). */
 .optionActive,
 .optionActive:hover {
-  color: var(--hbui-color-accent-text);
-  background: var(--hbui-color-accent);
+  color: var(--hbui-action-text);
+  background: var(--hbui-action-info);
 }
 
 /* Id */
@@ -393,7 +405,7 @@
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--hbui-radius-sm);
+  border-radius: 0;
   outline: 2px solid transparent;
 }
 
@@ -406,8 +418,9 @@
 }
 
 .objectItemSelected {
-  background: var(--hbui-color-accent-subtle);
-  border-color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  background: var(--hbui-color-surface-active);
+  border-color: var(--hbui-color-border-strong);
 }
 
 .objectLabel {

@@ -10,7 +10,7 @@ export interface SitePageProps {
   heading?: ReactNode;
   /** Short text under the heading. */
   lead?: ReactNode;
-  /** Content width: 'narrow' forms (28rem), 'normal' (48rem, default), 'wide' lists (72rem). */
+  /** Content box width: 'narrow' forms (32rem), 'normal' (52rem, default), 'wide' lists (76rem). */
   width?: 'narrow' | 'normal' | 'wide';
   children?: ReactNode;
   className?: string;

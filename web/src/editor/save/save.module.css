@@ -1,4 +1,5 @@
-/* Save lane chrome: status, draft banner, conflict dialog body, local history list. */
+/* Save lane chrome: status, draft banner, conflict dialog body, local history list. Banners are
+   upstream's flat notices (notificationPopup.less): a coloured edge, bold heading, square box. */
 
 .status {
   display: inline-flex;
@@ -29,7 +30,7 @@
 }
 
 .status[data-tone='error'] .statusLabel {
-  color: var(--hbui-color-danger-text);
+  color: var(--hbui-color-danger);
 }
 
 .status[data-tone='busy'] .statusIcon {
@@ -55,7 +56,7 @@
   gap: var(--hbui-space-3);
   padding: var(--hbui-space-3) var(--hbui-space-4);
   border: 1px solid var(--hbui-color-border);
-  border-inline-start: 4px solid var(--hbui-color-info);
+  border-inline-start: 5px solid var(--hbui-color-info);
   border-radius: var(--hbui-radius);
   background: var(--hbui-color-info-subtle);
   color: var(--hbui-color-text);
@@ -75,7 +76,7 @@
 .bannerTitle {
   margin: 0;
   font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
 }
 
 .bannerMessage {
@@ -112,10 +113,12 @@
 .actionError {
   margin: 0 0 var(--hbui-space-3);
   padding: var(--hbui-space-2) var(--hbui-space-3);
-  border-radius: var(--hbui-radius-sm);
-  background: var(--hbui-color-danger-subtle);
-  color: var(--hbui-color-danger-text);
+  border-radius: var(--hbui-radius);
+  /* Upstream's errorBar.less: white on red, in both schemes. */
+  background: var(--hbui-action-danger);
+  color: var(--hbui-action-text);
   font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
 }
 
 .snapshots {
@@ -141,7 +144,7 @@
 }
 
 .snapshotTime {
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
 }
 
 .snapshotMeta {

@@ -1,23 +1,68 @@
+/*
+ * Upstream's snippet bar (legacy/client/homebrew/editor/snippetbar/snippetbar.less): a #DDD strip
+ * of square tools that turn #999 under the pointer, black bold uppercase text. The bar re-points the
+ * kit tokens, so buttons, menus triggers and fields inside it take the bar's colours in both
+ * schemes (popups are portaled and keep the page's). Add .viewbar for the darker preview toolbar.
+ */
 .toolbar {
+  --hbui-color-surface-hover: var(--hbui-bar-hover);
+  --hbui-color-surface-active: var(--hbui-bar-hover);
+  --hbui-color-text: var(--hbui-bar-text);
+  --hbui-color-text-muted: #444444;
+  --hbui-color-border: var(--hbui-bar-divider);
+  --hbui-color-border-strong: #808080;
+  --hbui-color-bg: #ffffff;
+  --hbui-color-focus: #2471a3;
+  /* Tools sit flat on the bar until hovered, as upstream's snippet bar buttons. */
+  --hbui-button-bg: transparent;
+  /* Status colours dark enough for the grey bar in both schemes (WCAG AA on #DDD). */
+  --hbui-color-danger: #922b21;
+  --hbui-color-warning: #873600;
+  --hbui-color-success: #145a32;
+  --hbui-color-info: #1a5276;
+
   box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   align-items: center;
-  min-height: 40px;
-  padding: 4px 8px;
+  min-height: 32px;
+  padding: 2px 6px;
   font-family: var(--hbui-font);
-  font-size: var(--hbui-font-size);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text);
-  background: var(--hbui-color-surface);
-  border-bottom: 1px solid var(--hbui-color-border);
+  text-transform: uppercase;
+  background: var(--hbui-bar-bg);
+  border-bottom: 1px solid var(--hbui-bar-divider);
+}
+
+/* Upstream's preview toolbar (brewRenderer/toolBar/toolBar.less): #555 with light text, #444 hover,
+   #3B3B3B inputs. */
+.viewbar {
+  --hbui-color-surface-hover: var(--hbui-viewbar-hover);
+  --hbui-color-surface-active: var(--hbui-viewbar-active);
+  --hbui-color-text: var(--hbui-viewbar-text);
+  --hbui-color-text-muted: #cccccc;
+  --hbui-color-border: var(--hbui-viewbar-border);
+  --hbui-color-border-strong: var(--hbui-viewbar-border);
+  --hbui-color-bg: var(--hbui-viewbar-input);
+  --hbui-color-focus: #d3d3d3;
+  /* Status colours light enough for #555 (WCAG AA). */
+  --hbui-color-danger: #fadbd8;
+  --hbui-color-warning: #f8c471;
+  --hbui-color-success: #82e0aa;
+  --hbui-color-info: #aed6f1;
+
+  background: var(--hbui-viewbar-bg);
+  border-bottom-color: var(--hbui-viewbar-border);
 }
 
 .vertical {
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: stretch;
-  padding: 8px 4px;
+  padding: 6px 2px;
   border-right: 1px solid var(--hbui-color-border);
   border-bottom: 0;
 }
@@ -32,12 +77,14 @@
   flex-direction: column;
 }
 
+/* Upstream's .divider: a 1px line in the text colour. */
 .separator {
   flex: none;
   align-self: stretch;
   width: 1px;
   margin: 4px 4px;
-  background: var(--hbui-color-border);
+  background: currentcolor;
+  opacity: 0.35;
 }
 
 .vertical .separator {
