@@ -1,11 +1,24 @@
-// P6.4 in the app: "Export HTML" next to Print on the share page and in the editor (home page),
-// and printing from the app: lazy images loaded before the print dialog, one brew page per sheet
-// with no app chrome, the brew's @page size honoured. The API is stubbed (page.route), so this
-// runs without an API server.
+// Issue #2 and P6.4 in the app: "Download PDF" next to Print on the share page and in the editor
+// (home page), and printing from the app: lazy images loaded before the print dialog, one brew page
+// per sheet with no app chrome, the brew's @page size honoured. The API is stubbed (page.route):
+// POST /api/export/pdf is rendered by the test browser (stubPdfEndpoint), so this runs without an
+// API server.
 import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { attachImage, blockOtherSites, diffImages, LOAD_TIMEOUT, openOffline, pageBoxes, pageShot, pdfSheets } from './helpers';
+import {
+  attachImage,
+  blockOtherSites,
+  diffImages,
+  LOAD_TIMEOUT,
+  openOffline,
+  pageBoxes,
+  pageShot,
+  pdfSheets,
+  READER,
+  stubPdfEndpoint,
+  writeExport,
+} from './helpers';
 
 test.use({ viewport: { width: 1400, height: 1300 } });
 
@@ -50,8 +63,15 @@ interface ImageGate {
   requested: boolean;
 }
 
-/** The share page of a brew with `style` as its CSS; the lazy image answers once `imageGate` opens. */
-async function openShare(page: Page, style = '', imageGate?: ImageGate): Promise<void> {
+interface ShareOptions {
+  /** The brew's CSS. */
+  style?: string;
+  /** The lazy image answers once it opens. */
+  imageGate?: ImageGate;
+}
+
+/** The share page of a brew, for a reader who is not signed in. */
+async function openShare(page: Page, { style = '', imageGate }: ShareOptions = {}): Promise<void> {
   await blockOtherSites(page);
   await page.route(
     (url) => url.pathname.startsWith('/share/'),
@@ -91,7 +111,7 @@ async function waitForApp(page: Page): Promise<void> {
   await expect(page.locator('[data-mode][data-canvas-status="ready"]').first()).toBeAttached(LOAD_TIMEOUT);
   await page.waitForFunction(() => (window as unknown as { __hbEditorApp?: { settled: () => boolean } }).__hbEditorApp?.settled() === true, undefined, LOAD_TIMEOUT);
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByTestId('export-html')).toBeEnabled(LOAD_TIMEOUT);
+  await expect(page.getByTestId('download-pdf')).toBeEnabled(LOAD_TIMEOUT);
 }
 
 /** Replaces window.print: records, at the moment of printing, how many images had loaded. */
@@ -117,31 +137,39 @@ async function visibleChrome(page: Page): Promise<string[]> {
       ['navbar', 'nav[aria-label="Main"]'],
       ['app bar', '[data-testid="editor-app-bar"]'],
       ['toolbars', '[role="toolbar"]'],
-      ['export button', '[data-testid="export-html"]'],
+      ['download button', '[data-testid="download-pdf"]'],
       ['skip link', 'a[href="#main-content"]'],
     ];
     return chrome.filter(([, selector]) => Array.from(document.querySelectorAll(selector)).some(visible)).map(([name]) => name);
   });
 }
 
-test('share page: "Export HTML" downloads a file that opens offline and looks like the page', async ({ page, browser }, testInfo) => {
+test('share page: a reader who is not signed in downloads the PDF, one sheet per page', async ({ page, browser }, testInfo) => {
   await openShare(page);
-  const button = page.getByTestId('export-html');
-  await expect(button).toHaveAccessibleName('Export HTML');
+  const endpoint = await stubPdfEndpoint(page, browser);
+  const button = page.getByTestId('download-pdf');
+  await expect(button).toHaveAccessibleName('Download PDF');
   // Right after Print, in the viewing bar.
   const order = await page.getByTestId('editor-app-bar').evaluate((bar) => Array.from(bar.querySelectorAll('[data-testid]')).map((el) => el.getAttribute('data-testid')));
-  expect(order.indexOf('export-html')).toBe(order.indexOf('print') + 1);
+  expect(order.indexOf('download-pdf')).toBe(order.indexOf('print') + 1);
 
   const [download] = await Promise.all([page.waitForEvent('download', LOAD_TIMEOUT), button.click()]);
-  expect(download.suggestedFilename()).toBe('A Shared Brew.html');
-  const path = testInfo.outputPath('A Shared Brew.html');
-  await download.saveAs(path);
-  await expect(page.getByText('Exported “A Shared Brew.html”', { exact: true })).toBeVisible();
-
-  const html = readFileSync(path, 'utf8');
-  expect(/<script/i.test(html), 'a <script> in the file').toBe(false);
+  expect(download.suggestedFilename()).toBe('A Shared Brew.pdf');
+  await expect(page.getByText('Downloaded “A Shared Brew.pdf”', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Sign in' })).toHaveCount(0);
   const pages = await page.locator('.hb-canvas .pages > .page').count();
-  const offline = await openOffline(browser, path);
+  const sheets = pdfSheets(readFileSync(await download.path()));
+  expect(sheets).toHaveLength(pages);
+  for (const sheet of sheets) {
+    expect(sheet.width).toBeCloseTo(612, 0); // 816 px = 8.5 in
+    expect(sheet.height).toBeCloseTo(792, 0);
+  }
+
+  // What the API renders: the page's HTML export, without scripts, which looks like the page.
+  expect(endpoint.requests).toHaveLength(1);
+  const html = endpoint.requests[0]!;
+  expect(/<script/i.test(html), 'a <script> in the file').toBe(false);
+  const offline = await openOffline(browser, writeExport(testInfo, html, 'A Shared Brew.html'));
   try {
     expect(offline.requests).toEqual([]);
     await expect(offline.page.locator('.pages > .page')).toHaveCount(pages);
@@ -164,7 +192,7 @@ test('share page: "Export HTML" downloads a file that opens offline and looks li
 test('share page: Print waits for lazy images, then prints only the pages, one per sheet', async ({ page, browserName }) => {
   let release: () => void = () => undefined;
   const imageGate: ImageGate = { open: new Promise<void>((resolve) => (release = resolve)), requested: false };
-  await openShare(page, '', imageGate);
+  await openShare(page, { imageGate });
   await recordPrints(page);
   // The picture on page 3 (lazy) is not there: its file answers only once released.
   const loaded = () => page.locator(`.hb-canvas img[src="${LAZY_IMAGE}"]`).evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0);
@@ -199,7 +227,7 @@ test('share page: Print waits for lazy images, then prints only the pages, one p
 });
 
 test("share page: the brew's @page size is honoured when printing", async ({ page, browserName }) => {
-  await openShare(page, '@page { size: A5; }\n.page { width: 148mm; height: 210mm; padding: 1cm 1.2cm; }');
+  await openShare(page, { style: '@page { size: A5; }\n.page { width: 148mm; height: 210mm; padding: 1cm 1.2cm; }' });
   await page.emulateMedia({ media: 'print' });
   const boxes = await pageBoxes(page);
   expect(boxes.length).toBeGreaterThanOrEqual(3);
@@ -232,41 +260,33 @@ test("share page: the brew's @page size is honoured when printing", async ({ pag
   }
 });
 
-test('home page: "Export HTML" is in the Brew toolbar, keyboard operable, and axe-clean', async ({ page, browser }, testInfo) => {
+test('home page (signed in): "Download PDF" is in the Brew toolbar, keyboard operable, and axe-clean', async ({ page, browser }) => {
   await blockOtherSites(page);
   await page.route(
     (url) => url.pathname.startsWith('/api/'),
     (route) => {
       const { pathname } = new URL(route.request().url());
-      if (pathname === '/api/account/me') return route.fulfill({ status: 204 });
+      if (pathname === '/api/account/me') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(READER) });
       if (pathname === '/api/notifications/active') return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       return route.fulfill({ status: 404, contentType: 'application/problem+json', body: JSON.stringify({ title: 'Not found', status: 404 }) });
     },
   );
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await waitForApp(page);
+  const endpoint = await stubPdfEndpoint(page, browser);
 
-  // Roving focus: from Print, ArrowRight reaches Export HTML; Enter exports.
+  // Roving focus: from Print, ArrowRight reaches Download PDF; Enter exports.
   const print = page.getByTestId('print');
   await print.focus();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByTestId('export-html')).toBeFocused();
+  await expect(page.getByTestId('download-pdf')).toBeFocused();
   const [download] = await Promise.all([page.waitForEvent('download', LOAD_TIMEOUT), page.keyboard.press('Enter')]);
-  const path = testInfo.outputPath(download.suggestedFilename());
-  await download.saveAs(path);
-  expect(download.suggestedFilename()).toMatch(/\.html$/);
-  // (Booleans, not the text: a failure must not print a file full of data: URIs.)
-  const html = readFileSync(path, 'utf8');
-  expect(/<script/i.test(html)).toBe(false);
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/);
   const pages = await page.locator('.hb-canvas .pages > .page').count();
-  const headings = await page.locator('.hb-canvas .page h1').allInnerTexts();
-  const offline = await openOffline(browser, path);
-  try {
-    await expect(offline.page.locator('.pages > .page')).toHaveCount(pages);
-    expect(await offline.page.locator('.page h1').allInnerTexts()).toEqual(headings);
-  } finally {
-    await offline.context.close();
-  }
+  expect(pdfSheets(readFileSync(await download.path()))).toHaveLength(pages);
+  // (Booleans, not the text: a failure must not print a file full of data: URIs.)
+  expect(endpoint.requests).toHaveLength(1);
+  expect(/<script/i.test(endpoint.requests[0]!)).toBe(false);
 
   // Legacy mode: axe in the page (the default mode's extra blank page is slow to open in Firefox).
   const results = await new AxeBuilder({ page }).setLegacyMode(true).include('[data-testid="editor-app-bar"]').analyze();

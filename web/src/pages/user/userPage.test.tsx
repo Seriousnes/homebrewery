@@ -8,6 +8,14 @@ import { summary } from '@/ported/listPage/testing';
 import { clearToasts, toastStore } from '@/ui';
 import UserPage from './index';
 
+// The PDF export itself (HTML export, theme, API render) has its own tests: here it is a stand-in.
+const exporter = vi.hoisted(() => ({
+  exportStoredBrewPdf: vi.fn(),
+  downloadFile: vi.fn(),
+  formatBytes: (n: number) => `${n} bytes`,
+}));
+vi.mock('@/editor/export', () => exporter);
+
 const BOB: AccountInfo = { id: '0190-bob', handle: 'bob', email: 'bob@example.test', roles: [] };
 
 beforeEach(() => {
@@ -125,7 +133,7 @@ describe('/user/:handle', () => {
     expect(screen.getByRole('button', { name: 'Delete Alpha' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Beta' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline Delta invite' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Download Gamma draft' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download Gamma draft as PDF' })).toBeInTheDocument();
     // A locked brew can't be cloned; the others can.
     const locked = screen.getByRole('article', { name: 'Epsilon locked' });
     expect(within(locked).getByTestId('brew-locked')).toBeInTheDocument();
@@ -240,28 +248,28 @@ describe('/user/:handle', () => {
     expect(await navigator.clipboard.readText()).toBe(`${window.location.origin}/share/pubA000001`);
   });
 
-  it('downloads an own brew as a JSON file', async () => {
+  it('downloads an own brew as a PDF', async () => {
     const api = fakeUserApi({ me: ALICE, own: aliceBrews });
-    const blobs: Blob[] = [];
-    const createObjectURL = vi.fn((blob: Blob) => {
-      blobs.push(blob);
-      return 'blob:test';
-    });
-    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
-    const clicked: string[] = [];
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
-      clicked.push(this.download);
-    });
-    try {
-      const { user } = renderUserPage('/user/alice', ALICE);
-      await user.click(await screen.findByRole('button', { name: 'Download Gamma draft' }));
-      await waitFor(() => expect(clicked).toEqual(['Gamma draft.json']));
-      expect(api.requests.some((r) => r.path === '/api/brews/edit/editC00001')).toBe(true);
-      const file = JSON.parse(await blobs[0]!.text()) as { format: string; shareId: string; doc: unknown };
-      expect(file).toMatchObject({ format: 'homebrewery-brew', shareId: 'draft00001', doc: { type: 'doc' } });
-    } finally {
-      click.mockRestore();
-    }
+    const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+    const report = { pages: 2, bytes: 1, inlined: 0, inlinedBytes: 0, external: [], failed: [], removed: 0, pageSize: null, fontsSettled: true };
+    exporter.exportStoredBrewPdf.mockResolvedValue({ pdf, filename: 'Gamma draft.pdf', report, missingFiles: 0 });
+    const { user } = renderUserPage('/user/alice', ALICE);
+    await user.click(await screen.findByRole('button', { name: 'Download Gamma draft as PDF' }));
+    await waitFor(() => expect(exporter.downloadFile).toHaveBeenCalledWith(pdf, 'Gamma draft.pdf'));
+    expect(api.requests.some((r) => r.path === '/api/brews/edit/editC00001')).toBe(true);
+    const [brew, options] = exporter.exportStoredBrewPdf.mock.calls[0]! as [{ shareId: string }, { title: string }];
+    expect(brew.shareId).toBe('draft00001');
+    expect(options.title).toBe('Gamma draft');
+    await waitFor(() => expect(toastTitles()).toContain('Downloaded “Gamma draft.pdf”'));
+  });
+
+  it('says why a PDF could not be made', async () => {
+    fakeUserApi({ me: ALICE, own: aliceBrews });
+    exporter.exportStoredBrewPdf.mockRejectedValue(new Error('The theme could not be loaded.'));
+    const { user } = renderUserPage('/user/alice', ALICE);
+    await user.click(await screen.findByRole('button', { name: 'Download Gamma draft as PDF' }));
+    await waitFor(() => expect(toastTitles()).toContain("Couldn't make the PDF"));
+    expect(toastStore.getState().toasts.at(-1)?.description).toBe('The theme could not be loaded.');
   });
 
   it('says when the list is capped and welcomes an owner without brews', async () => {

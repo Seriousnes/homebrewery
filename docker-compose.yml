@@ -35,8 +35,13 @@ services:
       start_period: 10s
 
   # ASP.NET Core API under `dotnet watch` (hot reload; restarts on edits hot reload can't apply).
+  # The image is the .NET SDK plus headless Chromium for PDF export (the Dockerfile's dev-api stage).
+  # After a Microsoft.Playwright upgrade, `docker compose build api` installs the matching Chromium.
   api:
-    image: mcr.microsoft.com/dotnet/sdk:10.0
+    build:
+      context: .
+      target: dev-api
+    image: homebrewery-dev-api:local
     working_dir: /repo
     command:
       - dotnet

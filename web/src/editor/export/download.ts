@@ -1,13 +1,12 @@
-// Saving the exported file (P6.4): a Blob URL clicked through a temporary <a download>.
+// Saving an exported file (issue #2: the PDF): a Blob URL clicked through a temporary <a download>.
 
 /** The Blob URL lives this long after the click (the browser has started the download by then). */
 export const REVOKE_DELAY_MS = 60_000;
 
-/** Starts the download of `html` as `filename`. */
-export function downloadHtml(html: string, filename: string, doc: Document = document): void {
+/** Starts the download of `file` as `filename`. */
+export function downloadFile(file: Blob, filename: string, doc: Document = document): void {
   const win = doc.defaultView ?? window;
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = win.URL.createObjectURL(blob);
+  const url = win.URL.createObjectURL(file);
   const link = doc.createElement('a');
   link.href = url;
   link.download = filename;
