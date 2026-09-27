@@ -1,5 +1,5 @@
 // P8.3: the production build under the enforced Content-Security-Policy (src/Homebrewery.Api/Infrastructure/
-// SecurityHeaders.cs, docs/security.md). A walk through every page (anonymous, signed in, admin) with brews that use
+// SecurityHeaders.cs). A walk through every page (anonymous, signed in, admin) with brews that use
 // what brews use in the wild — theme CSS and fonts, user CSS with an https @import (a web font), https and data:
 // images, raw HTML with inline styles — must cause no CSP violation: none reported by a securitypolicyviolation
 // listener (every page and frame of the context) and none logged to the console. A canary checks that the policy is

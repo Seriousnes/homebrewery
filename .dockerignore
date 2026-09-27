@@ -12,7 +12,6 @@
 
 # Not part of the image (the compose files and deploy/caddy are the local dev/run stack)
 legacy/
-docs/
 tests/
 Dockerfile
 .dockerignore

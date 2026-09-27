@@ -12,7 +12,7 @@ existing brews only.
 - **Database:** PostgreSQL 18; documents are stored as ProseMirror JSON in `jsonb`.
 - **Themes:** the upstream theme CSS and snippet generators (`themes/`) are reused unchanged.
 
-The plan of record is [docs/wysiwyg-plan.md](./docs/wysiwyg-plan.md), a text copy of the
+The plan of record is the
 [Homebrewery WYSIWYG Plan](https://claude.ai/artifact/1X5nXZesTgEWWRCTuCXEgt). Work is tracked by task ID
 (P0.1–P8.4, spikes S1–S3). The rewrite is in progress; the original app is kept in [legacy/](./legacy)
 for reference.
@@ -27,14 +27,13 @@ for reference.
 | `themes/` | Shared with upstream: V3 and Legacy theme LESS, fonts, assets and snippet generators. Edited only to fix bugs |
 | `shared/` | Generated and committed files both sides read: `schema-manifest.json` (from the editor schema by `web/scripts/schema-manifest.ts`; the server validates documents against it), `openapi.json` (the API description; `web/src/api/schema.d.ts` is generated from it) and `url-policy-cases.json` (URL policy cases both test suites run) |
 | `legacy/` | The original Node/React/MongoDB app (`client/`, `server/`, `shared/`, `server.js`, its build and Docker files). Reference only; nothing imports from it at runtime |
-| `docs/` | `wysiwyg-plan.md`, the implementation plan; `operations.md`, running it in production; `security.md`; `testing.md`, the test suites and their fail-fast limits; `implementation-notes.md` |
 | `Homebrewery.slnx`, `global.json`, `Directory.*.props` | .NET solution, SDK pin and shared build settings (central package versions) |
 | `docker-compose.yml` | Local dev stack: PostgreSQL 18, the API under `dotnet watch`, the Vite dev server and Caddy (see [Running locally](#running-locally)) |
 | `compose.prod.yml` | Override that runs the production image behind the same Caddy and database instead of the dev servers, plus the scheduled `backup` service |
 | `deploy/caddy/Caddyfile` | Local routing: one origin (http://localhost:8080) for the API and the Vite dev server |
-| `deploy/` (the rest) | Operations: `backup/hb-backup.sh` (scheduled `pg_dump`), `scripts/` (backup-now, restore and the operations tests), `compose.external-db.yml` (production against a managed PostgreSQL); see [docs/operations.md](./docs/operations.md) |
+| `deploy/` (the rest) | Operations: `backup/hb-backup.sh` (scheduled `pg_dump`), `scripts/` (backup-now, restore and the operations tests), `compose.external-db.yml` (production against a managed PostgreSQL) |
 | `Dockerfile` | Production image: Vite build, then `dotnet publish`, then the ASP.NET Core runtime |
-| `.github/workflows/ci.yml` | CI: web lint, typecheck, unit tests, build and Playwright (in short shards); .NET restore, build and test (see [docs/testing.md](./docs/testing.md)) |
+| `.github/workflows/ci.yml` | CI: web lint, typecheck, unit tests, build and Playwright (in short shards); .NET restore, build and test |
 
 ## Running locally
 
@@ -154,11 +153,10 @@ collide with this setup; both use the same (shared) database.
 
 Tests (on the host). They never use the shared database or another worktree's servers: the API tests start their
 own PostgreSQL with Testcontainers, every e2e runner that needs an API starts a throwaway PostgreSQL container of its
-own, and a worktree's test ports and temp folders carry its slot ([docs/testing.md](./docs/testing.md) "Worktrees";
-Docker must be running). Every suite fails fast: short
+own, and a worktree's test ports and temp folders carry its slot (Docker
+must be running). Every suite fails fast: short
 per-test timeouts, every Playwright run capped at 5 minutes (a big suite runs as several short sets), and runner
-scripts that kill a run making no progress for 60 s. There are no long tests. How to run each suite, the limits,
-splitting a slow test and debugging a stall: [docs/testing.md](./docs/testing.md).
+scripts that kill a run making no progress for 60 s. There are no long tests.
 
 The everyday loop is the unit tests, the e2e specs of the area you change, and the smoke set (about 50 e2e tests
 tagged `@smoke`, Chromium, under 3 minutes: the plan §12 flow, core pagination in the editor, an import smoke).
@@ -177,7 +175,7 @@ skip without one. Rarely needed locally, from `web/`:
 
 ```
 node e2e/matrix/run-suite.mjs     # the whole suite as CI runs it: private API (:5474) and Vite (:5374) + 1000 × slot, in short sets
-node e2e/security/run-csp.mjs     # the production build under the enforced CSP, every page (docs/security.md)
+node e2e/security/run-csp.mjs     # the production build under the enforced CSP, every page
 ```
 
 After changing an endpoint or a DTO, regenerate `shared/openapi.json` and `web/src/api/schema.d.ts`
@@ -199,9 +197,7 @@ docker run -p 8080:8080 -v homebrewery-keys:/var/lib/homebrewery/keys -e Databas
 
 ## Running in production
 
-[docs/operations.md](./docs/operations.md) is the operations guide: deploying the image behind a TLS
-proxy, every configuration key, secrets, managed PostgreSQL (SSL modes), migrations and upgrades,
-backups and restores, logs, health checks, sign-in keys, rate limits and admin accounts. In short:
+Deploy the image behind a TLS proxy. In short:
 
 - The image needs `ConnectionStrings__Homebrewery` and a volume at `/var/lib/homebrewery/keys`
   (the sign-in key ring). It listens on port 8080 and logs one JSON object per line.
@@ -209,7 +205,7 @@ backups and restores, logs, health checks, sign-in keys, rate limits and admin a
   as a release step (the app refuses to start while migrations are pending).
 - Health: `/healthz` (includes the database), `/healthz/live`, `/healthz/ready`.
 - Security headers: every response carries a Content-Security-Policy (enforced outside Development) and the
-  other headers described in [docs/security.md](./docs/security.md), with the threat model and the review.
+  other standard security headers.
 - Against a managed PostgreSQL: [deploy/compose.external-db.yml](./deploy/compose.external-db.yml) with
   [deploy/external-db.env.example](./deploy/external-db.env.example).
 - Backups: the `backup` service runs `pg_dump` on a schedule (`HB_BACKUP_INTERVAL`, default daily; keeps

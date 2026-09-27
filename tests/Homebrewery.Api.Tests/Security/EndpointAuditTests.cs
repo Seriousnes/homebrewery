@@ -47,7 +47,7 @@ public sealed class EndpointAuditTests(ApiFixture api)
 
     /// <summary>
     /// POSTs that anyone may call. They change nothing on the server (POST only carries a large body), are rate limited,
-    /// and SameOriginWriteGuard still requires the site's Origin. Adding one is a security decision: docs/security.md.
+    /// and SameOriginWriteGuard still requires the site's Origin. Adding one is a security decision.
     /// </summary>
     private static readonly HashSet<string> AnonymousWrites = new(StringComparer.OrdinalIgnoreCase)
     {

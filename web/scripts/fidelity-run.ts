@@ -24,7 +24,7 @@
 //
 // Every run (a browser or a variant) is split into short SETS (CLAUDE.md "Tests fail fast"): one
 // Playwright run per SET_SIZE fixtures (`--shard=k/n`), each well under the 5-minute cap and under
-// the runners' no-progress watchdog (scripts/testRunner.ts, docs/testing.md); every fixture is its
+// the runners' no-progress watchdog (scripts/testRunner.ts); every fixture is its
 // own short test. The sets run one after the other and the script stops at the first set that
 // fails, then prints each set's wall time. Playwright empties test-results/<port> on every run, so
 // each set's JSON results are copied to test-results/fidelity-runs/<run> before the next set

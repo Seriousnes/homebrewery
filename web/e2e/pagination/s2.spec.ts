@@ -2,7 +2,7 @@
 // /dev/pagination with 5ePHB. S2's other cases (typing at the end of a full page, deleting,
 // undo/redo, editing a split paragraph, 1,000 fuzzed edits, zoom, sections) run in the app's /edit
 // editor as the §4.11 matrix (web/e2e/matrix: typing, delete, undo, splitParagraph, fuzz, zoom and
-// sections.spec.ts); their dev-harness copies were removed (docs/testing.md, "The lean strategy").
+// sections.spec.ts); their dev-harness copies were removed.
 //
 // The budget is tagged @serial: it runs in the serial projects (one worker; after the parallel
 // projects in a full run, see playwright.config.ts), because other workers' load would eat it. It

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Homebrewery.Api.Tests.Operations;
 
 /// <summary>
-/// Liveness and readiness (plan P8.4, docs/operations.md "Health"): <c>/healthz/live</c> runs no checks,
+/// Liveness and readiness (plan P8.4): <c>/healthz/live</c> runs no checks,
 /// <c>/healthz/ready</c> runs the checks tagged <see cref="HealthEndpoints.ReadyTag"/> (the database), and
 /// <c>/healthz</c> keeps running every check (the compose health checks use it).
 /// </summary>

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Managed-PostgreSQL test (plan P8.4 "the container runs against a managed Postgres"; docs/operations.md
-# "Managed PostgreSQL").
+# Managed-PostgreSQL test (plan P8.4 "the container runs against a managed Postgres").
 #
 #   deploy/scripts/test-external-db.sh [--keep] [--no-build]
 #

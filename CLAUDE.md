@@ -1,9 +1,7 @@
 ## WYSIWYG rewrite (fork)
 
 - Plan of record: [https://claude.ai/artifact/1X5nXZesTgEWWRCTuCXEgt](https://claude.ai/artifact/1X5nXZesTgEWWRCTuCXEgt) ("Homebrewery WYSIWYG Plan").
-Local text copy: docs/wysiwyg-plan.md (same content; section numbers and task IDs match).
 Before starting a task, read the plan section for its ID (e.g. P4.3) and meet its "Done when".
-What was actually built (interfaces, conventions, deviations): docs/implementation-notes.md.
 - Run: ./stack up (PowerShell: .\stack up) → the branch's own stack (compose project hb-<branch>: API under dotnet watch,
 Vite, Caddy on 8080 in the main checkout, 8080 + slot in a worktree; ./stack info) on ONE shared PostgreSQL for every
 branch (compose project homebrewery-shared). README "Running locally". Production image: ./stack --prod up --build
@@ -15,18 +13,17 @@ in the browser (the local brew library, issue #4), keep any number, download the
 later (never automatically). Don't gate anything else behind sign-in without asking.
 - PDF export: POST /api/export/pdf renders the web client's HTML export with headless Chromium (Microsoft.Playwright).
 Host runs and dotnet test need that Chromium: npm --prefix web exec playwright install chromium (the same build).
-The Docker images install it; after a Microsoft.Playwright upgrade, ./stack build api. docs/implementation-notes.md "PDF export".
+The Docker images install it; after a Microsoft.Playwright upgrade, ./stack build api.
 - Frontend: web/ (React 19, TypeScript, Vite, TipTap 3). Host-only run: npm --prefix web run dev (:5173, proxies /api to :5080).
 - themes/ is shared with upstream. Only edit theme LESS to fix bugs. The editor must emit the
 HTML listed in the plan's "CSS contract" so theme CSS keeps working unchanged.
 - legacy/ holds the original Node/React code for reference. Never import from it at runtime.
 - Pagination: transactions set addToHistory=false and move page boundaries only with
 join + split (never delete + insert). See plan section 4.
-- Tests: npm --prefix web test (dotnet test for src/) + only the e2e specs of the area you change (npm --prefix web run e2e -- <spec or folder>) + npm --prefix web run e2e:smoke; the full e2e suite runs in CI only (docs/testing.md).
+- Tests: npm --prefix web test (dotnet test for src/) + only the e2e specs of the area you change (npm --prefix web run e2e -- <spec or folder>) + npm --prefix web run e2e:smoke; the full e2e suite runs in CI only.
 Production build under the enforced CSP: node e2e/security/run-csp.mjs (from web/); new pages need a step in web/e2e/security/csp.spec.ts.
 Tests never share servers or data across worktrees: runners start their own PostgreSQL container and use the
-worktree's slot ports and temp folders (docs/testing.md "Worktrees"). Only Docker needs to be running.
-- Operations (image, configuration, migrations, backups, logs, health): docs/operations.md. Security (CSP and headers, review, rules for new code): docs/security.md.
+worktree's slot ports and temp folders. Only Docker needs to be running.
 
 ## Development guidelines (beyond the plan)
 

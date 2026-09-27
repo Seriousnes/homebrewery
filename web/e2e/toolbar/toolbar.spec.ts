@@ -10,7 +10,7 @@ const toolbar = (page: Page) => page.getByRole('toolbar', { name: 'Editing' });
 /** Axe results for the app chrome (the brew's own content is the author's, not the app's). */
 async function violations(page: Page, include: string[]): Promise<string[]> {
   // Legacy mode: axe.run in the page. The default mode finishes in a new blank page, which took seconds to
-  // minutes in Firefox (docs/implementation-notes.md, a11y lane); the toolbar page has no iframes.
+  // minutes in Firefox (a11y lane); the toolbar page has no iframes.
   let builder = new AxeBuilder({ page }).setLegacyMode(true);
   for (const selector of include) builder = builder.include(selector);
   const results = await builder.analyze();

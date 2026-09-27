@@ -10,7 +10,7 @@ namespace Homebrewery.Api.Tests.Pdf;
 
 /// <summary>
 /// <see cref="PdfRenderer"/> with real headless Chromium: the Chromium build of the Microsoft.Playwright package must be
-/// installed (docs/testing.md; <c>npm --prefix web exec playwright install chromium</c> installs the same build).
+/// installed (<c>npm --prefix web exec playwright install chromium</c> installs the same build).
 /// Other sites' files come from <see cref="FakeFetcher"/>, so these tests never use the network.
 /// </summary>
 public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) : IClassFixture<PdfRendererTests.RendererFixture>

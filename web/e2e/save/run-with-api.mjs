@@ -3,7 +3,7 @@
 // with its own database (hb_e2e_autosave on the run's own PostgreSQL container, migrated on start), starts an
 // isolated Vite on E2E_PORT (5325; e2e/matrix/vite.isolated.config.mjs, proxying /api to that API),
 // runs `playwright test e2e/save`, then stops both. Never uses the humans' ports (5080, 5173, 8080).
-// Fail-fast limits and the no-progress watchdog: docs/testing.md.
+// Fail-fast limits and the no-progress watchdog: scripts/testRunner.ts.
 //
 //   node e2e/save/run-with-api.mjs [playwright args…]      (from web/; needs Docker: the run starts its own PostgreSQL container)
 //

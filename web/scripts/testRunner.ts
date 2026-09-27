@@ -1,5 +1,5 @@
 // Shared support for the end-to-end runner scripts (web/e2e/**/run-*.mjs, scripts/fidelity-run.ts,
-// scripts/welcome-doc.ts): fail-fast process handling (CLAUDE.md "Tests fail fast", docs/testing.md).
+// scripts/welcome-doc.ts): fail-fast process handling (CLAUDE.md "Tests fail fast").
 //
 //   - Playwright runs under a no-progress watchdog. The progress reporter (scripts/progressReporter.ts,
 //     attached through PW_TEST_REPORTER) reports every test and step over IPC. When nothing moves for
@@ -10,7 +10,7 @@
 //   - Builds (dotnet build, vite build) are killed when they print nothing for 2 minutes.
 //   - Every child process is killed by process tree on exit, on SIGINT/SIGTERM and on errors; a
 //     detached reaper (scripts/processReaper.ts) kills them when the runner itself is killed hard.
-//   - Worktrees never share a run's servers or data (docs/testing.md "Worktrees"): the default ports,
+//   - Worktrees never share a run's servers or data: the default ports,
 //     temp folders and database container names carry the worktree's slot (scripts/worktree.ts), and
 //     every run that needs PostgreSQL starts a throwaway one of its own (startDatabase).
 //
@@ -33,7 +33,7 @@ const envMs = (name: string, fallback: number): number => {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 };
 
-/** The fail-fast limits (docs/testing.md). The HB_* variables exist to test the watchdog itself. */
+/** The fail-fast limits. The HB_* variables exist to test the watchdog itself. */
 export const LIMITS = {
   /** No test began, finished or took a step for this long: the run is stuck. The same for every test. */
   stallMs: envMs('HB_STALL_MS', 60_000),
@@ -805,7 +805,7 @@ export class TestRunner {
       onEvent: process.env.HB_WATCHDOG_DEBUG === '1' ? (event) => this.log(`progress: ${JSON.stringify(event)}`) : undefined,
       onStall: (stall) => {
         this.error(stall.message.split('\n').join(`\n[${this.name}] `));
-        this.error(`Killing the Playwright run (pid ${child.pid}) with its workers and browsers. How to debug a stall: docs/testing.md.`);
+        this.error(`Killing the Playwright run (pid ${child.pid}) with its workers and browsers.`);
       },
     });
     const ms = Date.now() - started;

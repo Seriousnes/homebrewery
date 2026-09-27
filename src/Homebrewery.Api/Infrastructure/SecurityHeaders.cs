@@ -18,7 +18,7 @@ public enum CspMode
 }
 
 /// <summary>
-/// Configuration section <c>SecurityHeaders</c> (P8.3; docs/security.md has the reasoning behind every value).
+/// Configuration section <c>SecurityHeaders</c> (P8.3).
 /// </summary>
 public sealed class SecurityHeadersSettings
 {

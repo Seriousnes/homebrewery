@@ -14,7 +14,7 @@
 // specs named _*.spec.ts are ignored), and stops what it started. A Vite already answering on its
 // port is reused (the port is this worktree's); the API only with HB_E2E_DB_HOST (otherwise it
 // would belong to another run's database). Never uses the humans' ports (5080, 5173, 8080); other worktrees' runs use other
-// ports, containers and temp folders (docs/testing.md "Worktrees").
+// ports, containers and temp folders.
 //
 //   node e2e/matrix/run-suite.mjs [playwright args…]          (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/matrix/run-suite.mjs e2e/matrix --workers=4      (a filter; options go to every set: use --opt=value)
@@ -31,7 +31,7 @@
 //     the set that failed.
 //   - With --project: one run, as given (CI shards do that).
 //
-// Fail fast (docs/testing.md, scripts/testRunner.ts): the API is built first, then must answer
+// Fail fast (scripts/testRunner.ts): the API is built first, then must answer
 // within 60 s, Vite within 30 s; a Playwright run with no test progress for 60 s is killed with its
 // browsers and the tests that were running are printed (exit 124); everything started here is
 // stopped on exit, Ctrl+C or error, and by a reaper when this script itself is killed.

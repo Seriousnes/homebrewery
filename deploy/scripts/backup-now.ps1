@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-One pg_dump backup right away, through the compose `backup` service (docs/operations.md "Backups and restore").
+One pg_dump backup right away, through the compose `backup` service.
 
 .DESCRIPTION
 Prints the new dump's file name (in the backups volume), e.g. homebrewery-20260926T010203Z-manual.dump.

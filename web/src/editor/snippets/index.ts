@@ -1,6 +1,5 @@
 // Snippets (plan §6.3, P5.1): theme snippet groups compiled for a theme chain, user snippets,
-// the markdown insertion pipeline, native replacements and style-view helpers. See
-// docs/implementation-notes.md ("Snippets, theme blocks, live TOC").
+// the markdown insertion pipeline, native replacements and style-view helpers.
 export type { ThemeSnippet, ThemeSnippetContext, ThemeSnippetGenerator, ThemeSnippetGroup } from './themeSnippets';
 export { STATIC_SNIPPET_LOADERS, hasStaticSnippets, loadStaticSnippets } from './staticSnippets';
 export {

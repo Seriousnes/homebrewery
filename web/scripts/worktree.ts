@@ -1,5 +1,5 @@
 // Which git worktree this checkout is, and the names and ports that keep its stacks apart from the
-// other worktrees' (docs/testing.md "Worktrees", README "Running locally").
+// other worktrees' (README "Running locally").
 //
 // Every worktree of the repository gets a SLOT: the main checkout is slot 0, every other worktree
 // the lowest free slot from 1, kept in <git common dir>/hb-worktree-slots.json (shared by all

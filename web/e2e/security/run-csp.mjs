@@ -8,7 +8,7 @@
 //      signs in many times from one IP) and an admin account that needs no confirmed email;
 //   3. `playwright test e2e/security` with E2E_BASE_URL at that API (no Vite) and HB_CSP_E2E=1;
 // then stops the API. Never uses the humans' ports (5080, 5173, 8080). Fail-fast limits and the
-// no-progress watchdog: docs/testing.md.
+// no-progress watchdog: scripts/testRunner.ts.
 //
 //   node e2e/security/run-csp.mjs [playwright args…]      (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/security/run-csp.mjs -g import

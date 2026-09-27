@@ -1,4 +1,4 @@
-// Timeout guard (CLAUDE.md "Tests fail fast", docs/testing.md). Tests must surface a stall in
+// Timeout guard (CLAUDE.md "Tests fail fast"). Tests must surface a stall in
 // seconds, so explicit timeouts are capped:
 //   e2e specs and helpers (web/e2e/**)                    60 s
 //   unit tests (web/src/**/*.test.*, scripts/, vite/)     15 s

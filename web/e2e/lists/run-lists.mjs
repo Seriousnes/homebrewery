@@ -7,7 +7,7 @@
 //     proxying /api and /share to that API;
 // then `playwright test` with HB_API_URL, E2E_PORT and E2E_BASE_URL set, and stops what it started
 // (servers already running on those ports are reused). Never uses the humans' ports. Fail-fast
-// limits and the no-progress watchdog: docs/testing.md.
+// limits and the no-progress watchdog: scripts/testRunner.ts.
 //
 //   node e2e/lists/run-lists.mjs [playwright args…]     (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/lists/run-lists.mjs --workers=2             (flags alone still run only e2e/lists)

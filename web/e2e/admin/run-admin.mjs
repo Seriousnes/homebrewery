@@ -7,7 +7,7 @@
 //     proxying /api and /share to that API;
 // then `playwright test e2e/admin` with HB_API_URL, E2E_PORT, E2E_BASE_URL and ADMIN_E2E_EMAIL set,
 // and stops what it started (servers already running on those ports are reused). Never uses the
-// humans' ports (5080, 5173, 8080). Fail-fast limits and the no-progress watchdog: docs/testing.md.
+// humans' ports (5080, 5173, 8080). Fail-fast limits and the no-progress watchdog: scripts/testRunner.ts.
 //
 //   node e2e/admin/run-admin.mjs [playwright args…]     (from web/; needs Docker: the run starts its own PostgreSQL container)
 //

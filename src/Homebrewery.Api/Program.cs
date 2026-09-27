@@ -49,7 +49,7 @@ builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
 builder.Services.Configure<ExceptionHandlerOptions>(o => o.StatusCodeSelector = ex =>
     ex is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
 builder.Services.AddProxyForwardedHeaders();                // X-Forwarded-For/-Proto/-Host behind Caddy
-builder.Services.AddSecurityHeaders();                      // CSP, HSTS, nosniff, ... (SecurityHeaders:*, docs/security.md)
+builder.Services.AddSecurityHeaders();                      // CSP, HSTS, nosniff, ... (SecurityHeaders:*)
 builder.Services.AddRateLimits();                           // RateLimits:* (auth, import, pdf, writes)
 builder.Services.TryAddSingleton(TimeProvider.System);
 
@@ -94,7 +94,7 @@ builder.Services.AddHttpClient(SpaIndex.DevServerClient, c => c.Timeout = TimeSp
 
 builder.Services.AddApiDocument();                          // web/ generates its client from this (shared/openapi.json)
 builder.Services.AddAppHealthChecks();                      // /healthz checks the database (SELECT 1)
-builder.Services.AddAppLogging();                           // JSON console logs outside Development (P8.4, docs/operations.md)
+builder.Services.AddAppLogging();                           // JSON console logs outside Development (P8.4)
 
 // UseStaticFiles and MapFallbackToFile both read these options. The defaults already cover every
 // theme asset type (.woff2 .otf .webp .svg ...); only .woff and .ttf still use pre-RFC 8081 names.
@@ -108,7 +108,7 @@ builder.Services.Configure<StaticFileOptions>(o =>
 
 var app = builder.Build();
 
-// `migrate` (first argument): apply migrations, seed the Admin role, exit without serving (P8.4, docs/operations.md).
+// `migrate` (first argument): apply migrations, seed the Admin role, exit without serving (P8.4).
 if (MigrateCommand.IsRequested(args)) { Environment.ExitCode = await MigrateCommand.RunAsync(app); return; }
 
 app.UseRequestLogging();                                    // one log entry per request: method, route template, status, ms (P8.4)

@@ -15,7 +15,7 @@
 //
 // Environment: E2E_PORT (5375). The API is stubbed by the specs (no account, static themes).
 // Servers already running on the port are reused. Never uses the humans' ports. Fail-fast limits
-// and the no-progress watchdog: docs/testing.md.
+// and the no-progress watchdog: scripts/testRunner.ts.
 import { pickSets, takeSetArg, TestRunner, viteBin } from '../../scripts/testRunner.ts';
 import { slotPort, slotTmp } from '../../scripts/worktree.ts';
 

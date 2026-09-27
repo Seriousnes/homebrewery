@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restore test (plan P8.4 "a restore from backup is tested"; docs/operations.md "Backups and restore").
+# Restore test (plan P8.4 "a restore from backup is tested").
 #
 #   deploy/scripts/test-restore.sh [--keep] [--no-build]
 #

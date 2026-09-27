@@ -1,6 +1,6 @@
 namespace Homebrewery.Api.Infrastructure;
 
-/// <summary>Process exit behaviour of the host (plan P8.4, docs/operations.md "Logs" and "Health").</summary>
+/// <summary>Process exit behaviour of the host (plan P8.4).</summary>
 public static class AppLifetime
 {
     /// <summary>Exit code of a failed start.</summary>

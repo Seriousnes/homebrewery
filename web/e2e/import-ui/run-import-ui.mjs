@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs the import page's end-to-end tests (web/e2e/import-ui) through the flows runner
 // (e2e/flows/run-flows.mjs: a private API with its own database and an isolated Vite, started or
-// reused, then stopped; fail-fast limits and the no-progress watchdog: docs/testing.md), with this
+// reused, then stopped; fail-fast limits and the no-progress watchdog: scripts/testRunner.ts), with this
 // lane's ports and database, in this process:
 //
 //   node e2e/import-ui/run-import-ui.mjs [playwright args…]     (from web/; needs Docker: the run starts its own PostgreSQL container)

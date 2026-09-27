@@ -18,7 +18,7 @@ import { slotPort } from './scripts/worktree';
 //                                     §4.10 perf budgets): one worker per project, so they never
 //                                     run beside each other.
 // The smoke set (tests tagged @smoke, Chromium, about 50 tests in under 3 minutes) is
-// `npm run e2e:smoke` (docs/testing.md).
+// `npm run e2e:smoke`.
 // In a bare full run (`npx playwright test`, no file, --grep, --project, --shard … filter) the
 // serial projects run after the parallel ones (project dependencies), so no other test competes
 // with their budgets; a failure in the parallel projects then skips them. With a filter there are
@@ -38,7 +38,7 @@ const SERIAL = /@serial/;
 // movement, selection, IME, paste and key handling differ between engines (canvas, sections/seams,
 // toolbar/keymap). Everything else (app pages, panels, a11y, import, export, save, lists …) is
 // engine-neutral and runs in Chromium only. E2E_FIREFOX=all lifts this (a local cross-browser check,
-// e.g. scripts/fidelity-run.ts --browsers chromium,firefox). docs/testing.md.
+// e.g. scripts/fidelity-run.ts --browsers chromium,firefox).
 const FIREFOX_SPECS =
   process.env.E2E_FIREFOX === 'all'
     ? undefined

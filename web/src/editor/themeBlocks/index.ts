@@ -1,5 +1,4 @@
-// Theme blocks (plan §6.4, P5.2) and the live TOC NodeView wiring (§6.5, P5.4). See
-// docs/implementation-notes.md ("Snippets, theme blocks, live TOC").
+// Theme blocks (plan §6.4, P5.2) and the live TOC NodeView wiring (§6.5, P5.4).
 import type { AnyExtension } from '@tiptap/core';
 import { ThemeBlockWithView, TocWithView } from './extension';
 

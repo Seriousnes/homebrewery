@@ -2,7 +2,7 @@
 // `playwright test` under the runners' no-progress watchdog, with no servers of its own: Playwright
 // starts the Vite dev server itself (playwright.config.ts webServer) unless E2E_BASE_URL is set.
 // A run where no test begins, ends or takes a step for 60 s is killed with its workers and
-// browsers, and the tests that were running are printed (exit 124). docs/testing.md.
+// browsers, and the tests that were running are printed (exit 124).
 //
 //   node e2e/run-playwright.mjs [playwright args…]      (from web/)
 //   E2E_PORT=5405 node e2e/run-playwright.mjs e2e/smoke.spec.ts --project=chromium --reporter=line

@@ -37,7 +37,7 @@ public sealed class CapturedLogHost(ApiFixture api) : IAsyncDisposable
 }
 
 /// <summary>
-/// Request logging (plan P8.4, docs/operations.md "Logs"): one entry per request with the method, the route template
+/// Request logging (plan P8.4): one entry per request with the method, the route template
 /// (never the raw path or query), the status and the duration, and no cookies, bodies or other request data anywhere
 /// in the log (the hosting diagnostics' RequestPath scope is off).
 /// </summary>
