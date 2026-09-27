@@ -151,6 +151,17 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
             RenderTimeout = TimeSpan.FromSeconds(3),
         });
 
+        // Start this renderer's Chromium first. On a busy CI runner the driver and browser launch can take longer
+        // than the 3 s render timeout; the launch isn't cancelled, so the browser is running afterwards either way.
+        try
+        {
+            await renderer.RenderAsync(Html("<div class=\"page\">warm-up</div>"), ct);
+        }
+        catch (PdfRenderFailedException)
+        {
+            // The launch used up the warm-up's render timeout.
+        }
+
         var slow = renderer.RenderAsync(Html("<div class=\"page\"><img src=\"https://images.example/slow.png\"></div>"), ct);
         await Task.WhenAny(entered.Task, slow).WaitAsync(TimeSpan.FromSeconds(10), ct);
         Assert.False(slow.IsCompleted, $"The render ended before it fetched the image: {slow.Exception}");
