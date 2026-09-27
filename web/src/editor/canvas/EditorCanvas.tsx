@@ -8,7 +8,8 @@
 //
 // It owns the TipTap editor (schema + PageView + canvas state + paste cleanup + column
 // navigation + `extensions`), the theme chain and the brew's CSS (useCanvasTheme), the fonts
-// gate (isCanvasReady), zoom (useCanvasZoom), spreads, page shadows and print styles.
+// gate (isCanvasReady), zoom (useCanvasZoom), spreads, page shadows and print styles. The pages
+// stay hidden until the theme is first applied.
 import type { AnyExtension, Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { clsx } from 'clsx';
@@ -155,6 +156,10 @@ export function EditorCanvas({
     onStatusChange,
     onRepaginate,
   });
+  // The pages stay invisible until the theme, the brew's CSS and the fonts have first been applied
+  // (or failed), so a brew never shows unstyled. Later theme or CSS changes keep them visible.
+  const [revealed, setRevealed] = useState(false);
+  if (!revealed && status.state !== 'loading') setRevealed(true);
 
   const handle = useMemo<EditorCanvasHandle>(
     () => ({
@@ -194,7 +199,7 @@ export function EditorCanvas({
 
   return (
     <div ref={viewportRef} className={clsx(styles.viewport, className)} data-canvas-status={status.state} data-canvas-theme={status.theme}>
-      <div ref={sizerRef} className={styles.sizer}>
+      <div ref={sizerRef} className={clsx(styles.sizer, !revealed && styles.unstyled)}>
         <EditorContent
           editor={editor}
           ref={canvasRef}

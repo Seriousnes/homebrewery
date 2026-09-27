@@ -181,6 +181,31 @@ describe('EditorCanvas', () => {
     expect(t.editor.storage.hbCanvas.theme).toBe('Blank');
   });
 
+  it('keeps the pages hidden until the theme is first applied, and visible through later theme changes', async () => {
+    const t = setup();
+    const hidden = () => /unstyled/.test(t.container.querySelector('.hb-canvas')!.parentElement!.className);
+    expect(hidden()).toBe(true);
+    await waitFor(() => expect(fontsGate).not.toBeNull());
+    expect(hidden()).toBe(true); // styles applied, fonts still loading
+    await act(async () => {
+      fontsGate!.resolve(true);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(hidden()).toBe(false));
+
+    t.rerender(<EditorCanvas content={content} theme="Blank" userCssDelayMs={0} onReady={() => {}} />);
+    await waitFor(() => expect(loader.waitForFonts).toHaveBeenCalledTimes(2));
+    expect(t.container.querySelector('[data-canvas-status="loading"]')).not.toBeNull();
+    expect(hidden()).toBe(false);
+  });
+
+  it('shows the pages when the theme fails to load', async () => {
+    loader.loadThemeChain.mockImplementationOnce(() => Promise.reject(new Error('Unknown theme "Nope"')));
+    const t = setup({ theme: 'Nope' });
+    await waitFor(() => expect(t.container.querySelector('[data-canvas-status="error"]')).not.toBeNull());
+    expect(t.container.querySelector('.hb-canvas')!.parentElement!.className).not.toMatch(/unstyled/);
+  });
+
   it('reports a theme that fails to load and keeps the canvas usable', async () => {
     loader.loadThemeChain.mockImplementationOnce(() => Promise.reject(new Error('Unknown theme "Nope"')));
     const statuses: string[] = [];
