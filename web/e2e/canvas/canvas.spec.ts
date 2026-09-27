@@ -191,6 +191,44 @@ test.describe('P3.3 EditorCanvas', () => {
     await expect.poll(() => page.evaluate(() => document.fonts.check('16px "Open Sans"'))).toBe(true);
   });
 
+  test('a theme switch is atomic: the previous theme stays until the new one applies with its fonts and textures', async ({ page }) => {
+    await openCanvas(page);
+    // Every frame from the switch on: the theme links that apply, and the fonts still loading.
+    await page.evaluate(() => {
+      const w = window as unknown as { __frames: { themes: string[]; loadingFonts: number; at: number }[]; __stop: boolean };
+      w.__frames = [];
+      w.__stop = false;
+      performance.setResourceTimingBufferSize(10_000); // the dev server's module requests fill the default 250
+      const tick = () => {
+        w.__frames.push({
+          themes: Array.from(document.querySelectorAll<HTMLLinkElement>('link[data-hb-theme-href]'))
+            .filter((l) => l.sheet && l.getAttribute('media') !== 'not all')
+            .map((l) => l.getAttribute('data-hb-theme-href')!.split('/')[3]!),
+          loadingFonts: Array.from(document.fonts).filter((f) => f.status === 'loading').length,
+          at: performance.now(),
+        });
+        if (!w.__stop) requestAnimationFrame(tick);
+      };
+      tick();
+    });
+    await page.getByTestId('theme-select').selectOption('Journal');
+    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
+    const { frames, texture } = await page.evaluate(() => {
+      const w = window as unknown as { __frames: { themes: string[]; loadingFonts: number; at: number }[]; __stop: boolean };
+      w.__stop = true;
+      // The page texture: Journal's .page background image.
+      const url = /url\("([^"]+)"\)/.exec(getComputedStyle(document.querySelector('.page')!).backgroundImage)?.[1] ?? '';
+      const entry = performance.getEntriesByName(url, 'resource')[0];
+      return { frames: w.__frames, texture: url.includes('/Journal/') && entry ? entry.responseEnd : null };
+    });
+    const states = [...new Set(frames.map((f) => f.themes.join('+')))];
+    expect(states).toEqual(['Blank+5ePHB', 'Blank+Journal']); // never neither, never both
+    const swap = frames.find((f) => f.themes.includes('Journal'))!;
+    expect(swap.loadingFonts, 'no font still loading when Journal applies').toBe(0);
+    expect(texture, 'the page texture was loaded before Journal applied').not.toBeNull();
+    expect(texture!).toBeLessThanOrEqual(swap.at);
+  });
+
   test('editing the brew CSS restyles live, stays inside the canvas and dispatches REPAGINATE', async ({ page }) => {
     await openCanvas(page);
     await recordRepaginate(page);

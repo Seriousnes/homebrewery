@@ -131,6 +131,12 @@ export function EditorCanvas({
       alive = false;
     };
   }, []);
+  // The canvas's base font (EditorCanvas.module.css), loaded up front: a theme that first uses it
+  // after a switch (Blank) would otherwise show a fallback font until it loads.
+  useEffect(() => {
+    const fonts = (document as Document & { fonts?: FontFaceSet }).fonts;
+    for (const weight of ['normal', 'bold']) void fonts?.load(`${weight} 1em "Open Sans"`).catch(() => undefined);
+  }, []);
   const onZoomApplied = useCallback((z: number) => setCanvasZoom(editor, z), [editor]);
   const { viewportRef, sizerRef, canvasRef } = useCanvasZoom(zoom, spread, onZoomApplied);
   const slot = `canvas-${useId()}`;

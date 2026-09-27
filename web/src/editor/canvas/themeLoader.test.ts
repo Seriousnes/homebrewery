@@ -139,6 +139,50 @@ describe('applyThemeStyles', () => {
     expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css']);
   });
 
+  it('switches atomically: the previous theme stays applied until the new links have loaded', async () => {
+    const first = applyThemeStyles(staticThemeChain(catalog, '5ePHB'), null, { slot: 'x' });
+    const inert = () => Array.from(document.head.querySelectorAll('link')).map((l) => l.getAttribute('media'));
+    expect(inert()).toEqual(['not all', 'not all']); // loading, not applied
+    loadAll();
+    await first;
+    expect(inert()).toEqual([null, null]);
+
+    const sheet = new CSSStyleSheet();
+    const journal = applyThemeStyles(staticThemeChain(catalog, 'Journal'), '.page{}', { slot: 'x', scopeCss: () => sheet });
+    await Promise.resolve();
+    // 5ePHB still applied; Journal loading inert after the reused Blank; the CSS text not yet adopted.
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/5ePHB/style.scoped.css', '/themes/V3/Journal/style.scoped.css']);
+    expect(inert()).toEqual([null, null, 'not all']);
+    expect(document.adoptedStyleSheets).not.toContain(sheet);
+    document.head.querySelector('link[media]')!.dispatchEvent(new Event('load'));
+    await journal;
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/Journal/style.scoped.css']);
+    expect(inert()).toEqual([null, null]);
+    expect(document.adoptedStyleSheets).toContain(sheet);
+    disposeThemeSlot('x');
+  });
+
+  it('only the latest apply of a slot switches it', async () => {
+    const first = applyThemeStyles(staticThemeChain(catalog, 'Blank'), null, { slot: 'y' });
+    loadAll();
+    await first;
+    const stale = applyThemeStyles(staticThemeChain(catalog, 'Journal'), null, { slot: 'y' });
+    const latest = applyThemeStyles(staticThemeChain(catalog, '5ePHB'), null, { slot: 'y' });
+    const journalLink = document.head.querySelector('link[data-hb-theme-href$="Journal/style.scoped.css"]')!;
+    journalLink.dispatchEvent(new Event('load'));
+    await stale; // superseded: switches nothing
+    expect(journalLink.getAttribute('media')).toBe('not all');
+    loadAll();
+    await latest;
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/5ePHB/style.scoped.css']);
+    expect(document.head.querySelector('link[media]')).toBeNull();
+    // A disposed slot is not switched back in by an apply still pending.
+    const pending = applyThemeStyles(staticThemeChain(catalog, 'Journal'), null, { slot: 'y', timeoutMs: 10 });
+    disposeThemeSlot('y');
+    await pending;
+    expect(themeLinks()).toEqual([]);
+  });
+
   it('disposeThemeSlot removes every link and sheet of the slot, and only of that slot', async () => {
     const sheet = new CSSStyleSheet();
     const scopeCss = () => sheet;
