@@ -158,14 +158,14 @@ export async function captureDownloads(page: Page, { blockDownloads = false } = 
 }
 
 /** The blob texts recorded by captureDownloads, once there are `count` of them. */
-export async function capturedBlobs(page: Page, count = 1): Promise<string[]> {
-  await expect.poll(() => page.evaluate(() => window.__hbBlobs?.length ?? 0)).toBe(count);
+export async function capturedBlobs(page: Page, count = 1, options?: { timeout: number }): Promise<string[]> {
+  await expect.poll(() => page.evaluate(() => window.__hbBlobs?.length ?? 0), options).toBe(count);
   return page.evaluate(() => window.__hbBlobs ?? []);
 }
 
 /** The file names of the blocked downloads, once there are `count` of them. */
-export async function blockedDownloads(page: Page, count = 1): Promise<string[]> {
-  await expect.poll(() => page.evaluate(() => window.__hbDownloads?.length ?? 0)).toBe(count);
+export async function blockedDownloads(page: Page, count = 1, options?: { timeout: number }): Promise<string[]> {
+  await expect.poll(() => page.evaluate(() => window.__hbDownloads?.length ?? 0), options).toBe(count);
   return page.evaluate(() => window.__hbDownloads ?? []);
 }
 

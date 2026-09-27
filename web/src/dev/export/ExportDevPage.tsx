@@ -7,7 +7,7 @@ import type { ThemeChain } from '@/editor/canvas/themeLoader';
 import type { CanvasStatus } from '@/editor/canvas/useCanvasTheme';
 import { editingExtensions, viewingExtensions } from '@/editor/EditorApp/editorAppExtensions';
 import { exportBrewHtml, type ExportResult } from '@/editor/export/exportHtml';
-import { ExportHtmlButton } from '@/editor/export/ExportHtmlButton';
+import { DownloadPdfButton } from '@/editor/export/DownloadPdfButton';
 import { hbfmToDoc } from '@/editor/import/hbfmToDoc';
 import { isSettled, settleNow } from '@/editor/pagination';
 import { IconButton, Toolbar, UiRoot } from '@/ui';
@@ -38,8 +38,10 @@ type Loaded = { state: 'loading' } | { state: 'ready'; content: JSONContent; css
 /**
  * /dev/export[?doc=inn|external|a5|s1|chrome][&fixture=<S3 fixture>][&theme=5ePHB][&css=<brew CSS>]
  * [&editable=1]: a read-only canvas (as the share page shows a brew; `editable=1` for the editor's
- * DOM) with pagination, the "Export HTML" button and a Print button. `fixture` imports an S3 fixture
- * with hbfmToDoc (its CSS becomes the brew CSS). data-theme-status is "ready" once the canvas is.
+ * DOM) with pagination, the "Download PDF" button (it needs the API and a signed-in session) and a
+ * Print button. window.__hbExport.exportHtml gives the HTML export that the PDF is rendered from.
+ * `fixture` imports an S3 fixture with hbfmToDoc (its CSS becomes the brew CSS).
+ * data-theme-status is "ready" once the canvas is.
  */
 export function ExportDevPage() {
   const [params] = useSearchParams();
@@ -115,7 +117,7 @@ export function ExportDevPage() {
           <strong>/dev/export</strong>
           <Toolbar label="Export" data-testid="export-toolbar">
             <IconButton icon="print" label="Print" tooltip="bottom" disabled={!editor} onClick={() => void print()} data-testid="print" />
-            <ExportHtmlButton editor={editor} chain={chain} userCss={css} lang={lang} title={title} />
+            <DownloadPdfButton editor={editor} chain={chain} userCss={css} lang={lang} title={title} signedIn />
           </Toolbar>
           <span data-testid="canvas-status">{loaded.state === 'error' ? loaded.message : frameStatus}</span>
         </header>

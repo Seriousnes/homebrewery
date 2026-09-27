@@ -36,7 +36,7 @@ import { type PanelId, useUiStore } from '@/app/uiStore';
 import { usePageTitle } from '@/app/usePageTitle';
 import { createCanvasGate } from '@/editor/canvas/canvasState';
 import { EditorCanvas, type EditorCanvasHandle } from '@/editor/canvas/EditorCanvas';
-import { ExportHtmlButton } from '@/editor/export/ExportHtmlButton';
+import { DownloadPdfButton } from '@/editor/export/DownloadPdfButton';
 import type { ThemeSnippetRef } from '@/editor/canvas/themeLoader';
 import type { CanvasStatus } from '@/editor/canvas/useCanvasTheme';
 import { settleNow } from '@/editor/pagination';
@@ -529,7 +529,14 @@ export function EditorApp({
           onHistory={saves && editable ? () => setHistoryOpen(true) : null}
           onPrint={print}
           exportAction={
-            <ExportHtmlButton editor={editor} chain={canvasStatus.state === 'ready' ? canvasStatus.chain : null} userCss={style} lang={lang} title={title} />
+            <DownloadPdfButton
+              editor={editor}
+              chain={canvasStatus.state === 'ready' ? canvasStatus.chain : null}
+              userCss={style}
+              lang={lang}
+              title={title}
+              signedIn={signedIn}
+            />
           }
           propertiesRef={propertiesRef}
           status={editable ? null : statusNote}
