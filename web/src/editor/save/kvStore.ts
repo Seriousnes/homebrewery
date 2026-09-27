@@ -5,7 +5,7 @@
 // single object store: two createStore calls with one database name and different store names
 // would fight over the schema version. fallbackStore puts a memory store behind IndexedDB for
 // browsers where it fails (site data blocked, a broken profile, quota).
-import { createStore, del, delMany, entries, get, getMany, set, setMany, type UseStore } from 'idb-keyval';
+import { createStore, del, delMany, entries, get, getMany, keys, set, setMany, type UseStore } from 'idb-keyval';
 
 export interface KeyValueStore<T> {
   get(key: string): Promise<T | undefined>;
@@ -15,6 +15,8 @@ export interface KeyValueStore<T> {
   del(key: string): Promise<void>;
   delMany(keys: string[]): Promise<void>;
   entries(): Promise<[string, T][]>;
+  /** The keys only (no values are read). */
+  keys(): Promise<string[]>;
 }
 
 /** True when this browser exposes IndexedDB (false in jsdom and some private modes). */
@@ -38,6 +40,7 @@ export function idbStore<T>(dbName: string, storeName: string): KeyValueStore<T>
     del: (key) => del(key, idb()),
     delMany: (keys) => delMany(keys, idb()),
     entries: () => entries<string, T>(idb()),
+    keys: () => keys<string>(idb()),
   };
 }
 
@@ -120,6 +123,13 @@ export function fallbackStore<T>(primary: KeyValueStore<T>, fallback: KeyValueSt
       const older = await fromPrimary((store) => store.entries(), [] as [string, T][]);
       return [...own, ...older.filter(([key]) => !seen.has(key))];
     },
+    async keys() {
+      await ready();
+      if (!failed) return primary.keys();
+      const own = await fallback.keys();
+      const older = await fromPrimary((store) => store.keys(), [] as string[]);
+      return [...new Set([...own, ...older])];
+    },
   };
 }
 
@@ -152,5 +162,6 @@ export function memoryStore<T>(initial: Iterable<[string, T]> = []): KeyValueSto
       return Promise.resolve();
     },
     entries: () => Promise.resolve([...map.entries()].map(([key, value]) => [key, structuredClone(value)] as [string, T])),
+    keys: () => Promise.resolve([...map.keys()]),
   };
 }

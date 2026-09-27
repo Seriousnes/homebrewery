@@ -1,0 +1,122 @@
+/* Local brew notices (issue #4) and the "Brews on this device" page. */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-2) var(--hbui-space-4);
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-info-subtle);
+  border: 1px solid var(--hbui-color-border);
+  border-inline-start: 4px solid var(--hbui-color-info);
+  border-radius: var(--hbui-radius);
+}
+
+.icon {
+  flex: none;
+  color: var(--hbui-color-info);
+}
+
+.text {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--hbui-font-size);
+  font-weight: 600;
+}
+
+.message {
+  margin: var(--hbui-space-1) 0 0;
+  color: var(--hbui-color-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+}
+
+.link {
+  font-weight: 600;
+  color: var(--hbui-color-accent);
+}
+
+.pageText {
+  margin: 0 0 var(--hbui-space-3);
+  color: var(--hbui-color-text);
+}
+
+.warning {
+  display: flex;
+  gap: var(--hbui-space-2);
+  align-items: center;
+  margin: 0 0 var(--hbui-space-3);
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-warning-subtle);
+  border-inline-start: 4px solid var(--hbui-color-warning);
+  border-radius: var(--hbui-radius);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 var(--hbui-space-4);
+}
+
+.toolbar .pageText {
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: var(--hbui-space-3) var(--hbui-space-4);
+  background: var(--hbui-color-surface);
+  border: 1px solid var(--hbui-color-border);
+  border-radius: var(--hbui-radius);
+}
+
+.itemText {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  gap: var(--hbui-space-1);
+  min-width: 0;
+}
+
+.itemTitle {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  color: var(--hbui-color-accent);
+}
+
+.itemMeta {
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-2);
+}

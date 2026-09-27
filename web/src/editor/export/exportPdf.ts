@@ -46,8 +46,16 @@ export interface StoredBrewPdfOptions {
   render?: PdfExportOptions['render'];
 }
 
-/** A saved brew (GET /api/brews/edit/{editId}) as a PDF: its stored pages, theme and CSS. */
-export async function exportStoredBrewPdf(brew: BrewForEdit, options: StoredBrewPdfOptions = {}): Promise<PdfExportResult> {
+/** A stored brew: a cloud one (BrewForEdit) or a local one (web/src/editor/local). */
+export interface StoredBrew {
+  doc: unknown;
+  docSchemaVersion: number;
+  style: string;
+  meta: Pick<BrewForEdit['meta'], 'title' | 'lang' | 'theme'>;
+}
+
+/** A saved brew (GET /api/brews/edit/{editId}, or a local brew) as a PDF: its stored pages, theme and CSS. */
+export async function exportStoredBrewPdf(brew: StoredBrew, options: StoredBrewPdfOptions = {}): Promise<PdfExportResult> {
   const { signal, loadChain = loadThemeChain, render } = options;
   const doc = migrateDoc(brew.doc as JSONContent, brew.docSchemaVersion);
   const chain = await loadChain(brew.meta.theme, { signal });

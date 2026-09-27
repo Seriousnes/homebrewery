@@ -4,6 +4,7 @@
 import type { JSONContent } from '@tiptap/core';
 import type { PanelId } from '@/app/uiStore';
 import type { AuthorRole, BrewAuthorInfo, BrewForEdit, BrewForShare, BrewLockInfo, BrewMeta, BrewMetaInput } from '@/api';
+import type { LocalBrew } from '@/editor/local/localBrews';
 import type { BrewBaseline, Draft } from '@/editor/save';
 import { migrateDoc } from '@/editor/schema/migrations';
 import { DOC_SCHEMA_VERSION } from '@/editor/schema/version';
@@ -11,8 +12,11 @@ import { DOC_SCHEMA_VERSION } from '@/editor/schema/version';
 /** 'edit': the editable editor with toolbars and panels; 'view': read-only (share page). */
 export type EditorAppMode = 'edit' | 'view';
 
-/** 'server': autosave (edit and new pages); 'none': never saved (home, share). */
-export type EditorAppSaving = 'server' | 'none';
+/**
+ * 'server': autosave (edit and new pages); 'local': the browser's local brew library (issue #4,
+ * no account needed); 'none': never saved (home, share).
+ */
+export type EditorAppSaving = 'server' | 'local' | 'none';
 
 export const DEFAULT_THEME = '5ePHB';
 export const DEFAULT_LANG = 'en';
@@ -126,6 +130,22 @@ export function appBrewForNew(draft?: Pick<Draft, 'style' | 'snippets' | 'meta'>
     meta: metaFromInput(draft?.meta),
     style: draft?.style ?? '',
     snippets: draft?.snippets ?? null,
+    authors: [],
+    role: null,
+    lock: null,
+    updatedAt: null,
+  };
+}
+
+/** A local brew (issue #4), or a new one: never on the server, no authors, not published. */
+export function appBrewForLocal(brew?: Pick<LocalBrew, 'style' | 'snippets' | 'meta'> | null): EditorAppBrew {
+  return {
+    editId: null,
+    shareId: null,
+    version: null,
+    meta: defaultMeta(brew ? { ...brew.meta, tags: [...brew.meta.tags] } : {}),
+    style: brew?.style ?? '',
+    snippets: brew?.snippets ?? null,
     authors: [],
     role: null,
     lock: null,

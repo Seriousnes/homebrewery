@@ -12,6 +12,7 @@ import { jsonResponse, mockApi, problemResponse, type RecordedRequest, textRespo
 import { closeSignInPrompt } from '@/app/signInPromptStore';
 import { ALICE, renderRoute } from '@/app/testing';
 import type { ImportReportData } from '@/editor/import/importReport';
+import { defaultLocalBrews, setDefaultLocalBrews } from '@/editor/local/localBrews';
 import { DOC_SCHEMA_VERSION } from '@/editor/schema/version';
 import type { ImportPreviewProps } from '@/editor/ui/importReport';
 import { clearToasts } from '@/ui';
@@ -106,7 +107,10 @@ function setup({ convert = vi.fn((text: string) => Promise.resolve(fakeConversio
     url: '/import',
     path: 'import',
     me,
-    routes: [{ path: 'edit/:editId', element: <p>Editor page</p> }],
+    routes: [
+      { path: 'edit/:editId', element: <p>Editor page</p> },
+      { path: 'local/:localId', element: <p>Local editor page</p> },
+    ],
   });
   const posts = () => server.requests.filter((r) => r.method === 'POST' && r.url.pathname === '/api/brews');
   return { ...view, server, posts, convert, prefetch };
@@ -116,6 +120,7 @@ beforeEach(() => {
   preview.settle = true;
   preview.props = [];
   sessionStorage.clear();
+  setDefaultLocalBrews(null);
 });
 
 afterEach(() => {
@@ -333,19 +338,18 @@ describe('ImportPage', () => {
     expect(server.requests.length).toBe(before);
   });
 
-  it('anonymous: "Create" asks to sign in, and the create goes on once signed in', async () => {
-    const { user, router, posts, queryClient } = setup({ me: null });
+  it('anonymous: "Create" keeps the brew on this device (no request) and opens it (issue #4)', async () => {
+    const { user, router, posts } = setup({ me: null });
     await user.type(brewText(), 'Later');
     await user.click(screen.getByRole('button', { name: 'Preview the import' }));
-    expect(await screen.findByTestId('import-sign-in-note')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Sign in and create the brew' }));
-    expect(await screen.findByRole('dialog', { name: 'Sign in' })).toBeInTheDocument();
+    expect(await screen.findByTestId('import-sign-in-note')).toHaveTextContent('the brew is kept in this browser');
+    await user.click(screen.getByRole('button', { name: 'Create brew on this device' }));
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\/[\w-]+$/));
     expect(posts()).toEqual([]);
-    act(() => {
-      queryClient.setQueryData(queryKeys.account.me(), ALICE);
-    });
-    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newEdit1'));
-    expect(posts()).toHaveLength(1);
+    const localId = router.state.location.pathname.split('/')[2]!;
+    const stored = await defaultLocalBrews().get(localId);
+    expect(stored?.sourceMarkdown).toBe('Later');
+    expect(stored?.meta.theme).toBeTruthy();
   });
 
   it('anonymous: "Sign in and download" asks to sign in, then downloads', async () => {

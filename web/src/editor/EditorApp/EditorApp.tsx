@@ -9,7 +9,9 @@
 //
 // Modes: 'edit' (editable) or 'view' (read-only, pagination still on: the share page). Saving:
 // 'server' runs autosave (drafts, snapshots, 409 dialog; a brew without editId is created by its
-// first save) or 'none' (home, share: nothing is saved or written to IndexedDB).
+// first save), 'local' writes the brew to this browser's local brew library (issue #4: no account
+// needed; a new one is stored by its first change; signed in, it can be uploaded), or 'none'
+// (home, share: nothing is saved or written to IndexedDB).
 //
 // The editor owns the document: `content` is read once. Everything else the brew holds (style,
 // snippets, metadata) lives here and goes to autosave through its getters. Mount a new EditorApp
@@ -35,6 +37,10 @@ import { registerBeforeSignOut } from '@/app/signOutHooks';
 import { type PanelId, useUiStore } from '@/app/uiStore';
 import { usePageTitle } from '@/app/usePageTitle';
 import { createCanvasGate } from '@/editor/canvas/canvasState';
+import { registerActiveLocalEditor } from '@/editor/local/activeEditors';
+import { localMeta } from '@/editor/local/localBrews';
+import { LocalSaveStatus } from '@/editor/local/LocalSaveStatus';
+import { useLocalSave } from '@/editor/local/useLocalSave';
 import { EditorCanvas, type EditorCanvasHandle } from '@/editor/canvas/EditorCanvas';
 import { DownloadPdfButton } from '@/editor/export/DownloadPdfButton';
 import type { ThemeSnippetRef } from '@/editor/canvas/themeLoader';
@@ -78,9 +84,33 @@ import { EditorNavItems } from './EditorNavItems';
 import { LockBanner } from './LockBanner';
 import { useEditorShortcuts } from './useEditorShortcuts';
 
+/** The local brew of saving 'local' (issue #4). */
+export interface EditorAppLocalBrew {
+  /** Its id in the local brew library; null for a new brew (its first change stores it). */
+  id: string | null;
+  createdAt?: number | null;
+  /** When it was last stored (the status shows it). */
+  updatedAt?: number | null;
+  /** An import's original text, kept with the brew. */
+  sourceMarkdown?: string | null;
+  /** A new brew was stored under `id`. */
+  onCreated?: (id: string) => void;
+  /** The author changed the brew (before its first write stores it). */
+  onEdited?: () => void;
+  /**
+   * "Upload" (signed in): uploads brew `id` (uploadLocalBrew, which first lets this editor store its
+   * changes and stop writing; see editor/local/activeEditors.ts).
+   */
+  onUpload?: (id: string) => Promise<void>;
+  /** The brew was uploaded (from here, the sign-in prompt or Brews on this device): open the cloud brew. */
+  onUploaded?: (created: BrewForEdit) => void;
+}
+
 export interface EditorAppProps {
   mode: EditorAppMode;
   saving: EditorAppSaving;
+  /** With saving 'local': the brew in the local library. */
+  local?: EditorAppLocalBrew | null;
   /** The initial document (ProseMirror JSON, already migrated). Read once. */
   content: JSONContent;
   /** The brew: ids, version, metadata, style, snippets, authors, lock. Read once. */
@@ -174,6 +204,7 @@ async function saveBeforeSignOut(controller: AutosaveController): Promise<void> 
 export function EditorApp({
   mode,
   saving,
+  local = null,
   content,
   brew,
   initialMetaInput = null,
@@ -249,6 +280,7 @@ export function EditorApp({
   const me = useMe({ meta: { errorPolicy: 'manual' } });
   const userKey = me.data?.id ?? null;
   const saves = saving === 'server';
+  const localMode = saving === 'local';
 
   const autosave = useAutosave({
     editor,
@@ -314,6 +346,61 @@ export function EditorApp({
       }
     },
   });
+
+  // A local brew: written to this browser (useLocalSave). The metadata it keeps is the dialog's draft.
+  const localSave = useLocalSave({
+    editor,
+    enabled: localMode && editable,
+    localId: local?.id ?? null,
+    createdAt: local?.createdAt ?? null,
+    sourceMarkdown: local?.sourceMarkdown ?? null,
+    lastSavedAt: local?.updatedAt ?? null,
+    getContent: () => ({ style, snippets: snippetsEditor.value(), meta: localMeta(metaDraft) }),
+    watch: [style, snippets, metaDraft.title, metaDraft.description, metaDraft.tags, metaDraft.lang, metaDraft.theme],
+    onCreated: local?.onCreated,
+  });
+  const [uploading, setUploading] = useState(false);
+  const onUpload = local?.onUpload;
+  const uploadLocal = async () => {
+    if (!onUpload || uploading || !localSave.localId) return;
+    try {
+      await onUpload(localSave.localId);
+    } catch {
+      // The page reported it; the brew stays local and editable (uploadFailed below).
+    }
+  };
+  // An upload of this brew, from anywhere in this tab, first stores what the editor has and
+  // freezes it; afterwards the page opens the cloud brew, or the editor writes again.
+  const { saveNow: storeLocalNow, stop: stopLocal, resume: resumeLocal, localId: storedLocalId, status: localStatus } = localSave;
+  const localCallbacks = useRef({ onUploaded: local?.onUploaded, onEdited: local?.onEdited });
+  useEffect(() => {
+    localCallbacks.current = { onUploaded: local?.onUploaded, onEdited: local?.onEdited };
+  });
+  useEffect(() => {
+    if (!localMode || !editable || !storedLocalId) return;
+    return registerActiveLocalEditor(storedLocalId, {
+      prepareUpload: async () => {
+        if (!(await storeLocalNow())) return false;
+        stopLocal();
+        if (editor && !editor.isDestroyed) editor.setEditable(false);
+        setUploading(true);
+        return true;
+      },
+      uploaded: (created) => {
+        setUploading(false);
+        localCallbacks.current.onUploaded?.(created);
+      },
+      uploadFailed: () => {
+        resumeLocal();
+        if (editor && !editor.isDestroyed) editor.setEditable(true);
+        setUploading(false);
+      },
+    });
+  }, [localMode, editable, storedLocalId, storeLocalNow, stopLocal, resumeLocal, editor]);
+  // The author typed: a signed-out /new must not be swapped for a signed-in one any more.
+  useEffect(() => {
+    if (localMode && localStatus !== 'idle') localCallbacks.current.onEdited?.();
+  }, [localMode, localStatus]);
 
   // A save answered 401: the session is gone. Autosave calls the API directly, so the query
   // client's 401 policy (`me` = null) never saw it: apply it here. The navbar then offers "Sign
@@ -394,13 +481,18 @@ export function EditorApp({
   }, []);
 
   const { saveNow } = autosave;
+  const localSaveNow = localSave.saveNow;
   const onSaveKey = useCallback(() => {
     if (saves) {
       void saveNow();
       return;
     }
+    if (localMode) {
+      void localSaveNow();
+      return;
+    }
     toast({ id: 'editor-not-saved', title: 'This page is never saved', description: 'Create your own brew to keep your work.', tone: 'info' });
-  }, [saves, saveNow]);
+  }, [saves, saveNow, localMode, localSaveNow]);
   useEditorShortcuts({ editor, onSave: onSaveKey, onPrint: print, saveKeyOnWindow: !saves });
 
   const saveState = useRef(autosave.controller.getState);
@@ -478,7 +570,13 @@ export function EditorApp({
     </>
   ) : null;
 
-  const status = saves ? <SaveStatus autosave={autosave} /> : (statusNote ?? null);
+  const status = saves ? (
+    <SaveStatus autosave={autosave} />
+  ) : localMode ? (
+    <LocalSaveStatus state={localSave} signedIn={signedIn} onUpload={onUpload ? () => void uploadLocal() : undefined} uploading={uploading} />
+  ) : (
+    (statusNote ?? null)
+  );
 
   return (
     <div
@@ -486,7 +584,8 @@ export function EditorApp({
       data-testid={testId}
       data-mode={mode}
       data-canvas-status={canvasStatus.state}
-      data-save-status={saves ? autosave.status : 'none'}
+      data-save-status={saves ? autosave.status : localMode ? localSave.status : 'none'}
+      data-local-id={localMode ? (localSave.localId ?? '') : undefined}
       data-edit-id={editId ?? ''}
       data-share-id={shareId ?? ''}
     >
@@ -525,7 +624,7 @@ export function EditorApp({
           editor={editor}
           tracker={tracker}
           toggleRefs={toggleRefs}
-          onProperties={saves && editable ? () => setPropertiesOpen(true) : null}
+          onProperties={(saves || localMode) && editable ? () => setPropertiesOpen(true) : null}
           onHistory={saves && editable ? () => setHistoryOpen(true) : null}
           onPrint={print}
           exportAction={
@@ -620,6 +719,17 @@ export function EditorApp({
             }}
           />
         </>
+      ) : null}
+      {localMode && editable ? (
+        <MetadataDialog
+          open={propertiesOpen}
+          onOpenChange={setPropertiesOpen}
+          brew={metadataBrew}
+          draft={metaDraft}
+          onChange={onMetaChange}
+          baseUrl={window.location.origin}
+          local
+        />
       ) : null}
     </div>
   );
