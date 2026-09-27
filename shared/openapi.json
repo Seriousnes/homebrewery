@@ -1243,6 +1243,98 @@
         }
       }
     },
+    "/api/export/pdf": {
+      "post": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "The exported brew (self-contained HTML) rendered as a PDF.",
+        "description": "Renders `html` with headless Chromium: JavaScript off, page size from the HTML's `@page` rule, one brew page per sheet. https images, fonts and stylesheets of other sites are fetched from public addresses within per-render limits; every other request is blocked. The `X-Pdf-Missing-Files` header counts the files that are not in the PDF. The body may be gzip-compressed and is capped at 20 MB. 400 when `html` is empty, 503 (with Retry-After when busy) when the renderer is busy or unavailable, 500 when the render fails or times out. Rate limited per user (429).",
+        "operationId": "ExportPdf",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PdfExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stream"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/notifications/active": {
       "get": {
         "tags": [
@@ -3215,6 +3307,19 @@
         },
         "description": "Body of `POST /api/admin/notifications` and `PUT /api/admin/notifications/{id}`."
       },
+      "PdfExportRequest": {
+        "required": [
+          "html"
+        ],
+        "type": "object",
+        "properties": {
+          "html": {
+            "type": "string",
+            "description": "The exported HTML file (web/src/editor/export: exportBrewHtml)."
+          }
+        },
+        "description": "The exported brew (self-contained HTML, built by the web client) as a PDF."
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -3423,6 +3528,10 @@
           }
         },
         "description": "Body of `PUT /api/account/handle`."
+      },
+      "Stream": {
+        "type": "string",
+        "format": "binary"
       },
       "ThemeBundle": {
         "required": [
@@ -3864,6 +3973,9 @@
     },
     {
       "name": "Import"
+    },
+    {
+      "name": "Export"
     },
     {
       "name": "Notifications"

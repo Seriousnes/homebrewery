@@ -684,6 +684,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/export/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The exported brew (self-contained HTML) rendered as a PDF.
+         * @description Renders `html` with headless Chromium: JavaScript off, page size from the HTML's `@page` rule, one brew page per sheet. https images, fonts and stylesheets of other sites are fetched from public addresses within per-render limits; every other request is blocked. The `X-Pdf-Missing-Files` header counts the files that are not in the PDF. The body may be gzip-compressed and is capped at 20 MB. 400 when `html` is empty, 503 (with Retry-After when busy) when the renderer is busy or unavailable, 500 when the render fails or times out. Rate limited per user (429).
+         */
+        post: operations["ExportPdf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/active": {
         parameters: {
             query?: never;
@@ -1275,6 +1295,11 @@ export interface components {
              */
             stopsAt: null | string;
         };
+        /** @description The exported brew (self-contained HTML, built by the web client) as a PDF. */
+        PdfExportRequest: {
+            /** @description The exported HTML file (web/src/editor/export: exportBrewHtml). */
+            html: string;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -1351,6 +1376,8 @@ export interface components {
         SetHandleRequest: {
             handle: null | string;
         };
+        /** Format: binary */
+        Stream: string;
         /**
          * @description Response of `GET /api/themes/{theme}/bundle` (plan §8.7): the theme's inheritance chain, root first. Apply
          *     `styles` in order, then the brew's own CSS.
@@ -2233,6 +2260,84 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PdfExportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": components["schemas"]["Stream"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

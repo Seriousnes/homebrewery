@@ -3,24 +3,27 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Homebrewery.Api.Import;
 using Homebrewery.Api.Infrastructure;
+using Homebrewery.Api.Pdf;
+using Homebrewery.Api.Tests.Pdf;
 using Homebrewery.Api.Tests.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Homebrewery.Api.Tests.Security;
 
 /// <summary>
-/// P2.7 rate limits: the auth policy (per IP), the import policy (per user) and the global write limiter (per IP), each
-/// answering 429 problem+json with Retry-After. Each test runs its own host with low limits.
+/// P2.7 rate limits: the auth policy (per IP), the import and PDF export policies (per user) and the global write limiter
+/// (per IP), each answering 429 problem+json with Retry-After. Each test runs its own host with low limits.
 /// </summary>
 [Collection(ApiCollection.Name)]
 public sealed class RateLimitTests(ApiFixture api)
 {
     [Fact]
-    public void Defaults_limit_auth_import_and_writes()
+    public void Defaults_limit_auth_import_pdf_and_writes()
     {
         var settings = api.Factory.Services.GetRequiredService<IOptions<RateLimitSettings>>().Value;
         var defaults = new RateLimitSettings();
@@ -28,8 +31,9 @@ public sealed class RateLimitTests(ApiFixture api)
         Assert.Equal(HomebreweryApiFactory.GenerousPermitLimit, settings.Writes.PermitLimit);     // the test hosts' override
         Assert.Equal(20, defaults.Auth.PermitLimit);
         Assert.Equal(10, defaults.Import.PermitLimit);
+        Assert.Equal(10, defaults.Pdf.PermitLimit);
         Assert.Equal(120, defaults.Writes.PermitLimit);
-        Assert.All([defaults.Auth, defaults.Import, defaults.Writes], l => Assert.Equal(TimeSpan.FromMinutes(1), l.Window));
+        Assert.All([defaults.Auth, defaults.Import, defaults.Pdf, defaults.Writes], l => Assert.Equal(TimeSpan.FromMinutes(1), l.Window));
     }
 
     [Fact]
@@ -110,6 +114,26 @@ public sealed class RateLimitTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Pdf_export_is_limited_per_user()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var renderer = new PdfExportEndpointTests.FakeRenderer { Respond = _ => Task.FromResult(new PdfRenderResult([37, 80, 68, 70], 0, 0)) };
+        await using var host = WithLimits(pdf: 1, configure: b => b.ConfigureTestServices(s =>
+            s.Replace(ServiceDescriptor.Singleton<IPdfRenderer>(renderer))));
+        using var alice = await host.CreateUserAsync(ct: ct);
+        using var bob = await host.CreateUserAsync(ct: ct);
+
+        using var a1 = await alice.Client.PostAsJsonAsync("/api/export/pdf", new { html = "<p>x</p>" }, ct);
+        using var a2 = await alice.Client.PostAsJsonAsync("/api/export/pdf", new { html = "<p>x</p>" }, ct);
+        using var b1 = await bob.Client.PostAsJsonAsync("/api/export/pdf", new { html = "<p>x</p>" }, ct);
+
+        Assert.Equal(HttpStatusCode.OK, a1.StatusCode);
+        await AssertTooManyRequestsAsync(a2, ct);
+        Assert.Equal(HttpStatusCode.OK, b1.StatusCode);
+        Assert.Equal(2, renderer.Received.Count);                                 // the limited call never rendered
+    }
+
+    [Fact]
     public void Invalid_limits_stop_the_host()
     {
         using var host = api.Factory.WithWebHostBuilder(b => b.UseSetting("RateLimits:Writes:PermitLimit", "0"));
@@ -120,12 +144,13 @@ public sealed class RateLimitTests(ApiFixture api)
     }
 
     private WebApplicationFactory<Program> WithLimits(
-        int? auth = null, int? import = null, int? writes = null, Action<IWebHostBuilder>? configure = null) =>
+        int? auth = null, int? import = null, int? writes = null, int? pdf = null, Action<IWebHostBuilder>? configure = null) =>
         api.Factory.WithWebHostBuilder(b =>
         {
             if (auth is { } a) b.UseSetting("RateLimits:Auth:PermitLimit", a.ToString(System.Globalization.CultureInfo.InvariantCulture));
             if (import is { } i) b.UseSetting("RateLimits:Import:PermitLimit", i.ToString(System.Globalization.CultureInfo.InvariantCulture));
             if (writes is { } w) b.UseSetting("RateLimits:Writes:PermitLimit", w.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (pdf is { } p) b.UseSetting("RateLimits:Pdf:PermitLimit", p.ToString(System.Globalization.CultureInfo.InvariantCulture));
             configure?.Invoke(b);
         });
 

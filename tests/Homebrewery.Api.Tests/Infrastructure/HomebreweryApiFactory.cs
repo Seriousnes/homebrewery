@@ -45,6 +45,7 @@ public sealed class HomebreweryApiFactory(string connectionString) : WebApplicat
         .UseSetting("Themes:CatalogPath", ThemeCatalogFixture)
         .UseSetting("RateLimits:Auth:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .UseSetting("RateLimits:Import:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
+        .UseSetting("RateLimits:Pdf:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .UseSetting("RateLimits:Writes:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .UseSetting("Logging:LogLevel:Microsoft.EntityFrameworkCore", "Warning");
 

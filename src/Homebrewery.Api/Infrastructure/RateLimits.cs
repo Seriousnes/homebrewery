@@ -13,6 +13,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// <list type="bullet">
 /// <item><see cref="Auth"/>: the <c>/api/auth/*</c> endpoints (login, register, password reset, …), per client IP.</item>
 /// <item><see cref="Import"/>: the upstream import proxy, per signed-in user.</item>
+/// <item><see cref="Pdf"/>: PDF export (<c>POST /api/export/pdf</c>), per signed-in user.</item>
 /// <item>A global limiter for writes (POST, PUT, PATCH, DELETE) on every path, per client IP.</item>
 /// </list>
 /// A rejected request gets 429 problem+json with a <c>Retry-After</c> header. The client IP is the connection's
@@ -26,13 +27,16 @@ public static class RateLimits
     /// <summary>Endpoint policy for <c>GET /api/import/homebrewery/{shareId}</c>.</summary>
     public const string Import = "import";
 
+    /// <summary>Endpoint policy for <c>POST /api/export/pdf</c>.</summary>
+    public const string Pdf = "pdf";
+
     /// <summary>Configuration section of <see cref="RateLimitSettings"/>.</summary>
     public const string SectionName = "RateLimits";
 
     public static IServiceCollection AddRateLimits(this IServiceCollection services)
     {
         services.AddOptions<RateLimitSettings>().BindConfiguration(SectionName).Validate(
-            s => s.Auth.IsValid && s.Import.IsValid && s.Writes.IsValid,
+            s => s.Auth.IsValid && s.Import.IsValid && s.Pdf.IsValid && s.Writes.IsValid,
             "RateLimits: every PermitLimit must be at least 1 and every Window positive.").ValidateOnStart();
         services.AddRateLimiter(_ => { });
         services.AddOptions<RateLimiterOptions>().Configure<IOptions<RateLimitSettings>>((o, s) => Configure(o, s.Value));
@@ -52,6 +56,11 @@ public static class RateLimits
             RateLimitPartition.GetFixedWindowLimiter(
                 context.User.GetUserId() is { } id ? "user:" + id.ToString("N") : ClientIp(context),
                 _ => settings.Import.ToOptions()));
+
+        options.AddPolicy(Pdf, context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                context.User.GetUserId() is { } id ? "user:" + id.ToString("N") : ClientIp(context),
+                _ => settings.Pdf.ToOptions()));
 
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             IsWrite(context.Request.Method)
@@ -101,6 +110,9 @@ public sealed class RateLimitSettings
 
     /// <summary>Per user on the import proxy. Default: 10 per minute.</summary>
     public WindowLimit Import { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) };
+
+    /// <summary>Per user on PDF export. Default: 10 per minute.</summary>
+    public WindowLimit Pdf { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) };
 
     /// <summary>Per client IP for every POST, PUT, PATCH and DELETE. Default: 120 per minute.</summary>
     public WindowLimit Writes { get; set; } = new() { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) };
