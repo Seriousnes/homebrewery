@@ -682,7 +682,8 @@ export class TestRunner {
   /**
    * Builds (unless noBuild), then runs src/Homebrewery.Api on `port`; ready = /healthz answers.
    * Its database is on `dbHost` (or HB_E2E_DB_HOST) when given, otherwise on a throwaway
-   * PostgreSQL of this run (startDatabase). An API already answering on the port is reused only
+   * PostgreSQL of this run (startDatabase, container hb-test-<slot>-<runner>-<port>: two runs of one runner on
+   * different API ports keep their own). An API already answering on the port is reused only
    * with an external database server: with a throwaway one it would belong to an earlier run's.
    */
   async startApi(options: ApiOptions): Promise<{ child: ChildProcess | null; url: string }> {
@@ -697,7 +698,7 @@ export class TestRunner {
     if (!dbHost && (await answers(`${url}/healthz`))) {
       throw new Error(`something already answers on ${url}; stop it first (this run's API needs the port)`);
     }
-    const db = dbHost ? { host: dbHost, port: options.dbPort ?? process.env.HB_E2E_DB_PORT ?? '5432' } : await this.startDatabase();
+    const db = dbHost ? { host: dbHost, port: options.dbPort ?? process.env.HB_E2E_DB_PORT ?? '5432' } : await this.startDatabase({ name: `${this.name}-${options.port}` });
     if (!options.noBuild) {
       await this.runCommand('dotnet build', 'dotnet', ['build', 'src/Homebrewery.Api', '--configuration', configuration, '--artifacts-path', artifacts, '--nologo'], {
         cwd: repoRoot,
