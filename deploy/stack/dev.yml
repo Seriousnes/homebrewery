@@ -1,0 +1,14 @@
+# Override that ./stack (deploy/stack/stack.mjs) adds to docker-compose.yml: the stack uses the shared database
+# (deploy/stack/shared-db.yml) instead of its own. The api joins the shared network, where the database answers as
+# `db`, so its connection string stays the same.
+services:
+  db:
+    scale: 0
+  api:
+    networks: [default, shared]
+    depends_on: !reset {}
+
+networks:
+  shared:
+    external: true
+    name: homebrewery-shared

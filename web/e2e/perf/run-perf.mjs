@@ -16,12 +16,11 @@
 // Environment: E2E_PORT (5375). The API is stubbed by the specs (no account, static themes).
 // Servers already running on the port are reused. Never uses the humans' ports. Fail-fast limits
 // and the no-progress watchdog: docs/testing.md.
-import os from 'node:os';
-import path from 'node:path';
 import { pickSets, takeSetArg, TestRunner, viteBin } from '../../scripts/testRunner.ts';
+import { slotPort, slotTmp } from '../../scripts/worktree.ts';
 
 const runner = new TestRunner('perf');
-const port = process.env.E2E_PORT ?? '5375';
+const port = process.env.E2E_PORT ?? slotPort(5375);
 runner.refuseHumanPorts(port);
 
 const { only, args: argv } = takeSetArg(process.argv.slice(2));
@@ -32,7 +31,7 @@ let status = 1;
 try {
   let baseUrl;
   if (prod) {
-    const outDir = path.join(os.tmpdir(), 'hb-perf-build');
+    const outDir = slotTmp('hb-perf-build');
     await runner.runCommand(`vite build (production, dev routes on) into ${outDir}`, process.execPath, [viteBin, 'build', '--outDir', outDir, '--emptyOutDir'], {
       env: { ...process.env, VITE_HB_DEV_ROUTES: '1' },
     });

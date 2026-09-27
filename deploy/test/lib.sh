@@ -5,6 +5,13 @@
 docker() { MSYS_NO_PATHCONV=1 command docker "$@"; }
 export -f docker
 
+# This worktree's slot (web/scripts/worktree.ts; 0 in the main checkout or without node): the tests' default project,
+# container, volume and network names get the suffix -<slot> and their port moves by 1000 per slot, so the ops tests of
+# two worktrees never share anything.
+HB_SLOT=${HB_SLOT:-$(node deploy/stack/stack.mjs slot 2>/dev/null || echo 0)}
+if ((HB_SLOT > 0)); then HB_SLOT_SUFFIX=-$HB_SLOT; else HB_SLOT_SUFFIX=; fi
+HB_SLOT_TEST_PORT=$((5478 + HB_SLOT * 1000))
+
 PASSED=0
 FAILED=0
 

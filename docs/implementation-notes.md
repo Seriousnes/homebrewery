@@ -90,10 +90,10 @@ TESTS (tests/Homebrewery.Api.Tests; namespace Homebrewery.Api.Tests.Infrastructu
 
 ### Interfaces
 Commands:
-- Dev stack: `docker compose up` (or `docker compose up -d --wait`) → http://localhost:8080. Only Caddy publishes a port (127.0.0.1:${HB_HTTP_PORT:-8080}); db stays on 0.0.0.0:5432. The containers do NOT publish 5080 or 5173, so host `dotnet run` (:5080), host Vite (:5173) and Playwright (E2E_PORT) never collide with them.
-- DB only (host dev, backend agents, unchanged): `docker compose up -d db`.
-- Production image: `docker compose -f docker-compose.yml -f compose.prod.yml up -d --build` (service `app`, image `homebrewery:local`, the root Dockerfile; dev api/web scaled to 0). Back to dev: `docker compose up -d --remove-orphans`.
-- Stop dev servers but keep the db: `docker compose stop api web caddy`.
+- Dev stack: `./stack up` (or `./stack up -d --wait`) → the branch's stack (see "Per-branch stacks and per-worktree test isolation" below). Only Caddy publishes a port (127.0.0.1, 8080 + worktree slot); the shared db stays on 0.0.0.0:5432. The containers do NOT publish 5080 or 5173, so host `dotnet run` (:5080), host Vite (:5173) and Playwright (E2E_PORT) never collide with them. Plain `docker compose up` is docker-compose.yml alone: a stack with its own db.
+- DB only (host dev, backend agents): `./stack db up`.
+- Production image: `./stack --prod up -d --build` (service `app`, image `homebrewery:local`, the root Dockerfile; dev api/web scaled to 0). Back to dev: `./stack up -d --remove-orphans`.
+- Stop the branch's servers but keep the db: `./stack stop`.
 - Compose project name is the directory name (wysiwyg-editor); do not add `name:`, because it would create a second db on port 5432.
 
 Service contract (docker-compose.yml):
@@ -118,7 +118,7 @@ web/vite.config.ts (server section), env-driven and all unset on the host:
 
 ### Notes for later phases
 - Backend (ForwardedHeaders task): the compose files set ASPNETCORE_FORWARDEDHEADERS_ENABLED=true (built-in, trusts any peer). If Program.cs adds an explicit UseForwardedHeaders with its own config key, tell the owner of docker-compose.yml/compose.prod.yml to switch to that key, so the middleware isn't configured twice.
-- Backend: `Database__MigrateOnStartup=true` in the dev api container means every api (re)start migrates the SHARED compose db. When iterating on a migration (remove and re-add InitialCreate), stop the dev api container first (`docker compose stop api`), or the db history can end up out of sync with the files on disk.
+- Backend: `Database__MigrateOnStartup=true` in the dev api container means every api (re)start migrates the SHARED db (every branch's stack uses it). When iterating on a migration (remove and re-add InitialCreate), stop the dev api container first (`docker compose stop api`), or the db history can end up out of sync with the files on disk.
 - Backend P2 (ThemeCatalog): in the dev container, src/Homebrewery.Api/wwwroot is whatever the host last built, because Vite serves /themes in dev. If the server reads wwwroot/themes/themes.json at runtime, dev (host or container) needs a fallback or a prior `npm run build`.
 - Backend P8: persist Data Protection keys (e.g. PersistKeysToDbContext) so production containers keep sign-ins across re-creation. The dev container already persists /root/.aspnet in a volume.
 - Repo hygiene: add `.env` to .gitignore; README suggests .env for HB_HTTP_PORT.
@@ -2744,7 +2744,7 @@ RESULTS (this lane's runs)
 - Save lane: on the Windows host under load, Firefox context teardown after an /edit test sometimes took minutes ("Tearing down context exceeded the test timeout"). The logs showed useAutosave's pagehide flush (gzipSync of the document, fflate) killed by Firefox's slow-script timeout, re-entering performSave via afterAttempt → runQueued. The matrix's page fixture now waits for autosave to rest before the page closes, which avoided it. Worth checking whether the pagehide flush can loop when the request fails immediately (context closing).
 - App pages lane: e2e/flows/home.spec.ts "the welcome brew is editable and never saved" failed once in Linux Firefox in the CI image (toBeAttached at line 78); not investigated.
 - Repo hygiene: add `.artifacts/` to .gitignore (CI builds the API with `--artifacts-path .artifacts`, relative to the repository root).
-- The whole suite was not run twice at 6 workers by this lane (the integration step does it; the machine ran 11 lanes at once). Canonical command: `node e2e/matrix/run-suite.mjs` (needs `docker compose up -d db`); or `npx playwright test` (the serial projects then run after the parallel ones).
+- The whole suite was not run twice at 6 workers by this lane (the integration step does it; the machine ran 11 lanes at once). Canonical command: `node e2e/matrix/run-suite.mjs` (needs Docker; formerly `docker compose up -d db`); or `npx playwright test` (the serial projects then run after the parallel ones).
 - The shared scratchpad directory is the same for every lane (one session id): a generic name like notes-section.md was overwritten by another lane. Use lane-prefixed names.
 - Admin accounts for new API-backed specs: add them to run-suite.mjs's list (flows-admin@e2e.test, shell-admin@e2e.test) or pass HB_E2E_ADMIN_EMAILS.
 - CI hardware: GitHub's ubuntu-latest has 4 vCPUs. The e2e jobs use 2 workers (E2E_WORKERS) × 4 shards per browser. If the S2/perf budgets fail there, look at the runner's load before loosening anything.
@@ -2773,3 +2773,18 @@ RESULTS_PLACEHOLDER
 
 ### Notes for later phases
 NOTES_PLACEHOLDER
+
+## Per-branch stacks and per-worktree test isolation
+
+### Interfaces
+- `./stack` (sh), `stack.ps1`, `stack.cmd` → `node deploy/stack/stack.mjs`. `./stack [--prod] <compose args>`: `docker compose -p hb-<branch> -f docker-compose.yml -f deploy/stack/dev.yml [-f compose.prod.yml -f deploy/stack/prod.yml] <args>` with HB_HTTP_PORT (8080 + slot unless set in the environment or .env) and HB_WORKTREE. Commands that start containers (up, start, restart, run, create, exec, watch) first start the shared db and stop this worktree's stacks of other branches (found by the caddy label `hb.worktree`). `./stack db <compose args>` (the shared db; `db up` = start and wait), `./stack info`, `./stack ls`, `./stack slot`.
+- Shared db: deploy/stack/shared-db.yml, compose project `homebrewery-shared`, network `homebrewery-shared` (the api joins it through deploy/stack/dev.yml and answers the connection string's `db` there), volume `homebrewery-shared-pgdata`, port HB_DB_PORT (5432). stack.mjs refuses to start it while any other container mounts that volume, and on the first start copies the old single stack's `homebrewery_pgdata` into it (only when no container uses the old volume; the old one is kept). NEVER mount a PostgreSQL data volume into two containers.
+- deploy/stack/dev.yml: db `scale: 0`, api networks [default, shared], api depends_on reset. deploy/stack/prod.yml: the same for app and backup. docker-compose.yml: caddy label `hb.worktree: ${HB_WORKTREE:-}`; the NuGet volume is named `homebrewery-nuget-packages` (shared by all stacks).
+- web/scripts/worktree.ts: `worktreeInfo()` { root, commonDir, main, branch, slot } (cached; git rev-parse; no git → main checkout, slot 0), `registerSlot(commonDir, root)` (registry `<common dir>/hb-worktree-slots.json`, mkdir lock, removed worktrees pruned), `slotPort(base, slot?)` (base, or base + 1000 × slot), `slotTmp(name, slot?)` (<tmp>/<name>[-<slot>]), `dockerSlug`, `stackName`, `MAX_SLOT` (40). HB_SLOT forces the slot.
+- web/scripts/testRunner.ts: `startDatabase({ name? })` → { host, port, container } (HB_E2E_DB_HOST/PORT when set; otherwise container `hb-test-<slot>-<name>`: postgres:18, tmpfs, fsync/synchronous_commit/full_page_writes off, `-p 127.0.0.1::5432`, ready = pg_isready over TCP within LIMITS.dbReadyMs 60 s). `startApi` calls it when no dbHost is given, and then never reuses an API on its port (it fails if something answers there). Containers are removed in cleanup()/killAllSync() and by the reaper (`{ container: name }` message). `dockerSync(args)`, `removeContainerSync(name)`, `isHumanPort(port)` (5080, 5173, 8080–8120; refuseHumanPorts uses it).
+- Default ports: every runner uses `slotPort(<historical default>)` (playwright.config.ts, run-playwright, run-suite, run-csp, the lanes, perf, fidelity, welcome-doc); temp folders `slotTmp(...)`. deploy/test/lib.sh sets HB_SLOT, HB_SLOT_SUFFIX (-<slot> or empty) and HB_SLOT_TEST_PORT (5478 + 1000 × slot) for the ops tests' names and port.
+
+### Notes for later phases
+- The shared db means branches share schema too: a branch that adds a migration migrates it for every stack; an older branch's API then runs against the newer schema. To try a destructive migration, use plain `docker compose up` (a stack with its own db) or a test runner.
+- Checked on 2026-09-27: smoke 47/47 from a linked worktree (slot 1: its own db container, API :6474, Vite :6374); two suite runs at once in slots 1 and 2 (18/18 each, separate containers and ports); a runner killed with Stop-Process -Force had its db container removed by the reaper within about 2 s.
+

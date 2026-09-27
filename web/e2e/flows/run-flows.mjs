@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Runs the app-page flows (web/e2e/flows) against a private API and an isolated Vite:
-//   - src/Homebrewery.Api on :5429 with its own database (hb_e2e_flows on the compose Postgres,
+//   - src/Homebrewery.Api on :5429 with its own database (hb_e2e_flows on the run's own PostgreSQL container,
 //     migrated on start), admins flows-admin@e2e.test and shell-admin@e2e.test, and the share
 //     shell's index.html taken from this Vite;
 //   - Vite on :5329 with e2e/flows/vite.isolated.config.mjs (no HMR, its own dependency cache),
@@ -9,25 +9,25 @@
 // (servers already running on those ports are reused). Never uses the humans' ports. Fail-fast
 // limits and the no-progress watchdog: docs/testing.md.
 //
-//   node e2e/flows/run-flows.mjs [playwright args…]      (from web/; needs `docker compose up -d db`)
+//   node e2e/flows/run-flows.mjs [playwright args…]      (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/flows/run-flows.mjs e2e/save --workers=4    (other specs on these servers; the whole
 //                                                        suite: e2e/matrix/run-suite.mjs, in short sets)
 //
 // Environment: FLOWS_API_PORT (5429), E2E_PORT (5329), FLOWS_API_DB (hb_e2e_flows), HB_ARTIFACTS
 // (dotnet --artifacts-path, default <tmp>/hb-artifacts-flows), HB_API_NO_BUILD=1. Other runners
 // (e2e/import-ui/run-import-ui.mjs) call runFlows() with their own defaults.
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TestRunner } from '../../scripts/testRunner.ts';
+import { slotPort, slotTmp } from '../../scripts/worktree.ts';
 
 /**
  * @param {{ name?: string, apiPort?: string, e2ePort?: string, database?: string, artifacts?: string, defaultArgs?: string[], args?: string[] }} [options]
  */
 export async function runFlows(options = {}) {
   const runner = new TestRunner(options.name ?? 'flows');
-  const apiPort = options.apiPort ?? process.env.FLOWS_API_PORT ?? '5429';
-  const e2ePort = options.e2ePort ?? process.env.E2E_PORT ?? '5329';
+  const apiPort = options.apiPort ?? process.env.FLOWS_API_PORT ?? slotPort(5429);
+  const e2ePort = options.e2ePort ?? process.env.E2E_PORT ?? slotPort(5329);
   const adminEmail = 'flows-admin@e2e.test';
   runner.refuseHumanPorts(apiPort, e2ePort);
 
@@ -36,7 +36,7 @@ export async function runFlows(options = {}) {
     const { url: apiUrl } = await runner.startApi({
       port: apiPort,
       database: options.database ?? process.env.FLOWS_API_DB ?? 'hb_e2e_flows',
-      artifacts: options.artifacts ?? process.env.HB_ARTIFACTS ?? path.join(os.tmpdir(), 'hb-artifacts-flows'),
+      artifacts: options.artifacts ?? process.env.HB_ARTIFACTS ?? slotTmp('hb-artifacts-flows'),
       noBuild: process.env.HB_API_NO_BUILD === '1',
       env: { Admin__Emails: `${adminEmail},shell-admin@e2e.test`, Spa__DevServerUrls: `http://localhost:${e2ePort}` },
     });

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { DOC_SCHEMA_VERSION } from '../src/editor/schema/version.ts';
 import { TestRunner } from './testRunner.ts';
+import { slotPort } from './worktree.ts';
 
 const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webDir, '..');
@@ -31,7 +32,7 @@ const arg = (name: string): string | null => {
 };
 const check = process.argv.includes('--check');
 const headed = process.argv.includes('--headed');
-const port = Number(arg('--port') ?? process.env.E2E_PORT ?? 5329);
+const port = Number(arg('--port') ?? process.env.E2E_PORT ?? slotPort(5329));
 if ([5080, 5173, 8080].includes(port)) {
   console.error('Refusing a port humans use (5080, 5173, 8080).');
   process.exit(2);

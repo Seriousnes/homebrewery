@@ -7,7 +7,7 @@ How to check everything below again:
 
 - API: `dotnet test --project tests/Homebrewery.Api.Tests -- --filter-namespace Homebrewery.Api.Tests.Security`
   (headers, CSRF guard, cookies, rate limits, error bodies, the §14 endpoint audit, sanitizer/CSP alignment).
-- Browser: `node e2e/security/run-csp.mjs` from `web/` (needs `docker compose up -d db`). It builds the SPA into a
+- Browser: `node e2e/security/run-csp.mjs` from `web/` (needs Docker: it starts its own PostgreSQL container). It builds the SPA into a
   temporary directory, starts the API in the Production environment on :5477 serving that build, and walks every
   page in Chromium with the enforced policy, failing on any CSP violation. CI runs it in the `csp` job.
 - Dependencies: `npm --prefix web audit --omit=dev` and

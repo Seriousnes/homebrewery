@@ -11,10 +11,12 @@
 // suite as short sets, one Playwright run each (e2e/suiteSets.mjs; --set=<n>[,<n>…] for some of
 // them): every Playwright run is capped at 5 minutes. Otherwise it is one run, as given.
 import { takeSetArg, TestRunner } from '../scripts/testRunner.ts';
+import { slotPort } from '../scripts/worktree.ts';
 import { planSets } from './suiteSets.mjs';
 
 const runner = new TestRunner('playwright');
-const port = process.env.E2E_PORT ?? '5174';
+// This worktree's Vite port (playwright.config.ts computes the same default).
+const port = process.env.E2E_PORT ?? slotPort(5174);
 runner.refuseHumanPorts(port);
 const { only, args } = takeSetArg(process.argv.slice(2));
 // One run: a filter, a project, or a mode that isn't a suite run (UI, debug, list, shard …).

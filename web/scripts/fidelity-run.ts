@@ -10,7 +10,7 @@
 //                         keep            hbfmToDoc({ variables: 'keep' }) instead of expanding variables
 //                         trailing-break  the canvas.css rule proposed in fidelity-findings.md
 //                         plain           a bare TipTap editor instead of EditorCanvas
-//   --port <n>          E2E_PORT for the dev server (default $E2E_PORT or 5303). One isolated Vite
+//   --port <n>          E2E_PORT for the dev server (default $E2E_PORT or 5303 + 1000 × slot). One isolated Vite
 //                       (e2e/matrix/vite.isolated.config.mjs) serves every run; one already there is reused.
 //   --filter <regex>    only matching fixtures (FIDELITY_FILTER)
 //   --workers <n>       Playwright workers (default: playwright.config.ts's). On a busy machine
@@ -34,6 +34,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { pickSets, type PlaywrightSet, takeSetArg, TestRunner, webDir } from './testRunner.ts';
+import { slotPort } from './worktree.ts';
 
 const arg = (name: string, fallback: string): string => {
   const i = process.argv.indexOf(name);
@@ -41,7 +42,7 @@ const arg = (name: string, fallback: string): string => {
 };
 const list = (value: string) => value.split(',').map((s) => s.trim()).filter(Boolean);
 
-const port = arg('--port', process.env.E2E_PORT ?? '5303');
+const port = arg('--port', process.env.E2E_PORT ?? slotPort(5303));
 const browsers = list(arg('--browsers', 'chromium'));
 const variants = list(arg('--variants', ''));
 const filter = arg('--filter', '');

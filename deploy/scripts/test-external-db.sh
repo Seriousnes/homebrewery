@@ -18,7 +18,8 @@
 # Exit code 0 when every check passed. Everything is removed at the end unless --keep.
 #
 # Environment: HB_TEST_PORT (5478, the app's published port), HB_TEST_IMAGE (homebrewery:ops-test; built unless
-# --no-build), HB_TEST_PROJECT (hb-ops-extdb-test).
+# --no-build), HB_TEST_PROJECT (hb-ops-extdb-test). In a linked worktree the names get -<slot> and the port + 1000 × slot
+# (deploy/test/lib.sh), so worktrees can run it at the same time.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 source deploy/test/lib.sh
@@ -32,14 +33,14 @@ for arg in "$@"; do
   esac
 done
 
-server=hb-ops-extdb network=hb-ops-extdb-net certs_volume=hb-ops-extdb-certs
+server=hb-ops-extdb$HB_SLOT_SUFFIX network=hb-ops-extdb-net$HB_SLOT_SUFFIX certs_volume=hb-ops-extdb-certs$HB_SLOT_SUFFIX
 host=pg.external.test port=6543 app_password='app-Pw-7c1f' admin_password='admin-Pw-93ad'
-export COMPOSE_PROJECT_NAME=${HB_TEST_PROJECT:-hb-ops-extdb-test}
+export COMPOSE_PROJECT_NAME=${HB_TEST_PROJECT:-hb-ops-extdb-test$HB_SLOT_SUFFIX}
 export COMPOSE_PATH_SEPARATOR=:
 export COMPOSE_FILE=deploy/compose.external-db.yml:deploy/test/compose.external-db-test.yml
 export HB_EXTDB_NETWORK=$network
 export HB_IMAGE=${HB_TEST_IMAGE:-homebrewery:ops-test}
-export HB_HTTP_PORT=${HB_TEST_PORT:-5478} HB_BIND=127.0.0.1
+export HB_HTTP_PORT=${HB_TEST_PORT:-$HB_SLOT_TEST_PORT} HB_BIND=127.0.0.1
 export BASE_URL=http://localhost:$HB_HTTP_PORT
 case $HB_HTTP_PORT in 5080|5173|8080) echo "Refusing to use port $HB_HTTP_PORT (the dev stack's)." >&2; exit 2 ;; esac
 

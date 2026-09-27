@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Runs the list page specs (web/e2e/lists: /user/:handle and /vault) against a private API and an
 // isolated Vite:
-//   - src/Homebrewery.Api on :5472 with its own database (hb_e2e_lists on the compose Postgres,
+//   - src/Homebrewery.Api on :5472 with its own database (hb_e2e_lists on the run's own PostgreSQL container,
 //     migrated on start) and test rate limits (every spec registers accounts and seeds brews);
 //   - Vite on :5372 with e2e/lists/vite.isolated.config.mjs (no HMR, its own dependency cache),
 //     proxying /api and /share to that API;
@@ -9,18 +9,17 @@
 // (servers already running on those ports are reused). Never uses the humans' ports. Fail-fast
 // limits and the no-progress watchdog: docs/testing.md.
 //
-//   node e2e/lists/run-lists.mjs [playwright args…]     (from web/; needs `docker compose up -d db`)
+//   node e2e/lists/run-lists.mjs [playwright args…]     (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/lists/run-lists.mjs --workers=2             (flags alone still run only e2e/lists)
 //
 // Environment: LISTS_API_PORT (5472), E2E_PORT (5372), LISTS_API_DB (hb_e2e_lists), HB_ARTIFACTS
 // (dotnet --artifacts-path, default <tmp>/hb-artifacts-lists), HB_API_NO_BUILD=1.
-import os from 'node:os';
-import path from 'node:path';
 import { TestRunner } from '../../scripts/testRunner.ts';
+import { slotPort, slotTmp } from '../../scripts/worktree.ts';
 
 const runner = new TestRunner('lists');
-const apiPort = process.env.LISTS_API_PORT ?? '5472';
-const e2ePort = process.env.E2E_PORT ?? '5372';
+const apiPort = process.env.LISTS_API_PORT ?? slotPort(5472);
+const e2ePort = process.env.E2E_PORT ?? slotPort(5372);
 runner.refuseHumanPorts(apiPort, e2ePort);
 
 let status = 1;
@@ -28,7 +27,7 @@ try {
   const { url: apiUrl } = await runner.startApi({
     port: apiPort,
     database: process.env.LISTS_API_DB ?? 'hb_e2e_lists',
-    artifacts: process.env.HB_ARTIFACTS ?? path.join(os.tmpdir(), 'hb-artifacts-lists'),
+    artifacts: process.env.HB_ARTIFACTS ?? slotTmp('hb-artifacts-lists'),
     noBuild: process.env.HB_API_NO_BUILD === '1',
     env: {
       Spa__DevServerUrls: `http://localhost:${e2ePort}`,

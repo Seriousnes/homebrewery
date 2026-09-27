@@ -3,14 +3,14 @@
 //   1. `vite build` into a private directory (never the shared src/Homebrewery.Api/wwwroot), unless
 //      SECURITY_WEBROOT points at an existing build;
 //   2. src/Homebrewery.Api on :5477 in the Production environment, serving that build (ASPNETCORE_WEBROOT)
-//      with its own database (hb_e2e_security on the compose Postgres, migrated on start), the enforced
+//      with its own database (hb_e2e_security on the run's own PostgreSQL container, migrated on start), the enforced
 //      Content-Security-Policy and every other production default, except: generous rate limits (the walk
 //      signs in many times from one IP) and an admin account that needs no confirmed email;
 //   3. `playwright test e2e/security` with E2E_BASE_URL at that API (no Vite) and HB_CSP_E2E=1;
 // then stops the API. Never uses the humans' ports (5080, 5173, 8080). Fail-fast limits and the
 // no-progress watchdog: docs/testing.md.
 //
-//   node e2e/security/run-csp.mjs [playwright args…]      (from web/; needs `docker compose up -d db`)
+//   node e2e/security/run-csp.mjs [playwright args…]      (from web/; needs Docker: the run starts its own PostgreSQL container)
 //   node e2e/security/run-csp.mjs -g import
 // The walk runs in Chromium (Firefox runs only the editing specs, playwright.config.ts FIREFOX_SPECS).
 //
@@ -20,13 +20,13 @@
 // <tmp>/hb-artifacts-security), HB_API_NO_BUILD=1, SECURITY_SHOW_API_LOG=1 (print the API's output
 // after a failed walk).
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { answers, TestRunner, viteBin } from '../../scripts/testRunner.ts';
+import { slotPort, slotTmp } from '../../scripts/worktree.ts';
 
 const runner = new TestRunner('csp e2e');
-const apiPort = process.env.SECURITY_API_PORT ?? '5477';
-const e2ePort = process.env.E2E_PORT ?? '5377';
+const apiPort = process.env.SECURITY_API_PORT ?? slotPort(5477);
+const e2ePort = process.env.E2E_PORT ?? slotPort(5377);
 const adminEmail = 'security-admin@e2e.test';
 runner.refuseHumanPorts(apiPort, e2ePort);
 
@@ -39,24 +39,22 @@ try {
   // 1. The production bundle.
   let webRoot = process.env.SECURITY_WEBROOT;
   if (!webRoot) {
-    webRoot = path.join(os.tmpdir(), 'hb-security-wwwroot');
+    webRoot = slotTmp('hb-security-wwwroot');
     await runner.runCommand(`vite build into ${webRoot}`, process.execPath, [viteBin, 'build', '--outDir', webRoot, '--emptyOutDir']);
   }
   if (!fs.existsSync(path.join(webRoot, 'index.html'))) throw new Error(`no index.html in ${webRoot}`);
 
-  // 2. The API in Production.
+  // 2. The API in Production, on a database of this run (or HB_E2E_DB_HOST's).
   const { child: api, url: apiUrl } = await runner.startApi({
     port: apiPort,
     database: process.env.SECURITY_API_DB ?? 'hb_e2e_security',
-    dbHost: process.env.HB_E2E_DB_HOST,
-    dbPort: process.env.HB_E2E_DB_PORT,
-    artifacts: process.env.HB_ARTIFACTS ?? path.join(os.tmpdir(), 'hb-artifacts-security'),
+    artifacts: process.env.HB_ARTIFACTS ?? slotTmp('hb-artifacts-security'),
     noBuild: process.env.HB_API_NO_BUILD === '1',
     environment: 'Production',
     reuse: false,
     env: {
       ASPNETCORE_WEBROOT: webRoot,
-      DataProtection__KeysPath: path.join(os.tmpdir(), 'hb-security-keys'),
+      DataProtection__KeysPath: slotTmp('hb-security-keys'),
       Admin__Emails__0: adminEmail,
       Admin__RequireConfirmedEmail: 'false',
       RateLimits__Auth__PermitLimit: '1000',

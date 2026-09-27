@@ -10,13 +10,16 @@
 //   - Builds (dotnet build, vite build) are killed when they print nothing for 2 minutes.
 //   - Every child process is killed by process tree on exit, on SIGINT/SIGTERM and on errors; a
 //     detached reaper (scripts/processReaper.ts) kills them when the runner itself is killed hard.
+//   - Worktrees never share a run's servers or data (docs/testing.md "Worktrees"): the default ports,
+//     temp folders and database container names carry the worktree's slot (scripts/worktree.ts), and
+//     every run that needs PostgreSQL starts a throwaway one of its own (startDatabase).
 //
 // Plain erasable TypeScript: the .mjs runners import it directly (Node 24 strips the types).
 import { type ChildProcess, spawn, spawnSync, type SpawnOptions } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { dockerSlug, MAX_SLOT, slotTmp, worktreeInfo } from './worktree.ts';
 
 export const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const repoRoot = path.resolve(webDir, '..');
@@ -40,6 +43,8 @@ export const LIMITS = {
   startupMs: envMs('HB_STARTUP_MS', 90_000),
   apiReadyMs: 60_000,
   viteReadyMs: 30_000,
+  /** A throwaway PostgreSQL container (startDatabase) must accept connections within this. */
+  dbReadyMs: 60_000,
   /** A build (dotnet build, vite build) that prints nothing for this long. */
   buildQuietMs: 120_000,
   /** And a build that takes longer than this in total. */
@@ -47,6 +52,12 @@ export const LIMITS = {
 };
 
 export const HUMAN_PORTS = ['5080', '5173', '8080'];
+
+/** A port of a person's stack: the host-run API and Vite, or a dev stack's Caddy (8080 + worktree slot, deploy/stack). */
+export function isHumanPort(port: string | number): boolean {
+  const n = Number(port);
+  return HUMAN_PORTS.includes(String(n)) || (n >= 8080 && n <= 8080 + MAX_SLOT);
+}
 
 // ---------------------------------------------------------------------------------------------
 // The watchdog (pure: the clock is passed in; unit-tested in testRunner.test.ts)
@@ -321,6 +332,17 @@ export function killTreeSync(pid: number | undefined): void {
   }
 }
 
+/** Runs `docker <args>` to completion (30 s at most); `output` is stdout and stderr, trimmed. */
+export function dockerSync(args: string[]): { status: number; output: string } {
+  const result = spawnSync('docker', args, { encoding: 'utf8', windowsHide: true, timeout: 30_000 });
+  return { status: result.error ? 1 : (result.status ?? 1), output: `${result.stdout ?? ''}${result.stderr ?? ''}`.trim() };
+}
+
+/** Removes a container (running or not) if it exists. */
+export function removeContainerSync(name: string): void {
+  dockerSync(['rm', '-f', '-v', name]);
+}
+
 /** Stops a process tree: SIGTERM first on POSIX, SIGKILL after `graceMs`; Windows kills at once. */
 export async function stopTree(pid: number | undefined, graceMs = 3000): Promise<void> {
   if (!pid) return;
@@ -389,6 +411,7 @@ export interface ServerOptions {
 
 export interface ApiOptions {
   port: string;
+  /** Database name (created by the API's migrations). */
   database: string;
   /** dotnet --artifacts-path (default <tmp>/hb-artifacts-<runner name>). */
   artifacts?: string;
@@ -397,10 +420,23 @@ export interface ApiOptions {
   /** Skip `dotnet build` (HB_API_NO_BUILD=1: built before with the same artifacts path and configuration). */
   noBuild?: boolean;
   environment?: string;
+  /** An existing PostgreSQL (default HB_E2E_DB_HOST / HB_E2E_DB_PORT); without one the run starts its own. */
   dbHost?: string;
   dbPort?: string;
   env?: NodeJS.ProcessEnv;
   reuse?: boolean;
+}
+
+export interface DatabaseOptions {
+  /** Container name suffix (default: the runner's name). */
+  name?: string;
+}
+
+export interface Database {
+  host: string;
+  port: string;
+  /** The container this runner started (removed on exit), or null for an external server. */
+  container: string | null;
 }
 
 export interface ViteOptions {
@@ -436,6 +472,7 @@ export const STALLED_STATUS = 124;
 export class TestRunner {
   readonly name: string;
   private readonly children = new Set<ChildProcess>();
+  private readonly containers = new Set<string>();
   private reaper: ChildProcess | null = null;
   private exiting = false;
 
@@ -474,8 +511,8 @@ export class TestRunner {
   }
 
   refuseHumanPorts(...ports: string[]): void {
-    if (ports.some((p) => HUMAN_PORTS.includes(String(p)))) {
-      this.error(`Refusing to use a port humans use (${HUMAN_PORTS.join(', ')}).`);
+    if (ports.some((p) => isHumanPort(p))) {
+      this.error(`Refusing to use a port humans use (5080, 5173, the dev stacks' 8080-${8080 + MAX_SLOT}).`);
       process.exit(2);
     }
   }
@@ -498,7 +535,7 @@ export class TestRunner {
    * The reaper outlives a runner that is killed hard (TerminateProcess, SIGKILL, a tool timeout)
    * and then kills the process trees registered here.
    */
-  private watchWithReaper(pid: number): void {
+  private watchWithReaper(pid: number | undefined): void {
     if (!this.reaper) {
       try {
         this.reaper = spawn(process.execPath, [reaperScript, String(process.pid)], {
@@ -513,13 +550,15 @@ export class TestRunner {
         this.reaper = null;
       }
     }
-    if (this.reaper?.connected) this.reaper.send({ add: pid });
+    if (pid && this.reaper?.connected) this.reaper.send({ add: pid });
   }
 
-  /** Kills every child tree now (exit, signals, errors). */
+  /** Kills every child tree and removes every container now (exit, signals, errors). */
   killAllSync(): void {
     for (const child of this.children) if (child.exitCode === null && child.signalCode === null) killTreeSync(child.pid);
     this.children.clear();
+    for (const name of this.containers) removeContainerSync(name);
+    this.containers.clear();
     if (this.reaper?.connected) {
       try {
         this.reaper.send({ done: true });
@@ -593,15 +632,72 @@ export class TestRunner {
     return child;
   }
 
-  /** Builds (unless noBuild), then runs src/Homebrewery.Api on `port`; ready = /healthz answers. */
+  /**
+   * The PostgreSQL for this run. With HB_E2E_DB_HOST (CI's service container) that server
+   * (HB_E2E_DB_PORT, default 5432); otherwise a throwaway postgres:18 container of this runner,
+   * hb-test-<slot>-<name>: data in tmpfs, durability off, published on a free loopback port, removed
+   * on exit (and by the reaper when the runner is killed hard; a leftover of a killed run is replaced).
+   * No other worktree's run, and not the dev stacks' shared database, is ever touched.
+   */
+  async startDatabase(options: DatabaseOptions = {}): Promise<Database> {
+    if (process.env.HB_E2E_DB_HOST) {
+      return { host: process.env.HB_E2E_DB_HOST, port: process.env.HB_E2E_DB_PORT ?? '5432', container: null };
+    }
+    const name = `hb-test-${worktreeInfo().slot}-${dockerSlug(options.name ?? this.name)}`;
+    const started = Date.now();
+    this.log(`starting PostgreSQL (container ${name}; must accept connections within ${seconds(LIMITS.dbReadyMs)})…`);
+    removeContainerSync(name);
+    const run = dockerSync([
+      'run', '-d', '--rm', '--name', name,
+      '--label', `hb.test-runner=${this.name}`,
+      '-e', 'POSTGRES_USER=homebrewery', '-e', 'POSTGRES_PASSWORD=homebrewery', '-e', 'POSTGRES_DB=homebrewery',
+      '-p', '127.0.0.1::5432',
+      '--tmpfs', '/var/lib/postgresql',
+      'postgres:18',
+      '-c', 'fsync=off', '-c', 'synchronous_commit=off', '-c', 'full_page_writes=off',
+    ]);
+    if (run.status !== 0) throw new Error(`PostgreSQL could not start (docker run: ${run.output || 'is Docker running?'})`);
+    this.containers.add(name);
+    this.watchContainerWithReaper(name);
+    const deadline = started + LIMITS.dbReadyMs;
+    // pg_isready over TCP: the image's first-start initialisation listens on the socket only.
+    while (dockerSync(['exec', name, 'pg_isready', '-q', '-h', '127.0.0.1', '-U', 'homebrewery', '-d', 'homebrewery']).status !== 0) {
+      if (Date.now() > deadline) {
+        const logs = dockerSync(['logs', '--tail', '40', name]).output;
+        throw new Error(`PostgreSQL (${name}) did not accept connections within ${seconds(LIMITS.dbReadyMs)}. Its log:\n${logs}`);
+      }
+      await sleep(250);
+    }
+    const port = /:(\d+)\s*$/m.exec(dockerSync(['port', name, '5432/tcp']).output)?.[1];
+    if (!port) throw new Error(`could not read the port of ${name}`);
+    this.log(`PostgreSQL ready after ${((Date.now() - started) / 1000).toFixed(1)} s (localhost:${port})`);
+    return { host: 'localhost', port, container: name };
+  }
+
+  private watchContainerWithReaper(name: string): void {
+    this.watchWithReaper(undefined);
+    if (this.reaper?.connected) this.reaper.send({ container: name });
+  }
+
+  /**
+   * Builds (unless noBuild), then runs src/Homebrewery.Api on `port`; ready = /healthz answers.
+   * Its database is on `dbHost` (or HB_E2E_DB_HOST) when given, otherwise on a throwaway
+   * PostgreSQL of this run (startDatabase). An API already answering on the port is reused only
+   * with an external database server: with a throwaway one it would belong to an earlier run's.
+   */
   async startApi(options: ApiOptions): Promise<{ child: ChildProcess | null; url: string }> {
     const url = `http://localhost:${options.port}`;
     const configuration = options.configuration ?? 'Debug';
-    const artifacts = options.artifacts ?? path.join(os.tmpdir(), `hb-artifacts-${this.name}`);
-    if (options.reuse !== false && (await answers(`${url}/healthz`))) {
+    const artifacts = options.artifacts ?? slotTmp(`hb-artifacts-${this.name}`);
+    const dbHost = options.dbHost ?? process.env.HB_E2E_DB_HOST;
+    if (dbHost && options.reuse !== false && (await answers(`${url}/healthz`))) {
       this.log(`using the API already running at ${url}`);
       return { child: null, url };
     }
+    if (!dbHost && (await answers(`${url}/healthz`))) {
+      throw new Error(`something already answers on ${url}; stop it first (this run's API needs the port)`);
+    }
+    const db = dbHost ? { host: dbHost, port: options.dbPort ?? process.env.HB_E2E_DB_PORT ?? '5432' } : await this.startDatabase();
     if (!options.noBuild) {
       await this.runCommand('dotnet build', 'dotnet', ['build', 'src/Homebrewery.Api', '--configuration', configuration, '--artifacts-path', artifacts, '--nologo'], {
         cwd: repoRoot,
@@ -618,7 +714,7 @@ export class TestRunner {
       env: {
         ...process.env,
         ASPNETCORE_ENVIRONMENT: options.environment ?? 'Development',
-        ConnectionStrings__Homebrewery: `Host=${options.dbHost ?? 'localhost'};Port=${options.dbPort ?? '5432'};Database=${options.database};Username=homebrewery;Password=homebrewery`,
+        ConnectionStrings__Homebrewery: `Host=${db.host};Port=${db.port};Database=${options.database};Username=homebrewery;Password=homebrewery`,
         Database__MigrateOnStartup: 'true',
         ...options.env,
       },

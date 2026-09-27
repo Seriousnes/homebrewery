@@ -40,18 +40,34 @@ for reference.
 
 ### With Docker (the default)
 
-You need only [Docker](https://www.docker.com/) with Compose 2.24.4 or later (any current Docker Desktop).
-From the repository root:
+You need [Docker](https://www.docker.com/) with Compose 2.24.4 or later (any current Docker Desktop) and
+[Node.js 24](https://nodejs.org/) for the `stack` script. From the repository root (or any worktree of it):
 
 ```
-docker compose up
+./stack up          # sh (Git Bash, macOS, Linux); PowerShell or cmd: .\stack up
 ```
 
-Then open **http://localhost:8080**. Compose starts every resource the app needs:
+It prints the URL: **http://localhost:8080** in the main checkout. Every branch gets a stack of its own, so
+worktrees run side by side:
+
+- **One stack per branch.** The compose project is `hb-<branch>` (containers, network, build volumes). A
+  worktree's Caddy port is 8080 in the main checkout and 8080 + n in the worktree with slot n (the first
+  worktree 8081, …; `./stack info` shows it; `HB_HTTP_PORT` in the environment or `.env` overrides it).
+  Switching branches in a worktree and running `./stack up` stops the previous branch's stack, which held
+  the port.
+- **One database for all of them.** Every stack's API uses the same PostgreSQL, the `homebrewery-shared`
+  compose project ([deploy/stack/shared-db.yml](./deploy/stack/shared-db.yml)), whose data lives in the
+  `homebrewery-shared-pgdata` volume. `./stack up` starts it first. Removing a branch's stack never touches
+  it. Migrations are shared too: a branch that adds one migrates the database for every branch.
+- **Moving from the single stack.** The first `./stack up` copies the data of the old `homebrewery_pgdata`
+  volume into the shared one (the old volume is kept). It asks you to stop the old stack first
+  (`docker compose -p homebrewery down`), because the old database must not run during the copy.
+
+Each stack runs:
 
 | Service | Runs | Notes |
 | --- | --- | --- |
-| `db` | PostgreSQL 18 (official `postgres:18` image), data in the `pgdata` volume | Also published on `localhost:5432`; user, password and database are all `homebrewery` |
+| `db` (shared) | PostgreSQL 18 (official `postgres:18` image), data in the `homebrewery-shared-pgdata` volume | Published on `localhost:5432` (`HB_DB_PORT`); user, password and database are all `homebrewery` |
 | `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0`) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`) |
 | `web` | The Vite dev server (`node:24`) | Runs `npm ci` on the first start and whenever `web/package-lock.json` changes |
 | `caddy` | Caddy 2 with [deploy/caddy/Caddyfile](./deploy/caddy/Caddyfile) | The one origin: `/api`, `/share`, `/openapi` and `/healthz` go to `api`; everything else, including Vite's HMR websocket, goes to `web` |
@@ -59,44 +75,50 @@ Then open **http://localhost:8080**. Compose starts every resource the app needs
 The repository is bind-mounted into `api` and `web`. When you edit files on the host, `dotnet watch`
 hot-reloads the API (or restarts it) and Vite hot-updates the page. Platform-specific outputs
 (`src/*/bin`, `src/*/obj`, `web/node_modules`) live in named volumes, so the Linux builds in the
-containers never mix with builds on the host. The first start takes a few minutes (NuGet restore,
-`npm ci`, first build). `docker compose up -d --wait` returns once every service is healthy.
+containers never mix with builds on the host (a new branch's first start restores and builds them; the NuGet
+cache is shared). The first start takes a few minutes. `./stack up -d --wait` returns once every service is
+healthy.
 
-- `docker compose logs -f api web` follows the dev servers.
-- `docker compose restart api` restarts the API, which also applies migrations added since it started.
-- `HB_HTTP_PORT=9000 docker compose up` (or `HB_HTTP_PORT=9000` in a `.env` file) serves on another port.
-- `docker compose stop` stops everything. `docker compose down -v` also deletes the database and the
-  build caches.
+`./stack` passes any compose command to the branch's stack:
+
+- `./stack logs -f api web` follows the dev servers; `./stack ps` lists them.
+- `./stack restart api` restarts the API, which also applies migrations added since it started.
+- `./stack stop` stops the branch's stack; `./stack down -v` removes it with its build caches (never the database).
+- `./stack db stop` / `./stack db up` stop and start the shared database; `./stack ls` lists every stack.
+- `./stack info` shows the branch, the worktree's slot, the stack's URL and this worktree's test ports.
+
+Plain `docker compose up` still runs [docker-compose.yml](./docker-compose.yml) alone: one stack with a
+database of its own (its own `<project>_pgdata` volume), as the operations tests use it.
 
 Create migrations on the host (needs the .NET SDK; `dotnet tool restore` installs the pinned `dotnet-ef`),
-then run `docker compose restart api` to apply them:
+then run `./stack restart api` to apply them:
 
 ```
 dotnet tool restore
 dotnet ef migrations add <Name> --project src/Homebrewery.Data --startup-project src/Homebrewery.Api
 ```
 
-To run the production image instead of the dev servers, against the same database and still at
-http://localhost:8080:
+To run the production image instead of the dev servers, against the same shared database and at the same
+URL:
 
 ```
-docker compose -f docker-compose.yml -f compose.prod.yml up --build
+./stack --prod up --build
 ```
 
 This builds the [Dockerfile](./Dockerfile) (Vite build, `dotnet publish`, ASP.NET Core runtime) and
 replaces the dev `api` and `web` containers. It also starts the `backup` service, which dumps the
-database daily into the `backups` volume. `docker compose up --remove-orphans` switches back.
+database daily into the `backups` volume. `./stack up --remove-orphans` switches back.
 
 ### On the host (alternative)
 
 You need the [.NET 10 SDK](https://dotnet.microsoft.com/download), [Node.js 24](https://nodejs.org/) and
 Docker for PostgreSQL. The containerised dev servers publish no ports of their own, so they don't
-collide with this setup; both use the same database.
+collide with this setup; both use the same (shared) database.
 
-1. Start only PostgreSQL 18 (user, password and database are all `homebrewery`, on port 5432):
+1. Start only the shared PostgreSQL 18 (user, password and database are all `homebrewery`, on port 5432):
 
    ```
-   docker compose up -d db
+   ./stack db up
    ```
 
 2. The Development settings (`src/Homebrewery.Api/appsettings.Development.json`) already point at that database.
@@ -129,14 +151,17 @@ collide with this setup; both use the same database.
    npm --prefix web run dev
    ```
 
-Tests (on the host; the API tests start their own PostgreSQL with Testcontainers). Every suite fails fast: short
+Tests (on the host). They never use the shared database or another worktree's servers: the API tests start their
+own PostgreSQL with Testcontainers, every e2e runner that needs an API starts a throwaway PostgreSQL container of its
+own, and a worktree's test ports and temp folders carry its slot ([docs/testing.md](./docs/testing.md) "Worktrees";
+Docker must be running). Every suite fails fast: short
 per-test timeouts, every Playwright run capped at 5 minutes (a big suite runs as several short sets), and runner
 scripts that kill a run making no progress for 60 s. There are no long tests. How to run each suite, the limits,
 splitting a slow test and debugging a stall: [docs/testing.md](./docs/testing.md).
 
 The everyday loop is the unit tests, the e2e specs of the area you change, and the smoke set (about 50 e2e tests
-tagged `@smoke`, Chromium, under 3 minutes: the plan §12 flow, core pagination in the editor, an import smoke;
-`docker compose up -d db` first). The full e2e suite runs in CI only.
+tagged `@smoke`, Chromium, under 3 minutes: the plan §12 flow, core pagination in the editor, an import smoke).
+The full e2e suite runs in CI only.
 
 ```
 dotnet test
@@ -147,10 +172,10 @@ npm --prefix web run e2e:smoke                        # the smoke set
 
 Before the first e2e run, install the browsers from `web/`: `npx playwright install chromium firefox`.
 `npm run e2e` with a file or folder starts its own Vite (under the no-progress watchdog); the specs that need an API
-skip without one. Rarely needed locally, from `web/` (`docker compose up -d db` first):
+skip without one. Rarely needed locally, from `web/`:
 
 ```
-node e2e/matrix/run-suite.mjs     # the whole suite as CI runs it: private API (:5474) and Vite (:5374), in short sets
+node e2e/matrix/run-suite.mjs     # the whole suite as CI runs it: private API (:5474) and Vite (:5374) + 1000 × slot, in short sets
 node e2e/security/run-csp.mjs     # the production build under the enforced CSP, every page (docs/security.md)
 ```
 

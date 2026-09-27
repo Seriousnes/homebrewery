@@ -15,7 +15,7 @@ product code. So:
    (`npm --prefix web run e2e -- e2e/matrix/typing.spec.ts`). Before pushing a larger change, the
    smoke set. **No full-suite runs locally**: no `run-suite.mjs` and no `npm run e2e` without a file
    or folder (both run the whole suite, set after set).
-2. **The smoke set:** `npm --prefix web run e2e:smoke` (needs `docker compose up -d db`). It is
+2. **The smoke set:** `npm --prefix web run e2e:smoke` (needs Docker running). It is
    `run-suite.mjs --project=chromium --grep=@smoke`: the tests tagged `@smoke`, in Chromium, with a
    private API and an isolated Vite. 47 tests; on 2026-09-27 (22 logical CPUs, 6 workers) the
    Playwright run took 30 to 34 s and the whole command 41 s (47 s with a first API build). It
@@ -109,9 +109,10 @@ as `it('…', fn, 20_000)` or `beforeAll(fn, 180_000)`. It also fails on any lon
 ## Running the suites
 
 From the repository root unless noted. Run tests in the foreground; for agents: always with a hard
-command timeout of 5 minutes at most (for example `timeout 300 …`), your own `E2E_PORT`,
-`E2E_WORKERS` (6 at most) and `--reporter=line`. Never use the ports people use (5080, 5173,
-8080). A command that runs several sets (the whole suite, `run-perf.mjs`, `fidelity-run.ts`) takes
+command timeout of 5 minutes at most (for example `timeout 300 …`), `E2E_WORKERS` (6 at most)
+and `--reporter=line`. Never use the ports people use (5080, 5173, and the dev stacks' 8080 to
+8120). Runs in different worktrees never meet ([Worktrees](#worktrees)); two runs in the same
+worktree need different `E2E_PORT`s. A command that runs several sets (the whole suite, `run-perf.mjs`, `fidelity-run.ts`) takes
 longer than 5 minutes in total: run its sets one command at a time with `--set=<n>` where the
 script has it.
 
@@ -120,9 +121,9 @@ script has it.
 | Unit (Vitest) | `npm --prefix web test` | projects `web` (jsdom, `src/**`) and `node` (`vite/**`, `scripts/**`). About a minute. |
 | One unit file | `npx vitest run src/editor/toc/tocView.test.ts` (from `web/`) | `--project node` for `scripts/` and `vite/` |
 | E2E, the specs of an area | `npm --prefix web run e2e -- <file or folder> [args]` | `node e2e/run-playwright.mjs`: Playwright starts Vite; specs that need an API skip. With a file, folder or `--project` it is one run; without, the whole suite as sets (below: CI only) |
-| E2E smoke set | `npm --prefix web run e2e:smoke` | the `@smoke` tests in Chromium with a private API, one run of about a minute ([the lean strategy](#the-lean-strategy)). Needs `docker compose up -d db` |
-| E2E, whole suite as CI | `node e2e/matrix/run-suite.mjs [args]` (from `web/`) | CI runs it; locally rarely needed. Private API (:5474, database `hb_e2e_suite`) and isolated Vite (:5374); the suite as short sets (below). Needs `docker compose up -d db` |
-| E2E lanes | `node e2e/flows/run-flows.mjs`, `e2e/admin/run-admin.mjs`, `e2e/lists/run-lists.mjs`, `e2e/save/run-with-api.mjs`, `e2e/import-ui/run-import-ui.mjs` (from `web/`) | each with its own API port, database and Vite; the header of each script lists its variables |
+| E2E smoke set | `npm --prefix web run e2e:smoke` | the `@smoke` tests in Chromium with a private API, one run of about a minute ([the lean strategy](#the-lean-strategy)). Needs Docker (its own PostgreSQL container) |
+| E2E, whole suite as CI | `node e2e/matrix/run-suite.mjs [args]` (from `web/`) | CI runs it; locally rarely needed. Private API (:5474, database `hb_e2e_suite` on the run's own PostgreSQL container) and isolated Vite (:5374), + 1000 × slot in a worktree; the suite as short sets (below). Needs Docker |
+| E2E lanes | `node e2e/flows/run-flows.mjs`, `e2e/admin/run-admin.mjs`, `e2e/lists/run-lists.mjs`, `e2e/save/run-with-api.mjs`, `e2e/import-ui/run-import-ui.mjs` (from `web/`) | each with its own API port, PostgreSQL container and Vite; the header of each script lists its variables |
 | Production build under the CSP | `node e2e/security/run-csp.mjs` (from `web/`) | Chromium; the `csp` job in CI. See [security.md](./security.md) |
 | Performance | `node e2e/perf/run-perf.mjs [--prod]` (from `web/`) | one worker, three sets: the smoke tests (Firefox: `pagination-work.spec.ts` only), then the time budgets in `chromium-serial`, then in `firefox-serial` (about 2 minutes each) |
 | Snippet fidelity (every fixture) | `SNIPPET_FIDELITY=all node e2e/run-playwright.mjs e2e/snippets/snippetFidelity.spec.ts --project=chromium` (from `web/`) | local only, when a snippet's rendering changes: 25 tests of up to 8 fixtures, about 1 minute at 6 workers (Firefox with `E2E_FIREFOX=all`, 1.5 minutes). The suite has an 11-fixture smoke |
@@ -130,7 +131,7 @@ script has it.
 | .NET | `dotnet test` | Testcontainers starts its own PostgreSQL (Docker) |
 
 The runner scripts start (or reuse) the servers they need, run Playwright, and stop everything
-they started. Arguments after the script name go to `playwright test`; give options their values
+they started, including their PostgreSQL containers. Arguments after the script name go to `playwright test`; give options their values
 with `=` (`--workers=2`). Every Playwright run prints its wall time, the test time per project and
 its slowest tests (`HB_SLOWEST=<n>` lists more).
 
@@ -171,6 +172,32 @@ in Chromium (559 tests) and an estimated 1,100 s in Firefox (166 tests) locally,
 minutes per shard at 2 workers and 1.3 times slower. When the suite grows, raise them (every run
 prints its test time per project: a shard costs about that divided by the shard count and the
 workers).
+
+## Worktrees
+
+Several worktrees of the repository (`wt switch`, `git worktree add`) can run tests at the same
+time without meeting; nothing needs to be started first except Docker:
+
+- **Slots.** Every worktree has a slot (`web/scripts/worktree.ts`): 0 for the main checkout, the
+  lowest free one from 1 for every other worktree, kept in `<git common dir>/hb-worktree-slots.json`
+  (a removed worktree's slot is given back). `./stack info` prints it; `HB_SLOT` forces one.
+- **Ports.** Every runner's default port is its historical one in slot 0 and + 1000 × slot
+  elsewhere: Playwright's Vite 5174 → 6174 in slot 1, run-suite's API and Vite 5474/5374 → 6474/6374,
+  run-csp 5477/5377, the lanes' 54xx/53xx, perf 5375, fidelity 5303, welcome-doc 5329. A server
+  already answering on a port is only ever this worktree's.
+- **Databases.** A runner that starts an API also starts a throwaway PostgreSQL container for it
+  (`hb-test-<slot>-<runner>`: `postgres:18`, data in tmpfs, durability off, a free loopback port;
+  about 1.5 s to start). It is removed when the run ends, and by the reaper when the runner is
+  killed hard; a leftover of a killed run is replaced by the next. An API left answering on the
+  runner's port is not reused (it would belong to another run's database): stop it. With
+  `HB_E2E_DB_HOST` (and `HB_E2E_DB_PORT`) the runners use that server instead, as CI does with its
+  service container. Tests never touch the dev stacks' shared database.
+- **Temp folders.** dotnet artifacts (`hb-artifacts-<runner>`), the CSP walk's build and keys and the
+  perf build get the suffix `-<slot>` outside slot 0, so one worktree's build never runs another's
+  code.
+- **Operations tests** (`deploy/scripts/test-*.sh`): project, container, volume and network names get
+  `-<slot>` and the port 5478 + 1000 × slot (`deploy/test/lib.sh`).
+- **.NET tests** already start their own PostgreSQL per run (Testcontainers).
 
 ## Splitting a slow test
 

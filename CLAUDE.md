@@ -4,11 +4,12 @@
 Local text copy: docs/wysiwyg-plan.md (same content; section numbers and task IDs match).
 Before starting a task, read the plan section for its ID (e.g. P4.3) and meet its "Done when".
 What was actually built (interfaces, conventions, deviations): docs/implementation-notes.md.
-- Run: docker compose up → [http://localhost:8080](http://localhost:8080) (db, API under dotnet watch, Vite, Caddy; README  
-"Running locally"). Production image: docker compose -f docker-compose.yml -f compose.prod.yml up --build
+- Run: ./stack up (PowerShell: .\stack up) → the branch's own stack (compose project hb-<branch>: API under dotnet watch,
+Vite, Caddy on 8080 in the main checkout, 8080 + slot in a worktree; ./stack info) on ONE shared PostgreSQL for every
+branch (compose project homebrewery-shared). README "Running locally". Production image: ./stack --prod up --build
 - User secrets: every project shares UserSecretsId "homebrewery" (set once in Directory.Build.props). e.g. dotnet user-secrets set <key> <value> --project src/Homebrewery.Api
 - Backend: src/ (.NET 10, ASP.NET Core minimal APIs, EF Core + Npgsql, PostgreSQL 18).
-Host-only run: docker compose up -d db, then dotnet run --project src/Homebrewery.Api (:5080)
+Host-only run: ./stack db up (the shared PostgreSQL on :5432), then dotnet run --project src/Homebrewery.Api (:5080)
 - Frontend: web/ (React 19, TypeScript, Vite, TipTap 3). Host-only run: npm --prefix web run dev (:5173, proxies /api to :5080).
 - themes/ is shared with upstream. Only edit theme LESS to fix bugs. The editor must emit the
 HTML listed in the plan's "CSS contract" so theme CSS keeps working unchanged.
@@ -17,15 +18,21 @@ HTML listed in the plan's "CSS contract" so theme CSS keeps working unchanged.
 join + split (never delete + insert). See plan section 4.
 - Tests: npm --prefix web test (dotnet test for src/) + only the e2e specs of the area you change (npm --prefix web run e2e -- <spec or folder>) + npm --prefix web run e2e:smoke; the full e2e suite runs in CI only (docs/testing.md).
 Production build under the enforced CSP: node e2e/security/run-csp.mjs (from web/); new pages need a step in web/e2e/security/csp.spec.ts.
+Tests never share servers or data across worktrees: runners start their own PostgreSQL container and use the
+worktree's slot ports and temp folders (docs/testing.md "Worktrees"). Only Docker needs to be running.
 - Operations (image, configuration, migrations, backups, logs, health): docs/operations.md. Security (CSP and headers, review, rules for new code): docs/security.md.
 
 ## Development guidelines (beyond the plan)
 
-- Container-first: running the app on a developer machine means `docker compose up`, which starts
+- Container-first: running the app on a developer machine means `./stack up`, which starts
 every required resource (Postgres, API, web dev server, Caddy). Host-only runs stay possible but
 are secondary.
+- One stack per branch/worktree (compose project hb-<branch>, Caddy port per worktree slot), all on
+one shared PostgreSQL (project homebrewery-shared, volume homebrewery-shared-pgdata). Never mount a
+PostgreSQL data volume into a second container. Tests run their own stack: their own PostgreSQL
+container and the worktree's ports, never the shared database.
 - Postgres always comes from the official Docker image (postgres:18), in compose and in tests
-(Testcontainers). Never assume a locally installed Postgres.
+(Testcontainers, the e2e runners' containers). Never assume a locally installed Postgres.
 - Caddy does local routing: one origin for the browser, /api, /share, /openapi and /healthz go to
 the API, everything else to the Vite dev server (including the HMR websocket).
 - Tests fail or succeed fast. There are NO long tests and no long test runs — no exceptions, no
