@@ -14,12 +14,14 @@
 // worktree its own Caddy port (web/scripts/worktree.ts: 8080 for the main checkout, 8080 + n for worktree slot n;
 // HB_HTTP_PORT in the environment or .env overrides it). All of them use ONE PostgreSQL, the homebrewery-shared
 // project, so every stack sees the same data. Commands that start containers start it first (and, once, copy the
-// data of the old single-stack volume homebrewery_pgdata into it), and stop this worktree's stack of the branch
-// checked out before, which holds the same port.
+// data of the old single-stack volume homebrewery_pgdata into it; one ./stack at a time, and an interrupted copy is
+// redone), stop this worktree's stack of the branch checked out before, which holds the same port, and stop the
+// containers of the other mode (app and backup of --prod in dev mode, api and web in --prod mode).
 //
 // Plain `docker compose up` still works: it runs docker-compose.yml alone, a stack with a database of its own.
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MAX_SLOT, slotPort, stackName, worktreeInfo } from '../../web/scripts/worktree.ts';
@@ -30,6 +32,12 @@ const SHARED_VOLUME = 'homebrewery-shared-pgdata';
 const SHARED_FILE = 'deploy/stack/shared-db.yml';
 /** The volume of the single stack that docker-compose.yml ran before per-branch stacks (project "homebrewery"). */
 const OLD_VOLUME = 'homebrewery_pgdata';
+/** In the root of SHARED_VOLUME (next to PostgreSQL's 18/ folder) while the copy from OLD_VOLUME is not finished. */
+const COPYING = '.hb-copy-incomplete';
+/** Held (mkdir is atomic; it holds the owner's pid) while a ./stack prepares the shared database. */
+const LOCK = path.join(os.tmpdir(), 'homebrewery-shared-db.lock');
+/** A lock this old is stale even if its pid is alive again (a reused pid). */
+const LOCK_STALE_MS = 15 * 60_000;
 const STARTS = new Set(['up', 'start', 'restart', 'run', 'create', 'exec', 'watch']);
 
 const say = (message) => console.error(`[stack] ${message}`);
@@ -69,8 +77,72 @@ function httpPort(slot) {
   return String(8080 + slot);
 }
 
+/** Whether the lock's owner still runs (or has not written its pid yet). */
+function lockHeld() {
+  let age;
+  try {
+    age = Date.now() - fs.statSync(LOCK).mtimeMs;
+  } catch {
+    return false; // released meanwhile
+  }
+  if (age > LOCK_STALE_MS) return false;
+  let pid = 0;
+  try {
+    pid = Number(fs.readFileSync(path.join(LOCK, 'pid'), 'utf8'));
+  } catch {
+    // not written yet
+  }
+  if (!Number.isInteger(pid) || pid <= 0) return age < 10_000; // the owner has not written its pid yet
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM'; // ESRCH: the owner died
+  }
+}
+
+/** Runs `fn` holding LOCK, so two ./stack runs (of any worktree) never prepare the shared database at the same time. */
+function withSharedDbLock(fn) {
+  let waiting = false;
+  for (;;) {
+    try {
+      fs.mkdirSync(LOCK);
+      break;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      if (!lockHeld()) {
+        fs.rmSync(LOCK, { recursive: true, force: true });
+        continue;
+      }
+      if (!waiting) say(`waiting for another ./stack that prepares the shared database (lock ${LOCK})…`);
+      waiting = true;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+    }
+  }
+  const release = () => fs.rmSync(LOCK, { recursive: true, force: true });
+  process.on('exit', release); // fail() exits without running finally blocks
+  try {
+    fs.writeFileSync(path.join(LOCK, 'pid'), String(process.pid));
+    return fn();
+  } finally {
+    process.off('exit', release);
+    release();
+  }
+}
+
 /** Starts the shared database (after the one-time copy of the old stack's data) and waits until it is healthy. */
 function ensureSharedDb() {
+  withSharedDbLock(prepareSharedDb);
+}
+
+/** A copy from OLD_VOLUME that did not finish (Ctrl+C, a crash) left its marker in SHARED_VOLUME. */
+function copyInterrupted() {
+  // A running database is never overwritten; it only starts after a finished copy.
+  if (docker(['ps', '-q', '--filter', `volume=${SHARED_VOLUME}`]).out) return false;
+  return docker(['run', '--rm', '-v', `${SHARED_VOLUME}:/to:ro`, 'postgres:18', 'test', '-e', `/to/${COPYING}`], { allowFail: true }).status === 0;
+}
+
+function prepareSharedDb() {
   // No other container may have the shared data volume mounted.
   const users = lines(docker(['ps', '-a', '--filter', `volume=${SHARED_VOLUME}`, '--format', '{{.Names}}\t{{.Label "com.docker.compose.project"}}']).out).filter(
     (row) => row.split('\t')[1] !== SHARED_PROJECT,
@@ -78,7 +150,7 @@ function ensureSharedDb() {
   if (users.length) fail(`${SHARED_VOLUME} is mounted by ${users.map((r) => r.split('\t')[0]).join(', ')}; only the ${SHARED_PROJECT} database may use it. Remove those containers first.`);
 
   const volumes = new Set(lines(docker(['volume', 'ls', '--format', '{{.Name}}']).out));
-  if (!volumes.has(SHARED_VOLUME) && volumes.has(OLD_VOLUME)) {
+  if (volumes.has(OLD_VOLUME) && (!volumes.has(SHARED_VOLUME) || copyInterrupted())) {
     const running = lines(docker(['ps', '--filter', `volume=${OLD_VOLUME}`, '--format', '{{.Names}}']).out);
     if (running.length) {
       fail(
@@ -89,13 +161,27 @@ function ensureSharedDb() {
     }
     say(`copying the data of ${OLD_VOLUME} (the old single stack's database) into ${SHARED_VOLUME}; ${OLD_VOLUME} is kept…`);
     docker(['volume', 'create', SHARED_VOLUME]);
-    const copy = docker(['run', '--rm', '-v', `${OLD_VOLUME}:/from:ro`, '-v', `${SHARED_VOLUME}:/to`, 'postgres:18', 'cp', '-a', '/from/.', '/to/'], { inherit: true, allowFail: true });
+    // The marker comes first and goes last, so the next run redoes a copy that did not finish (into an emptied volume).
+    const script = `touch /to/${COPYING} && find /to -mindepth 1 -maxdepth 1 ! -name ${COPYING} -exec rm -rf {} + && cp -a /from/. /to/ && rm /to/${COPYING}`;
+    const copy = docker(['run', '--rm', '-v', `${OLD_VOLUME}:/from:ro`, '-v', `${SHARED_VOLUME}:/to`, 'postgres:18', 'sh', '-c', script], { inherit: true, allowFail: true });
     if (copy.status !== 0) {
       docker(['volume', 'rm', SHARED_VOLUME], { allowFail: true });
-      fail('the copy failed; nothing was changed.');
+      fail(`the copy failed; ${OLD_VOLUME} is unchanged. Run this again to retry.`);
     }
   }
   docker(['compose', '-f', SHARED_FILE, 'up', '-d', '--wait', '--wait-timeout', '120'], { inherit: true });
+}
+
+/**
+ * Stops the running containers of compose project `name`, or only those of `services`, found by their compose labels:
+ * the compose files of this checkout may not define them all (app and backup exist only with --prod).
+ */
+function stopContainers(name, services) {
+  const ids = lines(docker(['ps', '--filter', `label=com.docker.compose.project=${name}`, '--format', '{{.ID}}\t{{.Label "com.docker.compose.service"}}']).out)
+    .map((row) => row.split('\t'))
+    .filter(([, service]) => !services || services.includes(service))
+    .map(([id]) => id);
+  if (ids.length && docker(['stop', ...ids], { allowFail: true }).status !== 0) say(`could not stop every container of ${name}`);
 }
 
 /** Stops this worktree's stacks of other branches: they hold the same Caddy port. */
@@ -105,7 +191,7 @@ function stopOtherBranches(root, project) {
   );
   for (const other of projects) {
     say(`stopping ${other}, this worktree's stack of the branch checked out before (docker compose -p ${other} down removes it)…`);
-    docker(['compose', '-p', other, 'stop'], { inherit: true, allowFail: true });
+    stopContainers(other);
   }
 }
 
@@ -156,6 +242,8 @@ const command = args.find((a) => !a.startsWith('-'));
 if (command && STARTS.has(command)) {
   ensureSharedDb();
   stopOtherBranches(info.root, project);
+  // The other mode's services are not in this mode's compose files, so compose would leave them running.
+  stopContainers(project, prod ? ['api', 'web'] : ['app', 'backup']);
   say(`${project} (branch ${info.branch ?? 'detached'}, slot ${info.slot}) → http://localhost:${port}`);
 }
 
