@@ -42,7 +42,7 @@ export HB_EXTDB_NETWORK=$network
 export HB_IMAGE=${HB_TEST_IMAGE:-homebrewery:ops-test}
 export HB_HTTP_PORT=${HB_TEST_PORT:-$HB_SLOT_TEST_PORT} HB_BIND=127.0.0.1
 export BASE_URL=http://localhost:$HB_HTTP_PORT
-case $HB_HTTP_PORT in 5080|5173|8080) echo "Refusing to use port $HB_HTTP_PORT (the dev stack's)." >&2; exit 2 ;; esac
+refuse_human_port "$HB_HTTP_PORT"
 
 connection() { # connection <ssl mode> [root certificate file]
   printf 'Host=%s;Port=%s;Database=homebrewery;Username=hb_app;Password=%s;SSL Mode=%s;Root Certificate=/etc/homebrewery/db-certs/%s' \

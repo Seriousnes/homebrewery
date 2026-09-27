@@ -12,6 +12,15 @@ HB_SLOT=${HB_SLOT:-$(node deploy/stack/stack.mjs slot 2>/dev/null || echo 0)}
 if ((HB_SLOT > 0)); then HB_SLOT_SUFFIX=-$HB_SLOT; else HB_SLOT_SUFFIX=; fi
 HB_SLOT_TEST_PORT=$((5478 + HB_SLOT * 1000))
 
+# refuse_human_port <port>: exits 2 on a port of a person's stack: the host-run API (5080) and Vite (5173), or a dev
+# stack's Caddy (8080 + worktree slot: 8080-8120, MAX_SLOT in web/scripts/worktree.ts; isHumanPort in testRunner.ts).
+refuse_human_port() {
+  if [[ $1 =~ ^[0-9]+$ ]] && ((10#$1 == 5080 || 10#$1 == 5173 || (10#$1 >= 8080 && 10#$1 <= 8120))); then
+    echo "Refusing to use port $1 (humans use 5080, 5173 and the dev stacks' 8080-8120)." >&2
+    exit 2
+  fi
+}
+
 PASSED=0
 FAILED=0
 

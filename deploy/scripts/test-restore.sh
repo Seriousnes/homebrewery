@@ -33,7 +33,7 @@ export COMPOSE_FILE=docker-compose.yml:compose.prod.yml:deploy/test/compose.rest
 export HB_HTTP_PORT=${HB_TEST_PORT:-$HB_SLOT_TEST_PORT}
 export HB_TEST_IMAGE=${HB_TEST_IMAGE:-homebrewery:ops-test}
 export BASE_URL=http://localhost:$HB_HTTP_PORT
-case $HB_HTTP_PORT in 5080|5173|8080) echo "Refusing to use port $HB_HTTP_PORT (the dev stack's)." >&2; exit 2 ;; esac
+refuse_human_port "$HB_HTTP_PORT"
 
 work=$(mktemp -d)
 cleanup() {
