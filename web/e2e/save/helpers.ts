@@ -156,7 +156,7 @@ export async function killTab(page: Page): Promise<void> {
 /** Axe violations with impact serious or critical inside `selector`. */
 export async function seriousViolations(page: Page, selector?: string): Promise<string[]> {
   // Legacy mode: axe.run in the page. The default mode finishes in a new blank page, which took seconds
-  // to minutes in Firefox (docs/implementation-notes.md, a11y lane); /dev/save has no iframes.
+  // to minutes in Firefox (a11y lane); /dev/save has no iframes.
   let builder = new AxeBuilder({ page }).setLegacyMode(true);
   if (selector) builder = builder.include(selector);
   const results = await builder.analyze();

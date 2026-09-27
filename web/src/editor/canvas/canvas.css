@@ -118,7 +118,7 @@
    browser, offscreen.ts). The theme's contain: strict already applies the same containment.
    Pages nobody measures then cost nothing: adding or removing a page no longer restyles every page
    after it (the themes' .page:nth-child rules), and the browser's editing work per keystroke no
-   longer walks the whole brew (P8.1, docs/implementation-notes.md). */
+   longer walks the whole brew (P8.1). */
 .hb-canvas[data-hb-offscreen='skip'] .page {
   content-visibility: auto !important;
 }

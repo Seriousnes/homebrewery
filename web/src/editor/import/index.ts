@@ -1,5 +1,4 @@
-// Markdown import (plan §7, P6.2): brew text → document. See docs/implementation-notes.md
-// ("Import: hbfmToDoc, …") for the contract.
+// Markdown import (plan §7, P6.2): brew text → document.
 export { hbfmToDoc, ImportError, DEFAULT_IMPORT_THEME, type HbfmToDocOptions, type HbfmImportResult, type ImportErrorCode } from './hbfmToDoc';
 export { splitTextStyleAndMetadata, yamlSnippetsToText, brewSnippetsToJSON } from './brewText';
 export type { BrewMetadata, SplitBrew, BrewTextInput, BrewSnippet, BrewSnippetGroup, BrewSnippetsJSON } from './brewText';

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Replace the database with a pg_dump backup (docs/operations.md "Backups and restore").
+# Replace the database with a pg_dump backup.
 #
 #   deploy/scripts/restore.sh <dump> [--yes] [--clean] [--no-owner] [--no-safety-backup]
 #

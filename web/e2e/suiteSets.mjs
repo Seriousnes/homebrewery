@@ -7,7 +7,7 @@
 // (playwright.config.ts FIREFOX_SPECS), so most sets are Chromium only. The runner stops at the
 // first set that fails and prints each set's wall time; a set over 4 minutes is flagged: split it
 // (move folders to another set). The full suite runs in CI; locally, run the unit tests, the specs
-// of the area you change and `npm run e2e:smoke` (docs/testing.md).
+// of the area you change and `npm run e2e:smoke`.
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

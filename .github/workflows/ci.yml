@@ -1,12 +1,12 @@
 name: CI
 
-# Fail fast (CLAUDE.md "Tests fail fast", docs/testing.md): there are no long tests and no long
+# Fail fast (CLAUDE.md "Tests fail fast"): there are no long tests and no long
 # jobs. Every job has timeout-minutes of 15 at most (setup included); every Playwright run is
 # capped at 5 minutes (playwright.config.ts globalTimeout), so each e2e job is one short run (a
 # shard, a serial project, the fidelity smoke, the CSP walk) and the shard counts keep each well
 # under the cap at CI's 2 workers; the runner scripts kill a run that makes no progress for 60 s.
 # The whole e2e suite runs only here; locally the default loop is the unit tests, the specs of the
-# area being changed and `npm --prefix web run e2e:smoke` (docs/testing.md, "The lean strategy").
+# area being changed and `npm --prefix web run e2e:smoke`.
 on:
   push:
   pull_request:
@@ -308,7 +308,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # The CSP walk (P8.3, web/e2e/security; docs/security.md): a production build served by the API
+  # The CSP walk (P8.3, web/e2e/security): a production build served by the API
   # in the Production environment with the enforced Content-Security-Policy, every page walked in
   # Chromium, and any CSP violation fails. web/e2e/security/run-csp.mjs runs `vite build`, starts
   # the API and runs the walk (8 tests) under the runners' watchdog. Not in the e2e shards: it
@@ -440,7 +440,7 @@ jobs:
         run: dotnet build Homebrewery.slnx --no-restore --configuration Release
 
       # Pdf/PdfRendererTests render with real headless Chromium: the build that the pinned Microsoft.Playwright
-      # package expects, installed by that package's own CLI from the build output (docs/testing.md).
+      # package expects, installed by that package's own CLI from the build output.
       - name: Install Chromium for the PDF tests
         run: pwsh tests/Homebrewery.Api.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps --only-shell chromium
 

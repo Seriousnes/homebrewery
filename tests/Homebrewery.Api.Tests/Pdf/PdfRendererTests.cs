@@ -10,7 +10,7 @@ namespace Homebrewery.Api.Tests.Pdf;
 
 /// <summary>
 /// <see cref="PdfRenderer"/> with real headless Chromium: the Chromium build of the Microsoft.Playwright package must be
-/// installed (docs/testing.md; <c>npm --prefix web exec playwright install chromium</c> installs the same build).
+/// installed (<c>npm --prefix web exec playwright install chromium</c> installs the same build).
 /// Other sites' files come from <see cref="FakeFetcher"/>, so these tests never use the network.
 /// </summary>
 public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) : IClassFixture<PdfRendererTests.RendererFixture>
@@ -68,7 +68,7 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
     {
         var ct = TestContext.Current.CancellationToken;
         var font = await File.ReadAllBytesAsync(Path.Combine(SchemaManifestTests.RepositoryRoot(),
-            "web", "src", "editor", "canvas", "fonts", "open-sans-latin-400-normal.woff2"), ct);
+            "web", "src", "fonts", "open-sans-latin-400-normal.woff2"), ct);
         fixture.Fetcher.Reset(uri => uri.AbsolutePath switch
         {
             "/red.png" => new RemoteFile(Png, "image/png"),
@@ -150,6 +150,17 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
             QueueTimeout = TimeSpan.Zero,
             RenderTimeout = TimeSpan.FromSeconds(3),
         });
+
+        // Start this renderer's Chromium first. On a busy CI runner the driver and browser launch can take longer
+        // than the 3 s render timeout; the launch isn't cancelled, so the browser is running afterwards either way.
+        try
+        {
+            await renderer.RenderAsync(Html("<div class=\"page\">warm-up</div>"), ct);
+        }
+        catch (PdfRenderFailedException)
+        {
+            // The launch used up the warm-up's render timeout.
+        }
 
         var slow = renderer.RenderAsync(Html("<div class=\"page\"><img src=\"https://images.example/slow.png\"></div>"), ct);
         await Task.WhenAny(entered.Task, slow).WaitAsync(TimeSpan.FromSeconds(10), ct);

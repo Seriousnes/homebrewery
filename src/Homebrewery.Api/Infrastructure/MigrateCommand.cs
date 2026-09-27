@@ -6,8 +6,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// <summary>
 /// <c>dotnet Homebrewery.Api.dll migrate</c> (in the image: <c>docker run … homebrewery migrate</c>, or
 /// <c>docker compose run --rm app migrate</c>): applies pending EF Core migrations, ensures the Admin role and
-/// <c>Admin:Emails</c> grants, then exits without starting the web server (docs/operations.md "Upgrades and
-/// migrations").
+/// <c>Admin:Emails</c> grants, then exits without starting the web server.
 /// </summary>
 /// <remarks>
 /// It is <see cref="DatabaseInitializer"/> with <c>Database:MigrateOnStartup</c> forced on, so the connection-string

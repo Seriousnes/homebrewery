@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Restore test (plan P8.4 "a restore from backup is tested"; docs/operations.md "Backups and restore").
+# Restore test (plan P8.4 "a restore from backup is tested").
 #
 #   deploy/scripts/test-restore.sh [--keep] [--no-build]
 #
@@ -12,7 +12,8 @@
 # passed. The project and its volumes are removed at the end unless --keep.
 #
 # Environment: HB_TEST_PROJECT (hb-ops-restore-test), HB_TEST_PORT (5478), HB_TEST_IMAGE (homebrewery:ops-test; built
-# from the repository unless --no-build).
+# from the repository unless --no-build). In a linked worktree the project gets -<slot> and the port + 1000 × slot
+# (deploy/test/lib.sh), so worktrees can run it at the same time.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 source deploy/test/lib.sh
@@ -26,13 +27,13 @@ for arg in "$@"; do
   esac
 done
 
-export COMPOSE_PROJECT_NAME=${HB_TEST_PROJECT:-hb-ops-restore-test}
+export COMPOSE_PROJECT_NAME=${HB_TEST_PROJECT:-hb-ops-restore-test$HB_SLOT_SUFFIX}
 export COMPOSE_PATH_SEPARATOR=:
 export COMPOSE_FILE=docker-compose.yml:compose.prod.yml:deploy/test/compose.restore-test.yml
-export HB_HTTP_PORT=${HB_TEST_PORT:-5478}
+export HB_HTTP_PORT=${HB_TEST_PORT:-$HB_SLOT_TEST_PORT}
 export HB_TEST_IMAGE=${HB_TEST_IMAGE:-homebrewery:ops-test}
 export BASE_URL=http://localhost:$HB_HTTP_PORT
-case $HB_HTTP_PORT in 5080|5173|8080) echo "Refusing to use port $HB_HTTP_PORT (the dev stack's)." >&2; exit 2 ;; esac
+refuse_human_port "$HB_HTTP_PORT"
 
 work=$(mktemp -d)
 cleanup() {

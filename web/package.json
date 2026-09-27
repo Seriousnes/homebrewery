@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Homebrewery WYSIWYG front end (React 19 + TipTap 3 + Vite). See docs/wysiwyg-plan.md.",
+  "description": "Homebrewery WYSIWYG front end (React 19 + TipTap 3 + Vite).",
   "engines": {
     "node": ">=24"
   },

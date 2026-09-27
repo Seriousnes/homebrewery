@@ -1,0 +1,39 @@
+# The one PostgreSQL that every branch's dev stack uses (README "Running locally", deploy/stack/stack.mjs).
+# Its own compose project, so stopping or removing a branch's stack never touches the data; the stacks'
+# api (and, in production-image mode, app and backup) join its network, where it answers as `db`.
+#
+#   ./stack db up          start it (./stack up does that first anyway)
+#   ./stack db down        stop it; the data stays in the homebrewery-shared-pgdata volume
+#
+# The data volume belongs to this one container. Never mount it into a second PostgreSQL: two servers on
+# one data directory corrupt it. Tests never use this database (they start their own, web/scripts/testRunner.ts).
+#
+# Settings (environment): HB_DB_PORT   host port (default 5432), for a host-run API and tools.
+
+name: homebrewery-shared
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: homebrewery
+      POSTGRES_PASSWORD: homebrewery
+      POSTGRES_DB: homebrewery
+    ports: ["${HB_DB_PORT:-5432}:5432"]
+    volumes: ["pgdata:/var/lib/postgresql"]   # postgres 18 images keep data under a versioned subfolder
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homebrewery -d homebrewery"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+      start_interval: 1s
+
+volumes:
+  pgdata:
+    name: homebrewery-shared-pgdata
+
+networks:
+  default:
+    name: homebrewery-shared

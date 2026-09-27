@@ -1,6 +1,6 @@
 // Theme block commands (plan §6.4, P5.2). A toggle is one transaction with one attribute step
 // on the block (never setNodeMarkup: pagination can re-split blocks, and AttrSteps map through
-// that; implementation-notes "Pagination core"), with history closed first: one undo step.
+// that), with history closed first: one undo step.
 import { closeHistory } from '@tiptap/pm/history';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';

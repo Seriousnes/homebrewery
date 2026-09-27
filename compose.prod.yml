@@ -6,7 +6,7 @@
 # This command also removes the dev api and web containers (scale 0 below; their volumes stay).
 # Back to dev: `docker compose up -d --remove-orphans` (removes the app and backup containers again).
 #
-# Operations (docs/operations.md): the app writes JSON log lines (`docker compose logs app`), /healthz
+# Operations: the app writes JSON log lines (`docker compose logs app`), /healthz
 # checks the database, and the backup service runs pg_dump on a schedule into the backups volume.
 #   deploy/scripts/backup-now.sh (or .ps1)          one backup right away
 #   deploy/scripts/restore.sh (or .ps1) <file|latest>  replace the database with a dump (stops and restarts app)

@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Homebrewery API",
-    "description": "The Homebrewery WYSIWYG back end (docs/wysiwyg-plan.md §8). Same origin as the SPA: cookie sign-in, and writes need an Origin header matching the site. Errors are problem+json.",
+    "description": "The Homebrewery WYSIWYG back end. Same origin as the SPA: cookie sign-in, and writes need an Origin header matching the site. Errors are problem+json.",
     "version": "v1"
   },
   "paths": {

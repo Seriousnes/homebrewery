@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One pg_dump backup right away, through the compose `backup` service (docs/operations.md "Backups and restore").
+# One pg_dump backup right away, through the compose `backup` service.
 #
 #   deploy/scripts/backup-now.sh [label]
 #

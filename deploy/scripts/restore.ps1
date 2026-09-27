@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Replace the database with a pg_dump backup (docs/operations.md "Backups and restore"). Same behaviour as restore.sh.
+Replace the database with a pg_dump backup. Same behaviour as restore.sh.
 
 .DESCRIPTION
 Steps: take a safety dump of the current database (<prefix>-<time>-pre-restore.dump), stop the app, restore (default:

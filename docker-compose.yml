@@ -1,10 +1,14 @@
 # Local development stack (CLAUDE.md "Development guidelines", plan §2 "Running locally").
 #
-#   docker compose up            everything below; open http://localhost:8080
-#   docker compose up -d db      only PostgreSQL, for running the API and Vite on the host
+# Run it through ./stack (deploy/stack/stack.mjs): one stack per branch (compose project hb-<branch>), Caddy on
+# a port per worktree (8080 in the main checkout, 8080 + n in worktree slot n), and ONE shared PostgreSQL for
+# all of them (deploy/stack/shared-db.yml, joined through deploy/stack/dev.yml):
+#   ./stack up                   everything below; open the URL it prints
+#   ./stack db up                only the shared PostgreSQL, for running the API and Vite on the host
+#   ./stack --prod up --build    the production image instead of the dev servers (compose.prod.yml)
 #
-# Production image instead of the dev servers (same db, same Caddy):
-#   docker compose -f docker-compose.yml -f compose.prod.yml up --build
+# Plain `docker compose up` runs this file alone: a stack with a database of its own (the db service below,
+# volume <project>_pgdata), as the ops tests use it (deploy/scripts/test-restore.sh).
 #
 # Routing (deploy/caddy/Caddyfile): /api, /share, /openapi and /healthz go to the API, everything
 # else (SPA, Vite modules, HMR websocket) to the Vite dev server. Only Caddy and Postgres publish
@@ -16,7 +20,7 @@
 # containers never mix with Windows or macOS builds on the host.
 #
 # Settings (environment or a .env file next to this one):
-#   HB_HTTP_PORT   host port for Caddy (default 8080)
+#   HB_HTTP_PORT   host port for Caddy (default 8080; ./stack: 8080 + the worktree's slot)
 
 services:
   db:
@@ -147,6 +151,9 @@ services:
       - 127.0.0.1:${HB_HTTP_PORT:-8080}:${HB_HTTP_PORT:-8080}
     volumes:
       - ./deploy/caddy:/etc/caddy:ro
+    labels:
+      # ./stack finds this worktree's stacks by it (the one of the branch checked out before holds the same port).
+      hb.worktree: ${HB_WORKTREE:-}
     depends_on:
       api:
         condition: service_started
@@ -155,7 +162,10 @@ services:
 
 volumes:
   pgdata:
+  # The NuGet package cache is shared by every stack (it only ever gains packages), so a new branch's first
+  # start doesn't download them all again.
   nuget-packages:
+    name: homebrewery-nuget-packages
   aspnet-keys:
   dotnet-api-bin:
   dotnet-api-obj:

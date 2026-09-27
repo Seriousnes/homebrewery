@@ -1,7 +1,7 @@
 // /user/:handle against a real API (plan §9, P7.3): what visitors and the owner see, upstream's
 // client-side sort and filter (in the URL), and the brew actions (share link, edit, clone,
 // download as PDF, delete / remove / decline). Run with node e2e/lists/run-lists.mjs. The PDF is
-// rendered by the API's Chromium (the Microsoft.Playwright build; docs/testing.md).
+// rendered by the API's Chromium (the Microsoft.Playwright build).
 import { readFile } from 'node:fs/promises';
 import {
   addViews,

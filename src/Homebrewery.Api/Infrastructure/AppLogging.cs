@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Console;
 namespace Homebrewery.Api.Infrastructure;
 
 /// <summary>
-/// Structured console logs (plan P8.4, docs/operations.md "Logs").
+/// Structured console logs (plan P8.4).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">

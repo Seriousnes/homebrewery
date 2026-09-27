@@ -1,5 +1,4 @@
-// Brew snippets editor (plan §6.3). See SnippetsEditor.tsx and docs/implementation-notes.md
-// ("Brew snippets editor").
+// Brew snippets editor (plan §6.3). See SnippetsEditor.tsx.
 export { SnippetsPanel, SnippetsToggle, type SnippetsPanelProps, type SnippetsToggleProps } from './SnippetsPanel';
 export { SNIPPETS_REPORT_MS, useSnippetsEditor } from './useSnippetsEditor';
 export { SnippetsEditor, type SnippetsEditorProps } from './SnippetsEditor';

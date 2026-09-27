@@ -12,13 +12,14 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { slotPort } from './worktree.ts';
 
 const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (name: string, fallback: string): string => {
   const i = process.argv.indexOf(name);
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1]! : fallback;
 };
-const port = process.env.E2E_PORT ?? '5303';
+const port = process.env.E2E_PORT ?? slotPort(5303);
 const resultsDir = path.resolve(webDir, arg('--results', `test-results/${port}/fidelity-results/chromium`));
 const outFile = path.resolve(webDir, arg('--out', 'e2e/fixtures/fidelity-report.md'));
 const THRESHOLD = Number(arg('--threshold', '2'));

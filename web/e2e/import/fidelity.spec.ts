@@ -43,7 +43,7 @@ const manifest = JSON.parse(readFileSync(path.join(fixturesDir, 'fixtures.json')
 
 const SMOKE =
   /^(?:welcome|md-basic-001-.*|md-mustache-syntax-00[1-3]-.*|md-variables-00[1-2]-.*|md-definition-lists-00[1-2]-.*|snippet-5ephb-phb-(?:front-cover-page|monster-stat-block)|snippet-5ephb-tables-class-tables-full-caster-class-table)$/;
-// A few of them are in the e2e smoke set (@smoke, `npm run e2e:smoke`; docs/testing.md).
+// A few of them are in the e2e smoke set (@smoke, `npm run e2e:smoke`).
 const E2E_SMOKE = /^(?:md-basic-001-.*|md-mustache-syntax-001-.*|md-variables-001-.*|md-definition-lists-001-.*|snippet-5ephb-phb-monster-stat-block)$/;
 const filter = process.env.FIDELITY_FILTER ? new RegExp(process.env.FIDELITY_FILTER) : null;
 const fixtures = manifest.fixtures.filter((f) => {

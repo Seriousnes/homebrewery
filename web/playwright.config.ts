@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { slotPort } from './scripts/worktree';
 
 // Target selection:
-//   default            starts the Vite dev server on E2E_PORT (5174) — no build needed
+//   default            starts the Vite dev server on E2E_PORT (5174 in the main checkout,
+//                      5174 + 1000 × slot in other worktrees: scripts/worktree.ts) — no build needed
 //   E2E_PREVIEW=1      serves the existing build (src/Homebrewery.Api/wwwroot) with `vite preview`
 //   E2E_BASE_URL=…     runs against an already running server (e.g. the API host on :5080)
 // Parallel agents in one working tree: give each its own E2E_PORT; results go to test-results/<port>.
@@ -16,7 +18,7 @@ import { defineConfig, devices } from '@playwright/test';
 //                                     §4.10 perf budgets): one worker per project, so they never
 //                                     run beside each other.
 // The smoke set (tests tagged @smoke, Chromium, about 50 tests in under 3 minutes) is
-// `npm run e2e:smoke` (docs/testing.md).
+// `npm run e2e:smoke`.
 // In a bare full run (`npx playwright test`, no file, --grep, --project, --shard … filter) the
 // serial projects run after the parallel ones (project dependencies), so no other test competes
 // with their budgets; a failure in the parallel projects then skips them. With a filter there are
@@ -25,7 +27,7 @@ import { defineConfig, devices } from '@playwright/test';
 // sets one after the other (groups of folders in chromium + firefox, then each serial project).
 // There is no long-test tier (CLAUDE.md "Tests fail fast"): large coverage is many short tests, and a
 // big suite runs as several short sets (e2e/matrix/run-suite.mjs), each under globalTimeout.
-const port = Number(process.env.E2E_PORT ?? 5174);
+const port = Number(process.env.E2E_PORT ?? slotPort(5174));
 const externalBaseURL = process.env.E2E_BASE_URL;
 const preview = process.env.E2E_PREVIEW === '1';
 const isCI = Boolean(process.env.CI);
@@ -36,7 +38,7 @@ const SERIAL = /@serial/;
 // movement, selection, IME, paste and key handling differ between engines (canvas, sections/seams,
 // toolbar/keymap). Everything else (app pages, panels, a11y, import, export, save, lists …) is
 // engine-neutral and runs in Chromium only. E2E_FIREFOX=all lifts this (a local cross-browser check,
-// e.g. scripts/fidelity-run.ts --browsers chromium,firefox). docs/testing.md.
+// e.g. scripts/fidelity-run.ts --browsers chromium,firefox).
 const FIREFOX_SPECS =
   process.env.E2E_FIREFOX === 'all'
     ? undefined

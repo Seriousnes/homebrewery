@@ -20,7 +20,7 @@ export const PAGE_READY = { timeout: 10_000 };
 
 /**
  * Axe in legacy mode: axe.run in the page itself. The default mode finishes every analyze() in a new
- * blank page, which took seconds to minutes in Firefox (docs/implementation-notes.md, a11y lane). The
+ * blank page, which took seconds to minutes in Firefox (a11y lane). The
  * shell has no iframes, so the results are the same.
  */
 const axe = (page: Page) => new AxeBuilder({ page }).setLegacyMode(true);

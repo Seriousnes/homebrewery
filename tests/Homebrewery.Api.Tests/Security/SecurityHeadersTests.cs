@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace Homebrewery.Api.Tests.Security;
 
 /// <summary>
-/// P8.3 security headers (docs/security.md): pages get the document CSP (scripts only from this origin, no inline
+/// P8.3 security headers: pages get the document CSP (scripts only from this origin, no inline
 /// scripts, no eval; images and fonts from this origin, https: and data:), API responses a CSP that allows nothing,
 /// and every response nosniff, Referrer-Policy, Permissions-Policy, COOP and X-Frame-Options; HTTPS adds HSTS and
 /// upgrade-insecure-requests. Uses a temporary web root with a fixture index.html, never the real wwwroot.

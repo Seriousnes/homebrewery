@@ -20,7 +20,7 @@
 // - the smoke (default run): the first fixture of every theme and group (11), SMOKE_CHUNK per test;
 // - every fixture (149) with SNIPPET_FIDELITY=all (or a SNIPPET_FILTER): CHUNK fixtures per test,
 //   each test well under a minute; about a minute and a half per browser at 6 workers, one
-//   Playwright run per browser. A local tool, not in CI (docs/testing.md); Firefox needs
+//   Playwright run per browser. A local tool, not in CI; Firefox needs
 //   E2E_FIREFOX=all:
 //     SNIPPET_FIDELITY=all E2E_PORT=5327 npx playwright test e2e/snippets/snippetFidelity.spec.ts --project=chromium
 // The upstream render page is loaded once per test; each next fixture is a route change (upstreamShots).

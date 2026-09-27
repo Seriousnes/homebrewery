@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Homebrewery.Api.Tests.Operations;
 
 /// <summary>
-/// Console log format (plan P8.4, docs/operations.md "Logs"): JSON with scopes and UTC timestamps outside Development,
+/// Console log format (plan P8.4): JSON with scopes and UTC timestamps outside Development,
 /// the readable simple format in Development, and configuration always wins. The process-level check (real JSON lines
 /// on stdout) is in <see cref="MigrateCommandTests"/>; the container check is deploy/scripts/test-external-db.sh.
 /// </summary>

@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# This worktree's dev stack (deploy/stack/stack.mjs; README "Running locally").
+exec node "$(dirname "$0")/deploy/stack/stack.mjs" "$@"

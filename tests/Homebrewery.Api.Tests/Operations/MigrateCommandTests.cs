@@ -9,7 +9,7 @@ using Npgsql;
 namespace Homebrewery.Api.Tests.Operations;
 
 /// <summary>
-/// <c>Homebrewery.Api migrate</c> (plan P8.4, docs/operations.md "Upgrades and migrations"), run as a real process in
+/// <c>Homebrewery.Api migrate</c> (plan P8.4), run as a real process in
 /// the Production environment: it migrates, seeds the Admin role and exits 0, or logs a Critical entry and exits 1.
 /// Its stdout also shows the production log format: one JSON object per line with a UTC timestamp.
 /// </summary>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scheduled pg_dump backups for Homebrewery (plan P8.4, docs/operations.md "Backups and restore").
+# Scheduled pg_dump backups for Homebrewery (plan P8.4).
 # Runs inside the official postgres:18 image (pg_dump/pg_restore 18 can dump and restore any server from 9.2 up).
 #
 #   hb-backup.sh schedule            the backup service's command: back up every BACKUP_INTERVAL, keep BACKUP_KEEP

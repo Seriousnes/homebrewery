@@ -1,5 +1,5 @@
 // Vitest only (never import from app code): an in-memory /api/admin/* for the admin page tests,
-// following the API's documented behaviour (docs/implementation-notes.md, admin routes).
+// following the API's documented behaviour (admin routes).
 import type {
   AccountInfo,
   AdminBrewInfo,

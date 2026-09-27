@@ -40,7 +40,7 @@ async function fuzz(page: Page, testInfo: TestInfo, seed: number, edits: number)
 
 for (let k = 0; k < RUNS; k++) {
   const seed = SEED + k;
-  // The first two seeds are in the smoke set (docs/testing.md).
+  // The first two seeds are in the smoke set.
   test(`fuzz ${k + 1}/${RUNS}: ${EDITS} random edits on a 20-page document (seed ${seed}), no overflow and no loop guard`, { tag: k < 2 ? '@smoke' : [] }, async ({ page }, testInfo) => {
     await fuzz(page, testInfo, seed, EDITS);
   });

@@ -22,7 +22,7 @@ public static class ApiDocument
             {
                 Title = "Homebrewery API",
                 Version = "v1",
-                Description = "The Homebrewery WYSIWYG back end (docs/wysiwyg-plan.md §8). Same origin as the SPA: " +
+                Description = "The Homebrewery WYSIWYG back end. Same origin as the SPA: " +
                               "cookie sign-in, and writes need an Origin header matching the site. Errors are problem+json.",
             };
             // The SPA calls relative URLs on its own origin; the request's host would only make the export machine-specific.
