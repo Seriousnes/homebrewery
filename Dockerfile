@@ -22,8 +22,8 @@ COPY web web
 # Writes src/Homebrewery.Api/wwwroot (SPA + /themes/...) and shared/schema-manifest.json.
 RUN npm --prefix web run build
 
-# ---- 2. api: restore and publish the ASP.NET Core host ---------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
+# ---- 2. restore: the NuGet packages of the ASP.NET Core host ---------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
 WORKDIR /repo
 # Restore from the project files alone so the package layer stays cached until one of them changes.
 COPY global.json Directory.Build.props Directory.Packages.props* NuGet.config* nuget.config* ./
@@ -31,14 +31,50 @@ COPY src/Homebrewery.Api/*.csproj src/Homebrewery.Api/
 COPY src/Homebrewery.Core/*.csproj src/Homebrewery.Core/
 COPY src/Homebrewery.Data/*.csproj src/Homebrewery.Data/
 RUN dotnet restore src/Homebrewery.Api/Homebrewery.Api.csproj
+
+# ---- 3. playwright: the Playwright CLI of the pinned Microsoft.Playwright package --------------
+# PDF export (POST /api/export/pdf) runs headless Chromium. The browser build belongs to the package
+# version, so the stages below install it with this CLI: that layer changes only with the package.
+FROM restore AS playwright
+RUN set -eu; \
+    package="$(echo /root/.nuget/packages/microsoft.playwright/*/.playwright)"; \
+    case "$(uname -m)" in \
+      x86_64) node=linux-x64 ;; \
+      aarch64) node=linux-arm64 ;; \
+      *) echo "Playwright has no driver for $(uname -m)" >&2; exit 1 ;; \
+    esac; \
+    mkdir -p /playwright/node; \
+    cp "$package/node/$node/node" /playwright/node/node; \
+    cp -r "$package/package" /playwright/package
+
+# ---- 4. api: publish the ASP.NET Core host ---------------------------------------------------
+FROM restore AS api
 COPY src src
 COPY --from=web /repo/src/Homebrewery.Api/wwwroot src/Homebrewery.Api/wwwroot
 COPY --from=web /repo/shared shared
-RUN dotnet publish src/Homebrewery.Api/Homebrewery.Api.csproj -c Release -o /out
+# The Playwright driver (Node) comes out of the package executable by its owner only (root); the app runs as $APP_UID.
+RUN dotnet publish src/Homebrewery.Api/Homebrewery.Api.csproj -c Release -o /out \
+    && chmod 755 /out/.playwright/node/*/node
 
-# ---- 3. runtime ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+# ---- dev-api: the SDK image of `docker compose up`'s api service, with Chromium -----------------
+# Not part of the production image (it is not the last stage). docker-compose.yml builds it; after a
+# Microsoft.Playwright upgrade, `docker compose build api` installs the new Chromium.
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dev-api
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# The CLI is bind-mounted, not copied: a copied file stays in its layer even when a later step deletes it.
+RUN --mount=type=bind,from=playwright,source=/playwright,target=/tmp/playwright \
+    /tmp/playwright/node/node /tmp/playwright/package/cli.js install --with-deps --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- 5. runtime ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+# Chromium headless shell and the system libraries and fonts it needs (as root, before USER), readable by the app user.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# The CLI is bind-mounted, not copied: a copied file stays in its layer even when a later step deletes it.
+RUN --mount=type=bind,from=playwright,source=/playwright,target=/tmp/playwright \
+    /tmp/playwright/node/node /tmp/playwright/package/cli.js install --with-deps --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=api /out .
 ENV ASPNETCORE_HTTP_PORTS=8080
 # Data Protection keys (they encrypt the sign-in cookies; see src/Homebrewery.Api/Infrastructure/DataProtectionSetup.cs).

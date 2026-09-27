@@ -54,6 +54,7 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
         "--proxy-server=http://127.0.0.1:9",        // the discard port: direct connections fail...
         "--proxy-bypass-list=<-loopback>",          // ...loopback included
         "--host-resolver-rules=MAP * ~NOTFOUND",    // and no host name resolves
+        "--disable-dev-shm-usage",                  // containers have a small /dev/shm (64 MB in Docker)
     ];
 
     private readonly SemaphoreSlim _slots = new(options.Value.MaxConcurrentRenders, options.Value.MaxConcurrentRenders);
@@ -271,9 +272,9 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
     private static partial void LogLaunched(ILogger logger, string version);
 
     [LoggerMessage(Level = LogLevel.Error, Message =
-        "PDF export: Chromium could not be started. Install it with the Playwright CLI of the Microsoft.Playwright " +
-        "package: pwsh src/Homebrewery.Api/bin/Debug/net10.0/playwright.ps1 install chromium-headless-shell (the " +
-        "Docker images install it themselves; PLAYWRIGHT_BROWSERS_PATH says where to look).")]
+        "PDF export: Chromium could not be started. The Docker images install it (after a Microsoft.Playwright " +
+        "upgrade: docker compose build api). On a host: pwsh src/Homebrewery.Api/bin/Debug/net10.0/playwright.ps1 " +
+        "install --only-shell chromium. PLAYWRIGHT_BROWSERS_PATH says where Chromium is looked for.")]
     private static partial void LogLaunchFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Information, Message =

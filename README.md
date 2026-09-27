@@ -52,15 +52,15 @@ Then open **http://localhost:8080**. Compose starts every resource the app needs
 | Service | Runs | Notes |
 | --- | --- | --- |
 | `db` | PostgreSQL 18 (official `postgres:18` image), data in the `pgdata` volume | Also published on `localhost:5432`; user, password and database are all `homebrewery` |
-| `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0`) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`) |
+| `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0` plus headless Chromium for PDF export: the Dockerfile's `dev-api` stage) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`). After a Microsoft.Playwright upgrade, `docker compose build api` installs the new Chromium |
 | `web` | The Vite dev server (`node:24`) | Runs `npm ci` on the first start and whenever `web/package-lock.json` changes |
 | `caddy` | Caddy 2 with [deploy/caddy/Caddyfile](./deploy/caddy/Caddyfile) | The one origin: `/api`, `/share`, `/openapi` and `/healthz` go to `api`; everything else, including Vite's HMR websocket, goes to `web` |
 
 The repository is bind-mounted into `api` and `web`. When you edit files on the host, `dotnet watch`
 hot-reloads the API (or restarts it) and Vite hot-updates the page. Platform-specific outputs
 (`src/*/bin`, `src/*/obj`, `web/node_modules`) live in named volumes, so the Linux builds in the
-containers never mix with builds on the host. The first start takes a few minutes (NuGet restore,
-`npm ci`, first build). `docker compose up -d --wait` returns once every service is healthy.
+containers never mix with builds on the host. The first start takes a few minutes (the `api` image
+with Chromium, NuGet restore, `npm ci`, first build). `docker compose up -d --wait` returns once every service is healthy.
 
 - `docker compose logs -f api web` follows the dev servers.
 - `docker compose restart api` restarts the API, which also applies migrations added since it started.
@@ -115,10 +115,11 @@ collide with this setup; both use the same database.
 
    (`dotnet run --project src/Homebrewery.Api -- migrate` does the same with the app's own `migrate` command.)
 
-4. Install the front-end dependencies:
+4. Install the front-end dependencies, and Chromium (PDF export and the e2e tests use the same build):
 
    ```
    npm --prefix web install
+   npm --prefix web exec playwright install chromium
    ```
 
 5. Run the API (http://localhost:5080), then the Vite dev server (http://localhost:5173) in a second terminal.

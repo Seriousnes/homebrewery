@@ -30,6 +30,7 @@ Who attacks, and how:
 | An author of a malicious brew | Brew content that other people view: document JSON (attributes, links, images), raw HTML, user CSS, user themes, metadata in link previews. Targets: viewers of the share page, the vault and co-authors. |
 | Another website | CSRF against the API, clickjacking (framing the editor), reading API responses cross-origin. |
 | An anonymous client | Brute force and enumeration on the auth endpoints, abuse of the import proxy, large or deeply nested requests. |
+| A signed-in user sending HTML to the PDF renderer | Server-side request forgery (the server's network, cloud metadata), attacks on the headless browser, resource exhaustion. See [PDF export](#pdf-export). |
 | A signed-in non-admin | Mass assignment (setting `lock`, `authors`, `published` through a save), admin endpoints, other people's brews. |
 | The network | Session theft over plain HTTP. |
 
@@ -126,6 +127,30 @@ On HTTPS the policy also has `upgrade-insecure-requests`. `SecurityHeaders:CspRe
 The dev stack's Caddy (`deploy/caddy/Caddyfile`) adds no headers. In production-image mode every response already
 comes from the app with its headers, and in dev mode the pages come from Vite without a policy.
 
+## PDF export
+
+`POST /api/export/pdf` (issue #2) renders HTML that the client sends, so the HTML is untrusted input to a browser that
+runs on the server (`src/Homebrewery.Api/Pdf/PdfRenderer.cs`).
+
+- Access: signed-in users only (the endpoint audit), `RateLimits:Pdf` per user, at most `Pdf:MaxConcurrentRenders`
+  renders at once (others wait `Pdf:QueueTimeout`, then 503), `Pdf:RenderTimeout` per render, a 20 MB body cap after
+  decompression.
+- No scripts: each render has a fresh browser context with JavaScript disabled (and service workers blocked). The
+  exported HTML also carries a CSP without scripts, and the client strips active content, but the server does not
+  rely on that.
+- No network of its own: the HTML is served from a route handler as `https://export.homebrewery.invalid/`. Every
+  request goes through that handler, which aborts everything except GET requests for https images, fonts and
+  stylesheets of other hosts. Chromium is launched with a discard proxy for every host, loopback included, and a
+  host resolver that resolves nothing, so requests that bypass the handler (preconnect, DNS prefetch) go nowhere.
+  `PdfRendererTests.No_request_reaches_the_network_on_its_own` checks this with a local listener.
+- SSRF guard: the allowed files are fetched by the API, not by Chromium (`RemoteFileFetcher`). Its client connects
+  only to addresses that `PublicAddress.IsPublic` accepts. That excludes loopback, private, link-local (cloud
+  metadata), CGNAT, documentation, benchmark, multicast and reserved ranges, NAT64, Teredo, and 6to4 or
+  IPv4-mapped forms of those. The check runs in `ConnectCallback`, after DNS resolution, for every connection,
+  redirects included. So a DNS answer that changes between check and connect (rebinding) cannot reach a
+  private address. Other rules: https only, no proxy, no cookies, at most 3 redirects, and size, count and time
+  caps per file and per render. Tests: `RemoteFileFetcherTests`, `PublicAddressTests`.
+
 ## Plan §14 review
 
 | # | Upstream behaviour | Status | Proof |
@@ -157,7 +182,7 @@ comes from the app with its headers, and in dev mode the pages come from Vite wi
 | SR-10 | Secrets | No secrets in `appsettings.json` or the image. The Development connection string (the local compose password) is used only in Development. The image runs as a non-root user, and the Data Protection keys live in a 0700 volume directory. | OK. See R-5. |
 | SR-11 | Dependencies | `npm audit --omit=dev`: 0 vulnerabilities. `dotnet list package --vulnerable --include-transitive`: none (Api, Core, Data, tests). | OK on 2026-09-26. Re-run before releases; Dependabot is configured. |
 | SR-12 | Cookies | HttpOnly, SameSite=Lax, and Secure on HTTPS (`Auth:CookieSecurePolicy`, `Always` possible). Data Protection keys persist, so sign-ins survive restarts. | OK: `AuthCookieTests`, `DataProtectionTests`. See R-4. |
-| SR-13 | Rate limits | Auth 20/min per IP, writes 120/min per IP, import 10/min per user. Rejected anonymous writes count too. Identity locks an account out after repeated failed sign-ins. | OK: `RateLimitTests`. See R-3. |
+| SR-13 | Rate limits | Auth 20/min per IP, writes 120/min per IP, import and PDF export 10/min per user. Rejected anonymous writes count too. Identity locks an account out after repeated failed sign-ins. | OK: `RateLimitTests`. See R-3. |
 | SR-14 | Error leakage | problem+json everywhere. Exception details only in Development. `/register` does not reveal existing accounts. | OK: `ProblemDetailsTests`, `RegisterPrivacy`. |
 
 ## Residual risks
@@ -179,11 +204,19 @@ comes from the app with its headers, and in dev mode the pages come from Vite wi
 - **R-6: Identity bearer tokens.** `POST /api/auth/login` without `useCookies=true` returns bearer tokens (Identity
   API endpoints). The SPA never uses them. Only someone with the password gets one, and writes with a token still
   need an `Origin` header.
-- **R-7: Exported HTML files.** The export has no CSP of its own once saved to disk. The export serializer strips
-  scripts, handlers and unsafe URLs (`editor/export/serialize.ts`).
+- **R-7: Exported HTML.** The HTML export is no longer offered as a file (issue #2). It is sent to the PDF renderer,
+  which treats it as untrusted (see [PDF export](#pdf-export)). The export serializer still strips scripts, handlers
+  and unsafe URLs (`editor/export/serialize.ts`).
 - **R-8: Drafts on shared devices.** Unsaved work stays in the browser (IndexedDB drafts and local snapshots)
   after sign-out. The save lane scopes the `/new` draft to its signed-in author (`Draft.ownerId`, SAVE-12). Whoever
   uses the same browser profile next can still read what is stored there, as with any local data.
+- **R-9: The PDF renderer's Chromium runs without Chromium's own sandbox.** This is Playwright's default. Chromium's
+  sandbox needs user namespaces, and Docker's default seccomp profile blocks them. With JavaScript off and no
+  network, what remains exposed is HTML, CSS, font and image parsing by a current Chromium. The Chromium build
+  follows the Microsoft.Playwright version, so keep that package up to date. The process runs as the image's
+  non-root user.
+- **R-10: Other sites see the server fetch.** Images and fonts that a brew links on other sites are fetched from the
+  server's address when someone exports a PDF (as R-2 describes for viewers).
 
 ## Rules for new code
 
