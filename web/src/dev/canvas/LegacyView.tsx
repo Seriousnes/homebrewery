@@ -1,7 +1,7 @@
 import { hbfm } from 'marked-hbfm';
 import { useEffect, useRef } from 'react';
-import openSans400 from '@/editor/canvas/fonts/open-sans-latin-400-normal.woff2?url';
-import openSans700 from '@/editor/canvas/fonts/open-sans-latin-700-normal.woff2?url';
+import openSans400 from '@/fonts/open-sans-latin-400-normal.woff2?url';
+import openSans700 from '@/fonts/open-sans-latin-700-normal.woff2?url';
 import { loadThemeCatalog, staticThemeChain, waitForFonts } from '@/editor/canvas/themeLoader';
 import styles from './CanvasDevPage.module.css';
 

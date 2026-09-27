@@ -29,7 +29,8 @@
 
 .title {
   margin: 0 0 var(--hbui-space-2);
-  font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text);
+  text-transform: uppercase;
 }

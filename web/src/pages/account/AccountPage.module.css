@@ -1,14 +1,20 @@
+/* The account page in upstream's uiPage look (uiPage.less): .dataGroup boxes (a 2px rule with 5px
+   corners), bold uppercase headings, bold labels. */
 .card {
-  padding: var(--hbui-space-5);
+  padding: 6px 20px 15px;
   margin: 0 0 var(--hbui-space-5);
-  background: var(--hbui-color-surface);
-  border: 1px solid var(--hbui-color-border);
+  border: 2px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
 .cardTitle {
-  margin: 0 0 var(--hbui-space-3);
-  font-size: var(--hbui-font-size-xl);
+  padding-bottom: 2px;
+  margin: 0.5em 0 var(--hbui-space-3);
+  font-size: 1.5em;
+  font-weight: var(--hbui-label-weight);
+  line-height: 1.3;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-heading-rule);
 }
 
 .cardText {
@@ -28,8 +34,10 @@
 }
 
 .facts dt {
-  font-weight: 600;
-  color: var(--hbui-color-text-muted);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  line-height: 1.8;
+  text-transform: uppercase;
 }
 
 .facts dd {
@@ -89,8 +97,7 @@
   padding: var(--hbui-space-3) var(--hbui-space-4);
   margin: 0 0 var(--hbui-space-5);
   background: var(--hbui-color-success-subtle);
-  border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid var(--hbui-color-success);
 }
 
 .welcome > svg {
@@ -101,7 +108,7 @@
 
 .welcomeTitle {
   margin: 0 0 var(--hbui-space-1);
-  font-weight: 650;
+  font-weight: var(--hbui-label-weight);
 }
 
 .welcomeText {

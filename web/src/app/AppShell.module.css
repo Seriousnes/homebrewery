@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--hbui-color-bg);
+  background: var(--hbui-color-backdrop);
 }
 
 .skip {
@@ -17,8 +17,9 @@
   padding: 8px 12px;
   font-family: var(--hbui-font);
   font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-accent-text);
+  text-transform: uppercase;
   text-decoration: none;
   background: var(--hbui-color-accent);
   border-radius: var(--hbui-radius);

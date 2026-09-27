@@ -5,13 +5,13 @@
  */
 
 /* Open Sans, the base font of upstream's preview (legacy/shared/naturalcrit/styles/fonts/fonts.css,
-   copied to ./fonts). canvas.css makes it the canvas's inherited font; theme text that sets no
+   copied to web/src/fonts). canvas.css makes it the canvas's inherited font; theme text that sets no
    font of its own (Blank-theme pages, for example) uses it, as upstream. */
 @font-face {
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: normal;
-  src: url('./fonts/open-sans-latin-400-normal.woff2') format('woff2');
+  src: url('../../fonts/open-sans-latin-400-normal.woff2') format('woff2');
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -21,7 +21,7 @@
   font-family: 'Open Sans';
   font-style: normal;
   font-weight: bold;
-  src: url('./fonts/open-sans-latin-700-normal.woff2') format('woff2');
+  src: url('../../fonts/open-sans-latin-700-normal.woff2') format('woff2');
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -35,11 +35,31 @@
   overflow: auto;
   /* A scrollbar appearing must not change the width the zoom maths uses (and loop). */
   scrollbar-gutter: stable;
-  background: var(--hb-canvas-backdrop, #585858);
+  /* Upstream's steel backdrop behind the pages (homebrew.less). */
+  background: var(--hb-canvas-backdrop, var(--hbui-color-backdrop, #2c3e50));
   /* The containing block for `position: fixed` inside the canvas, which upstream's iframe used to
      be: brew CSS can make .hb-canvas (as :root/body) or page content fixed, and must not cover the
      app around the viewport. Brew selectors can't reach this element (cssScope). */
   contain: layout paint;
+}
+
+/* Upstream's preview scrollbar (brewRenderer.less): a 20px track with a 15px parchment thumb.
+   The gutter is always reserved (scrollbar-gutter above), so its width stays constant. */
+.viewport::-webkit-scrollbar {
+  width: 20px;
+  height: 20px;
+}
+
+.viewport::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #d3c1af 15px, transparent 15px);
+}
+
+.viewport::-webkit-scrollbar-thumb:horizontal {
+  background: linear-gradient(0deg, #d3c1af 15px, transparent 15px);
+}
+
+.viewport::-webkit-scrollbar-corner {
+  visibility: hidden;
 }
 
 .sizer {

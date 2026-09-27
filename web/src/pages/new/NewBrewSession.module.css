@@ -1,4 +1,5 @@
-/* /new page notices (sign in to save, the loaded draft), under the editor's toolbars. */
+/* /new page notices (sign in to save, the loaded draft), under the editor's toolbars: upstream's
+   flat notices (notificationPopup.less), a coloured edge and a bold heading. */
 .notice {
   display: flex;
   flex-wrap: wrap;
@@ -9,7 +10,7 @@
   color: var(--hbui-color-text);
   background: var(--hbui-color-info-subtle);
   border: 1px solid var(--hbui-color-border);
-  border-inline-start: 4px solid var(--hbui-color-info);
+  border-inline-start: 5px solid var(--hbui-color-info);
   border-radius: var(--hbui-radius);
 }
 
@@ -26,7 +27,7 @@
 .title {
   margin: 0;
   font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
 }
 
 .message {
@@ -42,6 +43,6 @@
 }
 
 .link {
-  font-weight: 600;
-  color: var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-info);
 }

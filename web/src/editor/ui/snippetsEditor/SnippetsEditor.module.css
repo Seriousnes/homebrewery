@@ -1,4 +1,5 @@
-/* Brew snippets editor. App chrome: CSS module classes only, UI kit tokens (--hbui-*). */
+/* Brew snippets editor. App chrome: CSS module classes only, UI kit tokens (--hbui-*). Upstream's
+   snippet menus (snippetbar.less): bold uppercase group labels, square rows, darker grey selection. */
 
 .editor {
   box-sizing: border-box;
@@ -14,14 +15,10 @@
   color: var(--hbui-color-text);
 }
 
+/* The kit Toolbar (upstream's #DDD snippet bar) brings its own colours and rule. */
 .toolbar {
-  display: flex;
   flex: none;
-  flex-wrap: wrap;
   gap: 4px;
-  align-items: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--hbui-color-border);
 }
 
 .scroll {
@@ -42,7 +39,7 @@
   padding: 2px;
   margin: 0 0 var(--hbui-space-3);
   border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-sm);
+  border-radius: 0;
 }
 
 .group + .group {
@@ -53,9 +50,10 @@
   padding: 2px 6px;
   overflow: hidden;
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -65,7 +63,6 @@
   align-items: center;
   padding: 3px 6px 3px 14px;
   cursor: pointer;
-  border-radius: var(--hbui-radius-sm);
 }
 
 .option:hover {
@@ -79,8 +76,9 @@
 
 .selected,
 .selected:hover {
-  background: var(--hbui-color-accent-subtle);
-  box-shadow: inset 3px 0 0 var(--hbui-color-accent);
+  font-weight: var(--hbui-label-weight);
+  background: var(--hbui-color-surface-active);
+  box-shadow: inset 3px 0 0 var(--hbui-color-text);
 }
 
 .optionName {
@@ -110,10 +108,14 @@
   border-top: 1px solid var(--hbui-color-border);
 }
 
+/* metadataEditor.less h2: bold uppercase over a grey rule. */
 .heading {
+  padding-bottom: 2px;
   margin: 0;
-  font-size: var(--hbui-font-size);
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--hbui-color-border-strong);
 }
 
 .bodyField {
@@ -123,7 +125,9 @@
 }
 
 .label {
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .body {
@@ -131,7 +135,7 @@
   min-height: 120px;
   resize: vertical;
   border: 1px solid var(--hbui-color-border-strong);
-  border-radius: var(--hbui-radius-sm);
+  border-radius: 0;
 }
 
 .hint {
@@ -154,7 +158,7 @@
   font-size: var(--hbui-font-size-sm);
   color: var(--hbui-color-text);
   background: var(--hbui-color-warning-subtle);
-  border-radius: var(--hbui-radius-sm);
+  border-left: 4px solid var(--hbui-color-warning);
 }
 
 .actions {
@@ -182,7 +186,8 @@
 .themeName {
   margin: 0;
   font-size: var(--hbui-font-size-sm);
-  font-weight: 600;
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .themeList {
@@ -194,7 +199,6 @@
 .themeSnippet > summary {
   padding: 2px 4px;
   cursor: pointer;
-  border-radius: var(--hbui-radius-sm);
 }
 
 .themeSnippet > summary:hover {
@@ -221,7 +225,6 @@
   overflow-wrap: anywhere;
   background: var(--hbui-color-bg);
   border: 1px solid var(--hbui-color-border);
-  border-radius: var(--hbui-radius-sm);
 }
 
 .footer {
@@ -269,7 +272,9 @@
 }
 
 .file > label {
-  font-weight: 600;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .dialogError {

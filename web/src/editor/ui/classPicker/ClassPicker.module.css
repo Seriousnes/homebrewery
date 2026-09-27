@@ -13,8 +13,11 @@
   min-height: var(--hbui-control-height);
 }
 
+/* metadataEditor.less labels: small, bold, uppercase. */
 .chosenLabel {
-  font-weight: 500;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .none {
@@ -38,9 +41,9 @@
   padding: 0 2px 0 var(--hbui-space-2);
   font-family: var(--hbui-font-mono);
   font-size: var(--hbui-font-size-sm);
-  color: var(--hbui-color-accent-text);
-  background: var(--hbui-color-accent-subtle);
-  border: 1px solid var(--hbui-color-border);
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-surface-hover);
+  border: 1px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius-lg);
 }
 
@@ -55,9 +58,9 @@
 }
 
 .listFrame {
-  border: 1px solid var(--hbui-color-border);
+  border: 1px solid var(--hbui-color-border-strong);
   border-radius: var(--hbui-radius);
-  background: var(--hbui-color-surface);
+  background: var(--hbui-color-bg);
 }
 
 .list {

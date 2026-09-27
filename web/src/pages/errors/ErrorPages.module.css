@@ -1,8 +1,17 @@
+/* Upstream's error page (errorPage.less with uiPage.less): a centred red title without the rule,
+   slate rules elsewhere. The title is SitePage's h1, reached through the page class. */
+.page h1 {
+  color: var(--hbui-color-danger);
+  text-align: center;
+  border-bottom: 0;
+}
+
 .status {
   margin: 0 0 var(--hbui-space-2);
   font-size: var(--hbui-font-size-sm);
-  font-weight: 700;
+  font-weight: var(--hbui-label-weight);
   color: var(--hbui-color-text-muted);
+  text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -46,9 +55,7 @@
   padding: var(--hbui-space-4) var(--hbui-space-5);
   margin: 0 0 var(--hbui-space-5);
   background: var(--hbui-color-warning-subtle);
-  border: 1px solid var(--hbui-color-border);
-  border-left: 4px solid var(--hbui-color-warning);
-  border-radius: var(--hbui-radius);
+  border-left: 5px solid var(--hbui-color-warning);
 }
 
 .lockHeading {
@@ -57,6 +64,8 @@
   align-items: center;
   margin: 0 0 var(--hbui-space-2);
   font-size: var(--hbui-font-size-lg);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
 }
 
 .lockReason {
@@ -72,7 +81,15 @@
 }
 
 .details {
+  padding-top: var(--hbui-space-2);
   margin: 0 0 var(--hbui-space-5);
+  border-top: 2px solid var(--hbui-color-heading-rule);
+}
+
+.details > summary {
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 .details pre {
@@ -82,12 +99,16 @@
   font-family: var(--hbui-font-mono);
   font-size: var(--hbui-font-size-sm);
   white-space: pre-wrap;
-  background: var(--hbui-color-surface);
-  border-radius: var(--hbui-radius);
+  background: var(--hbui-color-surface-raised);
+  border: 1px solid var(--hbui-color-border);
 }
 
 /* Forced colours (Windows contrast themes) drop box-shadow focus rings: draw an outline instead (P8.2). */
 @media (forced-colors: active) {
+  .lock {
+    border: 1px solid CanvasText;
+  }
+
   .link:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;

@@ -5,6 +5,8 @@
  * so the layer scales with the zoom; --hb-object-inverse-zoom keeps handles and the toolbar at
  * screen size. Classes are doubled so brew CSS such as `div { … }` (scoped to `.hb-canvas div`)
  * can't restyle the chrome. Tokens fall back to fixed colours: the canvas is outside any UiRoot.
+ * The look is upstream's chrome: a blue selection (@blue, colors.less) and a #DDD snippet-bar
+ * toolbar with square tools that turn #999 under the pointer (snippetbar.less).
  */
 
 .layer.layer {
@@ -18,12 +20,12 @@
   padding: 0;
   overflow: visible;
   pointer-events: none;
-  font: 400 13px/1.2 system-ui, sans-serif;
-  color: #1f2328;
+  font: 400 13px/1.2 'Open Sans', sans-serif;
+  color: #000;
   text-indent: 0;
   text-align: start;
   letter-spacing: normal;
-  --hb-object-accent: var(--hbui-color-accent, #2563eb);
+  --hb-object-accent: #2980b9;
 }
 
 .frame.frame {
@@ -44,7 +46,7 @@
 
 .frame.frame:focus-visible {
   outline-width: calc(2.5px * var(--hb-object-inverse-zoom, 1));
-  box-shadow: 0 0 0 calc(4px * var(--hb-object-inverse-zoom, 1)) rgb(37 99 235 / 0.25);
+  box-shadow: 0 0 0 calc(4px * var(--hb-object-inverse-zoom, 1)) rgb(41 128 185 / 0.3);
 }
 
 .frame.frame[data-editing] {
@@ -67,7 +69,7 @@
   margin: 0;
   padding: 0;
   border: calc(1.5px * var(--hb-object-inverse-zoom, 1)) solid var(--hb-object-accent);
-  border-radius: 2px;
+  border-radius: 0;
   background: #fff;
   pointer-events: auto;
   touch-action: none;
@@ -88,11 +90,11 @@
   gap: 2px;
   box-sizing: border-box;
   margin: 0;
-  padding: 3px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  padding: 0;
+  border: 1px solid #999;
+  border-radius: 0;
+  background: #ddd;
+  box-shadow: 0 4px 5px rgb(0 0 0 / 0.35);
   white-space: nowrap;
   transform-origin: 0 0;
   pointer-events: auto;
@@ -116,19 +118,19 @@
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
-  color: #1f2328;
+  color: #000;
   font: inherit;
   cursor: pointer;
 }
 
 .button.button:hover {
-  background: #eef1f4;
+  background: #999;
 }
 
 .button.button:focus-visible {
-  outline: 2px solid var(--hb-object-accent);
+  outline: 2px solid #000;
   outline-offset: -2px;
 }
 
