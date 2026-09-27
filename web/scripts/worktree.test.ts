@@ -1,8 +1,9 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
-import { dockerSlug, registerSlot, slotPort, slotTmp, stackName } from './worktree';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dockerSlug, readWorktreeInfo, registerSlot, slotPort, slotTmp, stackName } from './worktree';
 
 const dirs: string[] = [];
 function tempDir(): string {
@@ -12,6 +13,7 @@ function tempDir(): string {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -52,6 +54,34 @@ describe('registerSlot', () => {
     const old = new Date(Date.now() - 60_000);
     fs.utimesSync(lock, old, old);
     expect(registerSlot(common, tempDir())).toBe(1);
+  });
+});
+
+describe('readWorktreeInfo', () => {
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync('git', ['-C', cwd, '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], { stdio: 'ignore' });
+  // git prints real paths (macOS /private/var, Windows drive letter case).
+  const real = (dir: string) => {
+    const p = fs.realpathSync.native(dir).replace(/\\/g, '/');
+    return process.platform === 'win32' ? p.toLowerCase() : p;
+  };
+  const lower = (p: string | null) => (p && process.platform === 'win32' ? p.toLowerCase() : p);
+
+  it('finds the main checkout and a linked worktree from a subfolder', () => {
+    vi.stubEnv('HB_SLOT', '');
+    const main = path.join(tempDir(), 'repo');
+    fs.mkdirSync(path.join(main, 'web', 'scripts'), { recursive: true });
+    git(main, 'init', '-q', '-b', 'master');
+    git(main, 'commit', '-q', '--allow-empty', '-m', 'init');
+    const linked = path.join(path.dirname(main), 'linked');
+    git(main, 'worktree', 'add', '-q', '-b', 'feature/x', linked);
+    fs.mkdirSync(path.join(linked, 'web', 'scripts'), { recursive: true });
+
+    // From a subfolder of the main checkout git prints a relative --git-common-dir (../../.git): relative to the cwd.
+    const fromMain = readWorktreeInfo(path.join(main, 'web', 'scripts'));
+    expect([lower(fromMain.root), lower(fromMain.commonDir), fromMain.main, fromMain.branch, fromMain.slot]).toEqual([real(main), `${real(main)}/.git`, true, 'master', 0]);
+    const fromLinked = readWorktreeInfo(path.join(linked, 'web', 'scripts'));
+    expect([lower(fromLinked.root), lower(fromLinked.commonDir), fromLinked.main, fromLinked.branch, fromLinked.slot]).toEqual([real(linked), `${real(main)}/.git`, false, 'feature/x', 1]);
   });
 });
 

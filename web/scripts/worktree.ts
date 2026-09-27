@@ -102,7 +102,12 @@ let cached: WorktreeInfo | undefined;
 
 /** This checkout's worktree, branch and slot (cached per process). */
 export function worktreeInfo(cwd = here): WorktreeInfo {
-  if (cached) return cached;
+  cached ??= readWorktreeInfo(cwd);
+  return cached;
+}
+
+/** The worktree, branch and slot of the checkout that contains `cwd` (not cached). */
+export function readWorktreeInfo(cwd: string): WorktreeInfo {
   const forced = process.env.HB_SLOT !== undefined && process.env.HB_SLOT !== '' ? Number(process.env.HB_SLOT) : null;
   if (forced !== null && !(Number.isInteger(forced) && forced >= 0 && forced <= MAX_SLOT)) {
     throw new Error(`HB_SLOT must be a whole number from 0 to ${MAX_SLOT}`);
@@ -111,16 +116,15 @@ export function worktreeInfo(cwd = here): WorktreeInfo {
   const [top, common, head] = out ?? [];
   if (!top || !common) {
     // No git (or a checkout git refuses): the main checkout, in the repository this file is in.
-    cached = { root: norm(path.resolve(here, '..', '..')), commonDir: null, main: true, branch: null, slot: forced ?? 0 };
-    return cached;
+    return { root: norm(path.resolve(here, '..', '..')), commonDir: null, main: true, branch: null, slot: forced ?? 0 };
   }
   const root = norm(top);
-  const commonDir = norm(path.resolve(root, common));
+  // A relative --git-common-dir (../../.git from a subfolder of the main checkout) is relative to `cwd`, not to the top level.
+  const commonDir = norm(path.resolve(cwd, common));
   const main = sameDir(commonDir, `${root}/.git`);
   const branch = head && head !== 'HEAD' ? head : null;
   const slot = forced ?? (main ? 0 : registerSlot(commonDir, root));
-  cached = { root, commonDir, main, branch, slot };
-  return cached;
+  return { root, commonDir, main, branch, slot };
 }
 
 /** `base` for slot 0, else base + slot × 1000: a test port that no other worktree's runs use. */
