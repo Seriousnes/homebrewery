@@ -439,6 +439,11 @@ jobs:
       - name: Build
         run: dotnet build Homebrewery.slnx --no-restore --configuration Release
 
+      # Pdf/PdfRendererTests render with real headless Chromium: the build that the pinned Microsoft.Playwright
+      # package expects, installed by that package's own CLI from the build output (docs/testing.md).
+      - name: Install Chromium for the PDF tests
+        run: pwsh tests/Homebrewery.Api.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps --only-shell chromium
+
       # API tests use Testcontainers.PostgreSql, which needs the Docker daemon that ubuntu-latest provides.
       # global.json selects Microsoft.Testing.Platform, so VSTest options such as --logger trx are
       # rejected (exit code 5); xunit.v3 writes TRX itself with --report-xunit-trx.

@@ -242,7 +242,7 @@ test('the policy is enforced and violations are heard (canary)', async ({ contex
   expect(events.find((v) => v.directive === 'img-src')?.blocked).toBe('http://images.csp-e2e.test/blocked.png');
 });
 
-test('the home page (the welcome brew) and a new brew', async ({ context, page, request }) => {
+test('the home page (the welcome brew), a new brew kept on this device, and Brews on this device', async ({ context, page, request }) => {
   const violations = await setUp(context, request);
 
   await visit(page, '/');
@@ -252,6 +252,11 @@ test('the home page (the welcome brew) and a new brew', async ({ context, page, 
   await waitForCanvas(page);
   await page.locator('.hb-canvas .ProseMirror').click();
   await page.keyboard.type('Typed on /new under the policy.');
+  // Signed out: a local brew (issue #4), stored in IndexedDB; the page moves to /local/:localId.
+  await expect(page).toHaveURL(/\/local\/[\w-]+$/, LOAD);
+  await settle(page);
+  await visit(page, '/local');
+  await expect(page.getByTestId('local-brew-item')).toHaveCount(1, LOAD);
   await settle(page);
 
   expect(violations).toEqual([]);
@@ -369,7 +374,7 @@ test('editing: typing, autosave, Insert menu, Style drawer, Outline, Properties,
   expect(violations).toEqual([]);
 });
 
-test('Snippets drawer and Export HTML (its layout probe frame, inlined fonts and images) in the editor and on the share page', async ({ context, page, request, baseURL }) => {
+test('Snippets drawer and Download PDF (its layout probe frame, inlined fonts and images, the API render) in the editor and on the share page', async ({ context, page, request, baseURL }) => {
   const violations = await setUp(context, request);
   await signInApi(page.request, baseURL!, uniqueEmail('csp-export'));
   const brew = await createBrew(page.request, baseURL!, 'CSP walk export');
@@ -390,17 +395,18 @@ test('Snippets drawer and Export HTML (its layout probe frame, inlined fonts and
   await saved(page);
   await page.getByTestId('toggle-snippets').click();
 
-  // Export HTML from the editor, then from the share page: the export chunk, the probe iframe and the download.
+  // Download PDF from the editor, then from the share page: the export chunk, the probe iframe, the
+  // render (POST /api/export/pdf) and the download.
   for (const path of [null, `/share/${brew.shareId}`]) {
     if (path) {
       await visit(page, path);
       await waitForCanvas(page);
     }
-    const button = page.getByTestId('export-html');
+    const button = page.getByTestId('download-pdf');
     await expect(button).toBeEnabled(LOAD);
     const [download] = await Promise.all([page.waitForEvent('download', LOAD), button.click()]);
-    expect(download.suggestedFilename()).toBe('CSP walk export.html');
-    await expect(page.getByText('Exported “CSP walk export.html”', { exact: true })).toBeVisible(LOAD);
+    expect(download.suggestedFilename()).toBe('CSP walk export.pdf');
+    await expect(page.getByText('Downloaded “CSP walk export.pdf”', { exact: true })).toBeVisible(LOAD);
     await settle(page);
   }
 

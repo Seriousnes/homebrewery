@@ -161,8 +161,8 @@ export function BrewItem({ brew, headingLevel = 3, onTagClick, selectedTags = []
         {brew.editId && actions.onDownload ? (
           <ActionButton
             icon={<Icon name="download" size={14} />}
-            label="Download"
-            name={`Download ${title}`}
+            label="PDF"
+            name={`Download ${title} as PDF`}
             onClick={actions.onDownload}
             busy={actions.downloading}
             testId="brew-download"

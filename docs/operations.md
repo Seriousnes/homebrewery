@@ -33,6 +33,8 @@ the `mcr.microsoft.com/dotnet/aspnet:10.0` runtime.
 - It needs **one volume**: `/var/lib/homebrewery/keys` (the sign-in key ring, see [Data Protection keys](#data-protection-keys)).
 - It needs **one setting**: `ConnectionStrings__Homebrewery`. Everything else has a default.
 - It has no curl or wget. The compose files check health with bash's `/dev/tcp` (see [Health](#health)).
+- It contains headless Chromium (`/ms-playwright`, installed by the CLI of the pinned Microsoft.Playwright package
+  with its system libraries and fonts) for PDF export: about 750 MB of the image. See [PDF export](#pdf-export).
 - `docker run … homebrewery migrate` applies the migrations and exits (see [Migrations and upgrades](#migrations-and-upgrades)).
 
 ```
@@ -68,7 +70,8 @@ The proxy must pass the `Host` header through and send `X-Forwarded-For` and `X-
 - If the proxy cannot send `X-Forwarded-Proto` and the site is HTTPS only, set `Auth__CookieSecurePolicy=Always`.
 - Writes (POST, PUT, PATCH, DELETE) need an `Origin` (or `Referer`) header equal to the site's own origin, as the
   browser sees it. A proxy that rewrites `Host` breaks every write with 403.
-- Request bodies go up to 20 MB (gzip-compressed brew saves). Allow that in the proxy.
+- Request bodies go up to 20 MB (gzip-compressed brew saves and PDF exports). Allow that in the proxy. A PDF export
+  can take up to `Pdf:RenderTimeout` (60 s): the proxy's response timeout must be at least that.
 - The app serves everything (SPA, `/api`, `/share`, `/healthz`), so one `reverse_proxy` rule is enough, e.g. Caddy:
   `homebrewery.example.com { reverse_proxy 127.0.0.1:8080 }`.
 
@@ -92,7 +95,13 @@ string separated by commas, semicolons or spaces.
 | `ForwardedHeaders:KnownProxies` (list) | empty = any peer | Addresses of trusted proxies. |
 | `RateLimits:Auth:PermitLimit`, `:Window` | 20 per `00:01:00` (Development 1000) | `/api/auth/*`, per client address. |
 | `RateLimits:Import:PermitLimit`, `:Window` | 10 per `00:01:00` (Development 100) | Upstream brew import, per signed-in user. |
+| `RateLimits:Pdf:PermitLimit`, `:Window` | 10 per `00:01:00` (Development 100) | PDF export, per signed-in user, or per client address when signed out. |
 | `RateLimits:Writes:PermitLimit`, `:Window` | 120 per `00:01:00` (Development 10000) | Every POST/PUT/PATCH/DELETE, per client address. |
+| `Pdf:MaxConcurrentRenders` | `2` | PDF renders at the same time (each is a Chromium page). See [PDF export](#pdf-export). |
+| `Pdf:QueueTimeout` | `00:00:10` | How long a PDF export waits for a free render slot before it gets 503 with `Retry-After`. |
+| `Pdf:RenderTimeout` | `00:01:00` | One render, other sites' files included; then 500. |
+| `Pdf:MaxRemoteFiles`, `:MaxRemoteFileBytes`, `:MaxRemoteBytes`, `:RemoteFileTimeout` | `100`, 10 MB, 50 MB, `00:00:10` | Limits on other sites' images, fonts and stylesheets fetched for one render. |
+| `PLAYWRIGHT_BROWSERS_PATH` | image: `/ms-playwright`; else the user's `ms-playwright` cache | Where the app looks for Chromium. |
 | `SecurityHeaders:Csp`, `:CspReportUri`, `:HstsMaxAge`, `:HstsIncludeSubDomains` | see [security.md](./security.md#configuration) | Content-Security-Policy mode and HSTS. |
 | `Logging:LogLevel:<category>` | see [Logs](#logs) | Log levels, e.g. `Logging__LogLevel__Default=Debug`. |
 | `Logging:Console:FormatterName` | `json` (Development: `simple`) | `json`, `simple` or `systemd`. |
@@ -381,12 +390,35 @@ Fixed windows, kept in memory per app instance (they are not shared between inst
 | --- | --- | --- |
 | `Auth` | 20 per minute per client address | `/api/auth/*` (register, sign in, …) |
 | `Import` | 10 per minute per user | `GET /api/import/homebrewery/{shareId}` |
+| `Pdf` | 10 per minute per user (signed out: per client address) | `POST /api/export/pdf` |
 | `Writes` | 120 per minute per client address | every POST, PUT, PATCH and DELETE |
 
 A rejected request gets `429` problem+json with a `Retry-After` header. Configure with
 `RateLimits__<Name>__PermitLimit` and `RateLimits__<Name>__Window` (a TimeSpan, e.g. `00:01:00`); startup fails on
 a limit below 1 or a window that is not positive. Behind a proxy the client address comes from `X-Forwarded-For`, so
 forwarded headers must be on; otherwise every user shares the proxy's address and its limits.
+
+## PDF export
+
+"Download PDF" (editor, share page) and a brew item's PDF download (user page) send the brew's self-contained HTML
+export to `POST /api/export/pdf`. The app renders it with headless Chromium ([Microsoft.Playwright](https://github.com/microsoft/playwright-dotnet),
+Apache-2.0) and answers the PDF. No account is needed: signed-out readers of a share page download PDFs too.
+
+- Chromium starts on the first export (about a second), not with the app, and again after a crash. `/healthz` does
+  not check it. A missing or broken Chromium logs `PDF export: Chromium could not be started` (Error) and the
+  exports answer 503; everything else keeps working.
+- Every render gets a fresh browser context without JavaScript. The app fetches other sites' https images, fonts and
+  stylesheets itself, from public addresses only; nothing else leaves the process. See [security.md](./security.md#pdf-export).
+- Memory and time: the container used about 280 MB (app and Chromium) after its first PDFs; each render in
+  progress adds a Chromium page (`Pdf:MaxConcurrentRenders`, default 2). A 3-page brew takes under a second, the
+  first PDF after a start about a second more. More exports at once wait up to `Pdf:QueueTimeout`, then get 503
+  with `Retry-After`.
+- Logs: one Information line per PDF (`PDF export: <bytes> bytes, <n> files of other sites, <n> left out, <ms> ms`),
+  Information lines for other sites' files that were left out (host and reason), Warning for a failed render.
+- The image installs the Chromium build of the pinned package version. The development stack's `api` service is
+  built from the Dockerfile's `dev-api` stage: after a Microsoft.Playwright upgrade, run `docker compose build api`.
+  For a run on the host: `pwsh src/Homebrewery.Api/bin/Debug/net10.0/playwright.ps1 install --only-shell chromium`
+  (or `npx playwright install chromium` in `web/`, which installs the same build while the versions match).
 
 ## Admin accounts
 

@@ -28,16 +28,19 @@ export interface MetadataDialogProps {
   onLockChange?: (lock: BrewLockInfo) => void;
   /** This site's origin, for share URLs typed into the theme field. */
   baseUrl?: string;
+  /** A local brew (issue #4): no authors, publishing or delete; changes are kept on this device. */
+  local?: boolean;
   'data-testid'?: string;
 }
 
 export function MetadataDialog({ open, onOpenChange, 'data-testid': testId = 'metadata-dialog', ...rest }: MetadataDialogProps) {
+  const local = rest.local === true;
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
       title="Properties"
-      description="Changes are saved with the brew."
+      description={local ? 'Changes are saved on this device.' : 'Changes are saved with the brew.'}
       size="lg"
       data-testid={testId}
       footer={
@@ -54,7 +57,7 @@ export function MetadataDialog({ open, onOpenChange, 'data-testid': testId = 'me
 
 type BodyProps = Omit<MetadataDialogProps, 'open' | 'onOpenChange' | 'data-testid'>;
 
-function MetadataDialogBody({ brew, draft: initialDraft, onChange, serverError, onDeleted, onLockChange, baseUrl }: BodyProps) {
+function MetadataDialogBody({ brew, draft: initialDraft, onChange, serverError, onDeleted, onLockChange, baseUrl, local = false }: BodyProps) {
   const [draft, setDraft] = useState<MetaDraft>(() => initialDraft ?? draftFromBrew(brew));
   const [lock, setLock] = useState<BrewLockInfo | null>(brew.lock);
   // The dialog shows its own message (with Retry) when the list fails, so no policy toast.
@@ -78,7 +81,8 @@ function MetadataDialogBody({ brew, draft: initialDraft, onChange, serverError, 
       serverError={serverError}
       {...(baseUrl === undefined ? {} : { baseUrl })}
       lock={lock}
-      {...(editId
+      local={local}
+      {...(editId && !local
         ? {
             onDelete: async () => {
               const result = await deleteBrew.mutateAsync(editId);

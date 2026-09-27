@@ -7,6 +7,7 @@ using Homebrewery.Api.Import;
 using Homebrewery.Api.Infrastructure;
 using Homebrewery.Api.Infrastructure.Identity;
 using Homebrewery.Api.Notifications;
+using Homebrewery.Api.Pdf;
 using Homebrewery.Api.Themes;
 using Homebrewery.Core;
 using Homebrewery.Core.Documents;
@@ -49,7 +50,7 @@ builder.Services.Configure<ExceptionHandlerOptions>(o => o.StatusCodeSelector = 
     ex is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
 builder.Services.AddProxyForwardedHeaders();                // X-Forwarded-For/-Proto/-Host behind Caddy
 builder.Services.AddSecurityHeaders();                      // CSP, HSTS, nosniff, ... (SecurityHeaders:*, docs/security.md)
-builder.Services.AddRateLimits();                           // RateLimits:* (auth, import, writes)
+builder.Services.AddRateLimits();                           // RateLimits:* (auth, import, pdf, writes)
 builder.Services.TryAddSingleton(TimeProvider.System);
 
 // The connection string is read when the context is created, not here, so test hosts
@@ -87,6 +88,7 @@ builder.Services.AddThemes();                                           // theme
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<AdminService>();                             // stats, lookups, locks
 builder.Services.AddUpstreamImport();                                   // homebrewery.naturalcrit.com /download proxy
+builder.Services.AddPdfExport();                                        // headless Chromium for /api/export/pdf (Pdf:*)
 builder.Services.AddSingleton<SpaIndex>();                              // index.html for ShareShell (Spa:DevServerUrl)
 builder.Services.AddHttpClient(SpaIndex.DevServerClient, c => c.Timeout = TimeSpan.FromSeconds(5));
 
@@ -137,6 +139,7 @@ api.MapBrewEndpoints();
 api.MapBrewListEndpoints();                                 // /vault, /users/{handle}/brews
 api.MapThemeEndpoints();
 api.MapImportEndpoints();                                   // /import/homebrewery/{shareId}
+api.MapExportEndpoints();                                   // /export/pdf
 api.MapNotificationEndpoints();                             // /notifications/active
 api.MapAdminEndpoints();                                    // the group itself requires the Admin policy
 

@@ -1,7 +1,8 @@
 // The app's editor pages against a real API (plan §9, §11 P7.1/P7.2, §12): views on /share,
 // the sign-in prompt and error pages on /edit, the /new draft through a reload and the sign-in
 // redirect, the 409 dialog with two tabs, locks, shortcuts and properties. See run-flows.mjs.
-import { type Browser, expect, type Page, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { type APIRequestContext, type Browser, expect, type Page, test } from '@playwright/test';
 import {
   adminEmail,
   appRoot,
@@ -13,6 +14,7 @@ import {
   nav,
   openEditorPage,
   PASSWORD,
+  pdfPageCount,
   printCount,
   privateApi,
   registerOnly,
@@ -106,90 +108,100 @@ test('/edit and /share: someone else gets 403, unknown ids 404', async ({ page: 
   await expect(stranger.getByRole('heading', { level: 1, name: 'Not found' })).toBeVisible(LOAD_TIMEOUT);
 });
 
-/** Signed out on /new: types `text` and waits for its draft; the save is refused ("Sign in to save"). */
-async function signedOutDraft(page: Page, text: string): Promise<void> {
+/** Signed out on /new: types `text`; the brew is stored in this browser and the page moves to /local/:localId. Returns the id. */
+async function signedOutLocalBrew(page: Page, text: string): Promise<string> {
   await openEditorPage(page, '/new');
-  await expect(page.getByTestId('new-sign-in-notice')).toBeVisible();
+  await expect(page.getByTestId('local-notice')).toBeVisible();
   await typeAt(page, text);
-  await waitForNewDraft(page, text);
-  await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'signedOut', SAVE_TIMEOUT);
-  await expect(page.getByTestId('save-status').getByRole('button', { name: 'Sign in to save' })).toBeVisible();
+  await expect(page).toHaveURL(/\/local\/[\w-]+$/, SAVE_TIMEOUT);
+  await expect(saveStatus(page)).toHaveText('Saved on this device', SAVE_TIMEOUT);
+  await expect(page.getByTestId('save-status').getByRole('button', { name: 'Sign in to upload' })).toBeVisible();
+  return new URL(page.url()).pathname.split('/').pop()!;
 }
 
-test('/new: signed out, the draft survives a reload', async ({ page }) => {
+/** The caller's own brews (GET /api/users/{handle}/brews). */
+async function ownBrews(request: APIRequestContext): Promise<{ editId: string; title: string }[]> {
+  const me = (await (await request.get('/api/account/me')).json()) as { handle: string };
+  const list = (await (await request.get(`/api/users/${me.handle}/brews`)).json()) as { items: { editId: string; title: string }[] };
+  return list.items;
+}
+
+test('/new signed out: a brew kept in this browser (issue #4) survives a reload at /local/:localId, is listed on this device and downloads as PDF', async ({ page, browserName }) => {
   acceptLeaving(page);
-  await signedOutDraft(page, 'Draft before signing in');
+  const localId = await signedOutLocalBrew(page, 'Kept on this device');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForEditor(page);
-  expect(await editorTexts(page)).toEqual(['Draft before signing in']);
-  await expect(page.getByTestId('new-draft-notice')).toBeVisible();
+  expect(await editorTexts(page)).toEqual(['Kept on this device']);
   expect(await chromeViolations(page)).toEqual([]);
+  await page.goto('/local', { waitUntil: 'domcontentloaded' });
+  const item = page.locator(`[data-local-id="${localId}"]`);
+  await expect(item).toBeVisible(LOAD_TIMEOUT);
+  await expect(item.getByRole('link')).toHaveAttribute('href', `/local/${localId}`);
+  // No account needed for the PDF either (the API renders it).
+  if (browserName === 'chromium') {
+    const [download] = await Promise.all([page.waitForEvent('download', SAVE_TIMEOUT), item.getByRole('button', { name: /^Download .* as PDF$/ }).click()]);
+    expect(download.suggestedFilename()).toBe('Untitled brew.pdf');
+    expect(pdfPageCount(await readFile(await download.path()))).toBe(1);
+  }
 });
 
-test('/new: the draft survives the sign-in redirect, the first save creates the brew, and /new starts blank again', async ({ page, baseURL }) => {
-  // Three page loads (/new, the saved brew reloaded, /new again) and the sign-in round trip.
+test('signed out, brews stay on this device; after signing in, the prompt uploads them only when asked', async ({ page, baseURL }) => {
+  // Two brews, the sign-in round trip and the upload.
   test.setTimeout(30_000);
   acceptLeaving(page);
   // An account to sign in with later (registered elsewhere: this page stays signed out).
-  const email = await registerOnly(page.request, baseURL!, uniqueEmail('flows-new'));
+  const email = await registerOnly(page.request, baseURL!, uniqueEmail('flows-local'));
   await page.context().clearCookies();
-  await signedOutDraft(page, 'Draft before signing in');
+  await signedOutLocalBrew(page, 'First local brew');
+  await signedOutLocalBrew(page, 'Second local brew');
 
-  // Sign in through the navbar's page (a redirect with returnTo), back to /new.
+  // Sign in through the navbar's page (a redirect with returnTo), back to the brew.
   await nav(page).getByRole('link', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/login\?returnTo=%2Fnew$/, LOAD_TIMEOUT);
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Flocal%2F/, LOAD_TIMEOUT);
   const form = page.getByTestId('login-form');
   await form.getByLabel('Email').fill(email);
   await form.getByLabel('Password').fill(PASSWORD);
   await form.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/new$/, LOAD_TIMEOUT);
-  await waitForEditor(page);
-  expect(await editorTexts(page)).toEqual(['Draft before signing in']);
+  const prompt = page.getByRole('dialog', { name: 'You have 2 brews on this device' });
+  await expect(prompt).toBeVisible(LOAD_TIMEOUT);
+  expect(await ownBrews(page.request)).toEqual([]); // nothing went up by itself
 
-  // Signed in: the draft is saved at once (a POST) and the page moves to its editor.
-  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
-  await expect(saveStatus(page)).toHaveText('Saved', SAVE_TIMEOUT);
-  const editId = new URL(page.url()).pathname.split('/').pop()!;
-  expect(JSON.stringify((await storedBrew(page.request, editId)).doc)).toContain('Draft before signing in');
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await waitForEditor(page);
-  expect(await editorTexts(page)).toEqual(['Draft before signing in']);
-
-  // The 'new' draft is gone: /new starts blank again.
-  await openEditorPage(page, '/new');
-  expect(await editorTexts(page)).toEqual(['']);
-  await expect(page.getByTestId('new-draft-notice')).toHaveCount(0);
+  await prompt.getByRole('button', { name: 'Upload all' }).click();
+  await expect(page.getByText('Uploaded 2 brews', { exact: true })).toBeVisible(SAVE_TIMEOUT);
+  const uploaded = await ownBrews(page.request);
+  expect(uploaded).toHaveLength(2);
+  const docs = await Promise.all(uploaded.map(async (b) => JSON.stringify((await storedBrew(page.request, b.editId)).doc)));
+  expect(docs.some((d) => d.includes('First local brew'))).toBe(true);
+  expect(docs.some((d) => d.includes('Second local brew'))).toBe(true);
+  await page.goto('/local', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('local-empty')).toBeVisible(LOAD_TIMEOUT);
 });
 
-test('/new: a draft left from another visit is shown, and becomes a brew only when edited', async ({ page, baseURL }) => {
-  // Two /new page loads, and a wait past the autosave delay.
+test("a local brew's Upload (signed in) saves it to the account and opens it at /edit/:editId", async ({ page, baseURL }) => {
   test.setTimeout(30_000);
   acceptLeaving(page);
-  await openEditorPage(page, '/new');
-  await typeAt(page, 'An old draft');
-  await waitForNewDraft(page, 'An old draft');
-  // Later, signed in, in another tab (no sign-in hand-off from this visit).
+  const localId = await signedOutLocalBrew(page, 'Up it goes');
   await signUpApi(page.request, baseURL!);
-  const later = await page.context().newPage();
-  await page.close({ runBeforeUnload: false });
-  await openEditorPage(later, '/new');
-  expect(await editorTexts(later)).toEqual(['An old draft']);
-  await expect(later.getByTestId('new-draft-notice')).toContainText('It is saved as a new brew when you edit it.');
-  await expect(later.getByTestId('new-sign-in-notice')).toHaveCount(0);
-  await later.waitForTimeout(3500); // past the autosave delay (3 s): nothing was created
-  await expect(later).toHaveURL(/\/new$/);
-  await expect(saveStatus(later)).toHaveText('Not saved yet');
-  await typeAt(later, ', kept');
-  await expect(later).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
-  await expect(saveStatus(later)).toHaveText('Saved', SAVE_TIMEOUT);
-  const editId = new URL(later.url()).pathname.split('/').pop()!;
-  expect(JSON.stringify((await storedBrew(later.request, editId)).doc)).toContain('An old draft, kept');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForEditor(page);
+  await page.getByTestId('local-upload').click();
+  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
+  await waitForEditor(page);
+  expect(await editorTexts(page)).toEqual(['Up it goes']);
+  await expect(saveStatus(page)).toHaveText('Saved', SAVE_TIMEOUT);
+  const editId = new URL(page.url()).pathname.split('/').pop()!;
+  expect(JSON.stringify((await storedBrew(page.request, editId)).doc)).toContain('Up it goes');
+  await page.goto(`/local/${localId}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('local-brew-missing')).toBeVisible(LOAD_TIMEOUT);
 });
 
-test('/new: "Start over" discards the draft', async ({ page }) => {
+test('/new signed in: "Start over" discards a draft whose create never got through', async ({ page, baseURL }) => {
   // Three /new page loads (the draft, reloaded; after Start over, reloaded).
   test.setTimeout(30_000);
   acceptLeaving(page);
+  await signUpApi(page.request, baseURL!);
+  // The create never gets out: the draft stays a draft.
+  await page.route((url) => url.pathname === '/api/brews', (route) => (route.request().method() === 'POST' ? route.abort('failed') : route.fallback()));
   await openEditorPage(page, '/new');
   await typeAt(page, 'A draft to throw away');
   await waitForNewDraft(page, 'A draft to throw away');

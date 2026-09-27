@@ -87,6 +87,7 @@ interface Route {
 const ROUTES: Route[] = [
   { name: 'home, signed out (with a site notice)', path: () => '/', me: null, editor: true, notice: true },
   { name: 'new brew, signed out', path: () => '/new', me: null, editor: true },
+  { name: 'brews on this device, signed out', path: () => '/local', me: null, editor: false },
   { name: 'share page, signed out', path: (i) => `/share/${i.theirs}`, me: null, editor: true },
   { name: 'locked share page (423)', path: (i) => `/share/${i.locked}`, me: null, editor: false },
   { name: 'missing share page (404)', path: () => '/share/nosuchbrew12', me: null, editor: false },
@@ -97,6 +98,7 @@ const ROUTES: Route[] = [
   { name: 'unknown route (404)', path: () => '/no/such/page', me: null, editor: false },
   { name: 'home, signed in', path: () => '/', me: ALICE, editor: true },
   { name: 'new brew, signed in', path: () => '/new', me: ALICE, editor: true },
+  { name: 'brews on this device, signed in', path: () => '/local', me: ALICE, editor: false },
   { name: 'account, signed in', path: () => '/account', me: ALICE, editor: false },
   { name: 'edit page', path: (i) => `/edit/${i.own}`, me: ALICE, editor: true },
   { name: 'share page of my brew (Edit)', path: (i) => `/share/${i.ownShare}`, me: ALICE, editor: true },
@@ -444,7 +446,7 @@ for (const scheme of ['light', 'dark'] as ColorScheme[]) {
       await installFakeApi(page, { me: null });
       await page.goto('/new', { waitUntil: 'domcontentloaded' });
       await waitForEditor(page);
-      await page.getByTestId('new-sign-in').click();
+      await page.getByTestId('local-notice-sign-in').click();
       const prompt = page.getByTestId('sign-in-prompt');
       await expect(prompt).toBeVisible();
       await audit(page, 'sign-in dialog', { include: [PORTAL] });

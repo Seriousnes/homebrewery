@@ -91,13 +91,13 @@ describe('BrewItem', () => {
     expect(onClone).toHaveBeenCalledOnce();
   });
 
-  it('gives own brews Edit, Download and Delete, worded by role', async () => {
+  it('gives own brews Edit, Download (PDF) and Delete, worded by role', async () => {
     const onRemove = vi.fn();
     const onDownload = vi.fn();
     const own = { ...rich, editId: 'edit123456', role: 'owner' as const, authors: ['alice'] };
     const { unmount } = renderItem(own, { actions: { onCopyLink: vi.fn(), onDownload, onRemove } });
     expect(screen.getByRole('link', { name: 'Edit The Sunless Citadel' })).toHaveAttribute('href', '/edit/edit123456');
-    await userEvent.click(screen.getByRole('button', { name: 'Download The Sunless Citadel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Download The Sunless Citadel as PDF' }));
     await userEvent.click(screen.getByRole('button', { name: 'Delete The Sunless Citadel' }));
     expect(onDownload).toHaveBeenCalledOnce();
     expect(onRemove).toHaveBeenCalledOnce();

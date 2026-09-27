@@ -128,7 +128,7 @@ script has it.
 | Performance | `node e2e/perf/run-perf.mjs [--prod]` (from `web/`) | one worker, three sets: the smoke tests (Firefox: `pagination-work.spec.ts` only), then the time budgets in `chromium-serial`, then in `firefox-serial` (about 2 minutes each) |
 | Snippet fidelity (every fixture) | `SNIPPET_FIDELITY=all node e2e/run-playwright.mjs e2e/snippets/snippetFidelity.spec.ts --project=chromium` (from `web/`) | local only, when a snippet's rendering changes: 25 tests of up to 8 fixtures, about 1 minute at 6 workers (Firefox with `E2E_FIREFOX=all`, 1.5 minutes). The suite has an 11-fixture smoke |
 | Import fidelity (every fixture) | `npx tsx scripts/fidelity-run.ts` (from `web/`) | local only, when the import changes: 309 fixtures, one short test each, as sets of 50 (`--shard`); writes `e2e/fixtures/fidelity-report.md` (`--out` elsewhere). The suite has a 12-fixture smoke subset (CI's `fidelity` job) |
-| .NET | `dotnet test` | Testcontainers starts its own PostgreSQL (Docker) |
+| .NET | `dotnet test` | Testcontainers starts its own PostgreSQL (Docker). `Pdf/PdfRendererTests` need the Microsoft.Playwright package's Chromium: `npx playwright install chromium` in `web/` installs the same build (or `pwsh tests/Homebrewery.Api.Tests/bin/Debug/net10.0/playwright.ps1 install --only-shell chromium`; CI's .NET job runs that script from the Release build, with `--with-deps`) |
 
 The runner scripts start (or reuse) the servers they need, run Playwright, and stop everything
 they started, including their PostgreSQL containers. Arguments after the script name go to `playwright test`; give options their values

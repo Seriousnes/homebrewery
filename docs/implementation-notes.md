@@ -2370,6 +2370,8 @@ TESTS:
 
 ## HTML export and print (P6.4, plan §5 print bullet, §11)
 
+Since issue #2 the HTML file is no longer offered as a download: it is the input of the PDF export (see [PDF export](#pdf-export-downloads-and-exports-are-pdf-issue-2)). `downloadHtml` and `ExportHtmlButton` below were replaced by `downloadFile` and `DownloadPdfButton`.
+
 ### Interfaces
 EXPORT (web/src/editor/export; `import … from '@/editor/export'` where an export runs; the app bar's button loads it on first click)
 - `exportBrewHtml(source, options) → Promise<ExportResult>`. `source`: an Editor (its document after `settleNow`, as printing does), a ProseMirror node, or doc JSON. `options`: `chain` (ThemeChain or `{ styles }`: EditorCanvas's `status.chain`, or loadThemeChain), `userCss?` (brew style), `lang?` ('en'), `title?`, `baseUrl?` (default document.baseURI; its origin is "this site"), `fetch?`, `probe?` (default `createIframeProbe()`; `null` = no layout: every url() written in, no TOC exclusions, no page size), `separators?` (default true), `signal?`.
@@ -2773,6 +2775,125 @@ RESULTS_PLACEHOLDER
 
 ### Notes for later phases
 NOTES_PLACEHOLDER
+
+## PDF export: downloads and exports are PDF (issue #2)
+
+Deviation from P6.4: the app no longer saves `.html` (editor "Export HTML") or `.json` (brew item "Download") files. Both give a PDF. `exportBrewHtml` stays: the HTML it builds is what the server renders. The plan's "Later: server-side PDF with Microsoft.Playwright for .NET" is done with that package.
+
+### Interfaces
+API (src/Homebrewery.Api/Pdf, Endpoints/ExportEndpoints.cs)
+- `POST /api/export/pdf` (operationId ExportPdf, tag Export): body `PdfExportRequest { html }` (JSON; gzip allowed; 20 MB cap before and after decompression, `ExportEndpoints.MaxRequestBytes`). 200 `application/pdf`, `Cache-Control: no-store`, header `X-Pdf-Missing-Files` (`ExportEndpoints.MissingFilesHeader`: files the page asked for that are not in the PDF). 400 (`errors.html`) for empty html, 413, 429 (`RateLimits:Pdf`, per user, or per client address when signed out), 503 with `Retry-After: 5` when every render slot stays busy for `Pdf:QueueTimeout` ("PDF export is busy"), 503 without it when Chromium can't start ("PDF export is unavailable"), 500 "Couldn't make the PDF" (render failed or took longer than `Pdf:RenderTimeout`; the detail says which). No account needed (`.AllowAnonymous()`): it stores nothing, so EndpointAuditTests lists it in `AnonymousWrites` and checks that it is rate limited. SameOriginWriteGuard still applies.
+- `IPdfRenderer.RenderAsync(html, ct) → PdfRenderResult(byte[] Pdf, int RemoteFiles, int MissingFiles)`; throws `PdfRendererBusyException`, `PdfRendererUnavailableException`, `PdfRenderFailedException`. `PdfRenderer` (singleton, IAsyncDisposable): one Chromium (Microsoft.Playwright 1.63, headless shell), started on the first render and again after a crash; a fresh context per render with JavaScript off, service workers blocked, downloads off. The HTML is served as `PdfRenderer.DocumentUrl` (https://export.homebrewery.invalid/) through the route handler, once, to the main frame. The route handler passes GET requests for https `image`, `font` and `stylesheet` resources of other hosts to `IRemoteFileFetcher` (fulfilled with `access-control-allow-origin: *`, since fonts need CORS) and aborts everything else, including the document's own host. Launch flags make Chromium's own network dead: `--proxy-server=http://127.0.0.1:9 --proxy-bypass-list=<-loopback> --host-resolver-rules=MAP * ~NOTFOUND`, plus `--disable-dev-shm-usage`. After `load` it waits for `document.fonts.ready` (evaluate works with JavaScript off), then `PdfAsync { PreferCSSPageSize, PrintBackground, Tagged, Outline }`.
+- `IRemoteFileFetcher.FetchAsync(uri, userAgent, budget, ct) → RemoteFile(byte[] Body, string? ContentType)?` (`RemoteFileFetcher`, named HttpClient `pdf-remote-files`): https only; `SocketsHttpHandler.ConnectCallback = RemoteFileFetcher.ConnectToPublicAddressAsync`, which resolves the host and connects only to addresses that `PublicAddress.IsPublic` accepts, on every connection, redirects included (at most 3; SocketsHttpHandler never follows https to http, so that redirect comes back as a 3xx and is left out). No proxy, no cookies, decompression on (the cap counts decompressed bytes). Chromium's user agent is forwarded, because Google Fonts answers by browser. Null for non-2xx, over `MaxRemoteFileBytes`, over what the render's `RemoteByteBudget` has left, over `RemoteFileTimeout`, or connection failures (logged at Information with the host). `RemoteByteBudget` (one per render, `MaxRemoteBytes`, shared by its concurrent fetches) is taken chunk by chunk as a file arrives, so parallel fetches never hold more than the budget between them; a file that is left out gives its bytes back.
+- `PublicAddress.IsPublic(IPAddress)`: IPv4 minus RFC 6890 special ranges, multicast and reserved; IPv6 only 2000::/3 minus documentation, 2001::/23 (Teredo) and 6to4 of a non-public IPv4. IPv4-mapped addresses are judged by their IPv4 address.
+- `PdfOptions` (section `Pdf`): MaxConcurrentRenders 2, QueueTimeout 10 s, RenderTimeout 60 s (includes the browser launch and remote files), MaxRemoteFiles 100, MaxRemoteFileBytes 10 MB, MaxRemoteBytes 50 MB, RemoteFileTimeout 10 s. Validated at startup. `PdfSetup.AddPdfExport()` registers all of it. `RateLimits:Pdf` defaults to 10/min per user (Development 100).
+
+WEB
+- `renderPdf(html, { client?, signal? }) → { pdf: Blob, missingFiles }` (web/src/api/exportPdf.ts; `PDF_MISSING_FILES_HEADER`). The JSON body is gzipped from 8 KB (jsonBodyOptions).
+- `exportBrewPdf(source, options) → PdfExportResult { pdf, filename ('<title>.pdf'), report (the HTML export's), missingFiles }` and `exportStoredBrewPdf(brew: BrewForEdit, { title?, signal?, loadChain?, render? })` (migrateDoc, loadThemeChain(meta.theme), style, lang) in web/src/editor/export/exportPdf.ts. `exportFileName(title, 'html' | 'pdf')`.
+- `downloadFile(blob, filename)` replaces downloadHtml. `exportSummary(result, formatBytes)`: toast "Downloaded “<file>”", "N pages, size.", plus "K images, fonts or stylesheets couldn't be included." (warning) with K = max(missingFiles, report.failed.length). `exportFailure(error)`: "Couldn't make the PDF", with messages for 413 and 429, else the problem detail. `EXPORT_TOAST_ID` is 'editor-export-pdf'.
+- `DownloadPdfButton({ editor, chain, userCss, lang, title, exportBrew?, download? })` replaces ExportHtmlButton: label "Download PDF", data-testid `download-pdf`, the same place (EditorAppBar exportAction, after Print) on /, /new, /edit and /share. It works signed in or not.
+- Brew items (user page): the action is labelled "PDF", accessible name "Download <title> as PDF". useBrewActions fetches the brew for edit, loads '@/editor/export' on first use, runs exportStoredBrewPdf with the list's display title, then downloads and toasts as the editor does (`errorPolicy: 'manual'`). Removed: brewFile, BREW_FILE_FORMAT/VERSION, fileNameFor, saveTextFile.
+- /dev/export renders DownloadPdfButton; `window.__hbExport.exportHtml` still returns the HTML export for the export specs.
+
+CONTAINERS
+- Dockerfile stages: restore → playwright (copies the pinned package's Node driver for this architecture and its CLI to /playwright) → api (publish) → dev-api (SDK + Chromium, for docker-compose.yml's `api` service) → runtime (aspnet + `cli.js install --with-deps --only-shell chromium` before the app files, `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`). The browser layer changes only when Directory.Packages.props' Microsoft.Playwright version changes.
+- docker-compose.yml `api` builds the `dev-api` target (image `homebrewery-dev-api:local`). After a Microsoft.Playwright upgrade: `./stack build api` (the image is shared by every stack).
+- Host runs (dotnet run, dotnet test, the e2e lanes' private APIs) use the Playwright browser cache (%LOCALAPPDATA%\ms-playwright, ~/.cache/ms-playwright). web's @playwright/test 1.63 installs the same Chromium build (revision 1243), so `npx playwright install chromium` in web/ is enough.
+
+TESTS
+- tests/Homebrewery.Api.Tests/Pdf: PdfRendererTests (real Chromium, about 6 s for the class: sheets and MediaBox from @page, outline, JavaScript off, other sites' image and font through the fetcher with the font embedded, nothing reaching a local listener on its own (preconnect, dns-prefetch, stylesheet, image, iframe, video, @import, background, the document host), busy and timeout then recovery), PdfExportEndpointTests (fake renderer: 200 with headers, gzip, anonymous 200, another Origin 403, 400, 413 via gzip bomb, 503 busy with Retry-After, 503 unavailable, 500), RemoteFileFetcherTests (the real client never connects to 127.0.0.1, localhost, ::1 or ::ffff:127.0.0.1; https only; size cap with and without Content-Length; timeout; user agent), PublicAddressTests. RateLimitTests covers the Pdf policy per user and, signed out, per client address. EndpointAuditTests checks the anonymous-write list. PdfFile.cs reads just enough PDF (pages, MediaBoxes, images, font names, outline).
+- Vitest: api/exportPdf.test.ts, editor/export/exportPdf.test.ts, DownloadPdfButton.test.tsx (disabled until ready, busy, download and toast, no account needed, error toast, cancel on unmount, summary and failure wording), download.test.ts, userPage.test.tsx (download via a mocked '@/editor/export'), BrewItem.test.tsx.
+- Playwright: e2e/export/app.spec.ts stubs POST /api/export/pdf with `stubPdfEndpoint(page, browser)` (helpers.ts: it renders the posted HTML with the test's Chromium, JavaScript off and offline, as the server does): share page download by a signed-out reader (file name, toast, no sign-in prompt, one Letter sheet per page, the posted HTML has no script and its page 1 matches the share page), and the home page signed in (keyboard path and axe). e2e/lists/user.spec.ts "Download gives the stored brew as a PDF" uses the lane's real API, so the server's Chromium renders it (2 pages). e2e/security/csp.spec.ts walks Download PDF in the editor and on the share page under the production CSP.
+
+### Notes for later phases
+- The PDF is rendered from the browser's HTML export, so it matches what the reader sees (unsaved edits included). A server-only path (for example a `GET /api/brews/{shareId}/pdf` link) would need the export pipeline on the server; it is not built.
+- Chromium runs without its own sandbox (Playwright's default, which Docker needs without a seccomp profile). JavaScript is off and the network is closed, which removes most of the attack surface; see security.md R-9.
+- Image size: the runtime image grows by about 750 MB: 608 MB for the headless shell with its system libraries and fonts, and about 140 MB for Playwright's Node driver in the app folder (`.playwright/node/linux-*`, which `Playwright.CreateAsync` starts). The Dockerfile bind-mounts the CLI for the install step (a copied file would stay in its layer) and makes the published driver executable for the app user (it comes out of the package as 744, owned by root).
+- Measured in the production image: the first PDF about 1.9 s (Chromium start included), then 0.3–0.7 s for the 3-page inn export, 2.5 s for the 4-page chrome export (24 MB of images). The container used about 280 MB after its first PDFs.
+
+## Local brews: anonymous brews in the browser, uploaded later (issue #4)
+
+Access model (the user's): sign-in is needed only to save brews to the cloud, to publish, and to share a private brew. The share link needs a brew in the cloud; anyone with the link can open it, as before. Anyone can create brews in the browser, keep any number of them, download them as PDF, and upload them to an account later. Nothing is uploaded without the user choosing it.
+
+Deviation from P7.2: a signed-out /new no longer keeps its brew in the 'new' draft to save it at sign-in. The signInHandoff.ts module and its "Sign in to save" notice are gone.
+
+### Interfaces
+LIBRARY (web/src/editor/local/localBrews.ts; small: the navbar, the prompt and the import page import it)
+- IndexedDB `hb-local-brews` (store `brews`: id → `LocalBrew { v: 1, id, createdAt, updatedAt, docSchemaVersion, doc, style, snippets, meta: LocalBrewMeta { title, description, tags, lang, theme }, sourceMarkdown? }`) and `hb-local-brew-index` (store `summaries`: id → `LocalBrewSummary { id, title, theme, pages, createdAt, updatedAt }`). localStorage was not used: it holds about 5 MB per site. Each store is a `fallbackStore` (memory when IndexedDB fails: `persistent()` false).
+- `LocalBrewLibrary { list() (newest first; reads summaries; repairs the index from the brews' keys: missing summaries rebuilt, orphans dropped), count() (keys only), get(id) (null when missing or malformed: isLocalBrew), save(brew), remove(id), persistent() }`. `defaultLocalBrews()` (memory only without IndexedDB, as in jsdom), `setDefaultLocalBrews(lib | null)` for tests, `createLocalBrewLibrary(brews, index)`.
+- `onLocalBrewsChanged(listener)` (in-tab; save and remove). `newLocalBrewId()` (16 [A-Za-z0-9]), `LOCAL_BREW_ID` (/^[\w-]{1,64}$/), `localMeta(partial)` (defaults: lang 'en', theme '5ePHB'), `countPages(doc)`, `summaryOf(brew)`.
+- `requestPersistentStorage(storage?)`: `navigator.storage.persist()` once per storage object, after the first brew is stored. It resolves true, false, or null when the API is missing.
+- `migrateAnonymousNewDraft(drafts, lib?)`: the 'new' draft with no ownerId and no createKey (the anonymous /new brew of earlier versions) becomes local brew `draft-<updatedAt base36>` (so two tabs write one brew) and the draft is deleted. /new (both states) and /local run it.
+- `KeyValueStore.keys()` is new (idb-keyval `keys`; fallbackStore merges both stores; memoryStore).
+
+SAVING (EditorApp saving 'local'; web/src/editor/local/useLocalSave.ts)
+- `EditorAppSaving = 'server' | 'local' | 'none'`. `EditorApp` prop `local: EditorAppLocalBrew { id (null for a new brew), createdAt?, updatedAt?, sourceMarkdown?, onCreated?(id), onUpload?(id) }`. `appBrewForLocal(brew?)` in editorAppModel.ts.
+- `useLocalSave({ editor, enabled, localId, createdAt?, sourceMarkdown?, lastSavedAt?, getContent: () => { style, snippets, meta }, watch, onCreated?, library?, delayMs = 1000 })` returns `{ status: 'idle'|'dirty'|'saving'|'saved'|'error', localId, lastSavedAt, error, persistent, saveNow(), stop(), resume() }`.
+  - What is dirty: author transactions (dirty.ts `isDirtyDispatch`) and changes of the watched values (EditorApp watches style, snippets and the metadata draft's title, description, tags, lang and theme).
+  - When it writes: 1 s after the last change, on Mod-S, on pagehide or visibilitychange → hidden, and on unmount (with the editor's last state if it is already destroyed). One write at a time.
+  - `settleNow` runs before each write, so stored pages match the editor. The PDF of a listed brew is made from them.
+  - A new brew gets its id on its first write; then `requestPersistentStorage()` and `onCreated(id)` run.
+- `LocalSaveStatus` (toolbar, data-testid `save-status`; wording in `localStatus.ts` `localStatusInfo`): "Not saved yet", "Unsaved changes", "Saving…", "Saved on this device", "Couldn’t save" + Retry, "Not kept" (warning) when `persistent` is false. Actions: "Upload" (`local-upload`) when signed in and stored, "Sign in to upload" (`local-sign-in`) when signed out.
+- Upload from the editor (EditorApp `uploadLocal`): `saveNow()`, then `stop()` and `editor.setEditable(false)`, then `local.onUpload(id)`. If that throws, `resume()` and editable again.
+- The Properties dialog opens for local brews too: `MetadataDialog`/`MetadataEditor` prop `local` hides Authors, Published and Delete, and shows a note (`meta-local-note`). The dialog description is "Changes are saved on this device."
+
+PAGES AND ROUTES
+- `paths.local` ('/local'), `paths.localBrew(id)`. The editor layout route has a new child `local/:localId`. `editorSessionKey(sessions, editId, locationKey, localId?)` keys it `local:<id>` (`localSessionId(id)`). A signed-out /new brew adopts that key when its first write stores it, so the move to /local/:localId keeps the editor mounted. BrewSession picks LocalBrewSession, NewBrewSession or EditBrewSession from the URL it mounted with.
+- `LocalBrewSession` (/local/:localId): loads the brew. If it is missing: `local-brew-missing` page. If its schema version is newer: NewerVersionPage.
+- `LocalBrewEditor({ brew, onStored? })`: EditorApp in 'local' mode.
+  - `onUpload` calls `uploadLocalBrew`, seeds the cloud brew's query (`seedCreatedBrew`), shows the toast "Uploaded to your account" and goes to /edit/:editId (replace).
+  - A 401 opens the sign-in prompt; other errors toast "Couldn’t upload the brew", and the brew stays.
+  - Signed out, a dismissible (per tab, sessionStorage `hb-local-notice-dismissed`) `local-notice` explains where the brew is kept, with Sign in (`local-notice-sign-in`), Create an account and a link to /local.
+- NewBrewSession (/new):
+  - Every visit runs the migration first.
+  - Signed out: a migrated draft is opened at /local/:id. Otherwise `LocalBrewEditor brew={null}`.
+  - Signing in before anything is typed reloads the page as a signed-in /new. Once the author has typed (EditorAppLocalBrew `onEdited`, from the local save leaving 'idle'), the page stays local even if the first write hasn't landed yet (review fix).
+  - Signed in: as before (the 'new' draft, SAVE-8, SAVE-12), except a loaded draft is always saved on its next edit (`saveOnLoad` is gone). A migrated draft gets an info toast with "Open".
+- /local, "Brews on this device" (web/src/pages/local/index.tsx, `local-brews-page`):
+  - The list: `local-brew-item` rows (data-local-id) with a title link, "N pages · edited <relative>", PDF (exportStoredBrewPdf from the stored brew), Upload (signed in; `local-brew-upload`) and Delete (confirm; `local-brew-delete`).
+  - "Upload all to my account" (`local-upload-all`), the empty state (`local-empty`), the not-kept warning (`local-not-kept`), and a sign-in hint when signed out (`local-page-sign-in`).
+  - It refreshes on library changes, window focus and visibility.
+- `LocalBrewsSignInPrompt` (in AppShell): `me` going from null to a user in this tab, with local brews present, opens the dialog "You have N brews on this device" (`local-brews-prompt`). Its buttons are Later, Review (/local) and Upload all (`uploadLocalBrews`, then a summary toast). If the library can't be read, a toast says so and the dialog stays open. A page loaded while already signed in is not asked.
+- Import page: signed out, "Create brew on this device" saves a local brew (doc, style, snippets, cleaned metadata, sourceMarkdown) and opens /local/:id. The upstream-link download still needs sign-in.
+- Navbar New panel: "Brews on this device" (`nav-local-brews`). User page (own list): `user-local-brews` note "N brews are only on this device" with a link.
+- `exportStoredBrewPdf(brew: StoredBrew)`: `StoredBrew` is `{ doc, docSchemaVersion, style, meta: { title, lang, theme } }`, so both BrewForEdit and LocalBrew fit.
+
+UPLOAD (web/src/editor/local/upload.ts)
+- `uploadRequest(brew)`: POST /api/brews body with doc, docSchemaVersion, style, snippets, meta (published: false), and sourceMarkdown when present.
+- `uploadKey(brew)` is `local-brew-<id>-<updatedAt base36>`. A retry of the same content gets the brew the first request created (SAVE-8 idempotency). An edit since then gets a new key, because the API answers 422 to a reused key with another body.
+- `uploadLocalBrew(id, { library?, client?, signal? })` removes the local copy after the create. An editor that has the brew open in this tab (`registerActiveLocalEditor` in activeEditors.ts; EditorApp registers a stored local brew) gets `prepareUpload()` first: it stores pending changes, stops writing and turns read-only. Resolving false aborts the upload. Afterwards the editor gets `uploaded(created)` (EditorAppLocalBrew `onUploaded`: LocalBrewEditor opens /edit/:editId) or `uploadFailed()` (writes and edits again). This covers the editor's Upload, the sign-in prompt's Upload all and /local (review fix: Upload all over an open editor with unsaved changes). Other tabs are not coordinated. `uploadLocalBrews(ids, options)` uploads one at a time and returns `{ uploaded, failed }`. `uploadProblem(error)` gives the message.
+- Icons: `upload`, `device` (ui/iconPaths.ts).
+
+TESTS
+- Vitest:
+  - localBrews.test.ts: library, index repair, listeners, ids, meta, persist request, migration.
+  - upload.test.ts: body, key, removal, failure keeps the brew, partial "upload all".
+  - localStatus.test.ts.
+  - editorSession.test.ts: local keys.
+  - pages/local/localPage.test.tsx: list order, signed-out hint, empty state, delete, upload one and all with a failure.
+  - MetadataDialog.test.tsx: local mode.
+  - appRoutes.test.tsx, the whole app:
+    - signed-out /new stores a local brew with the same editor, the URL moves, nothing is POSTed, sign-in shows the prompt, and "Upload all" creates the brew;
+    - signing in before typing gives a signed-in /new;
+    - the earlier anonymous draft is migrated and opened at /local/:id, not uploaded.
+  - ImportPage.test.tsx: signed-out create makes a local brew.
+- Playwright:
+  - e2e/flows/pages.spec.ts, real API and IndexedDB:
+    - a signed-out brew survives a reload at /local/:localId, is listed, and downloads as a 1-page PDF rendered by the API;
+    - two signed-out brews, then signing in through the navbar: the prompt, nothing uploaded until "Upload all", then both in the account and /local empty;
+    - the editor's Upload opens /edit/:editId, and the old /local URL says the brew is gone;
+    - signed in, "Start over" discards a draft whose POST was aborted.
+  - e2e/save/recovery.spec.ts: IndexedDB blocked; the signed-out brew is kept in memory across in-app navigation, and the status says "Not kept".
+  - e2e/save/idempotent-create.spec.ts: `local-notice`.
+  - e2e/a11y/axe.spec.ts: /local signed out and signed in, and the sign-in dialog opened from `local-notice-sign-in`.
+  - e2e/security/csp.spec.ts: /new stores a local brew and /local lists it under the production CSP.
+
+### Notes for later phases
+- Local brews are per browser profile: no sync between devices. Two tabs on the same local brew: the last write wins (no conflict detection).
+- The editor keeps no local history snapshots for local brews (LocalHistoryDialog is for cloud brews).
+- Upstream-link import stays sign-in only (plan §8.3); opening it to anonymous users would need the proxy's rate limit per client address.
+- Recent brews (navbar) don't list local brews; /local does.
 
 ## Per-branch stacks and per-worktree test isolation
 

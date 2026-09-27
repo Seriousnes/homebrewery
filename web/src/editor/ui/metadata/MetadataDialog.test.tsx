@@ -222,6 +222,16 @@ describe('MetadataDialog: every field reports its save payload', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Theme' })).toHaveValue('5e PHB'));
   });
 
+  it('a local brew (issue #4): no Authors, Published or Delete; says where it is kept', () => {
+    setup({ local: true, brew: makeBrew({ editId: null }) });
+    expect(screen.getByText('Changes are saved on this device.')).toBeInTheDocument();
+    expect(screen.getByTestId('meta-local-note')).toHaveTextContent('kept in this browser only');
+    expect(screen.queryByRole('switch', { name: 'Published' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Invited authors' })).toBeNull();
+    expect(screen.queryByTestId('delete-brew')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Title' })).toBeInTheDocument();
+  });
+
   it('published', async () => {
     const { user, last } = setup();
     await user.click(screen.getByRole('switch', { name: 'Published' }));

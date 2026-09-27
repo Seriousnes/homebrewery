@@ -26,7 +26,7 @@ export interface EditorAppBarProps {
   propertiesRef?: RefObject<HTMLButtonElement | null>;
   /** Print the pages (the canvas print). */
   onPrint: () => void;
-  /** Rendered right after Print: the "Export HTML" button (P6.4, editor/export/ExportHtmlButton). */
+  /** Rendered right after Print: the "Download PDF" button (issue #2, editor/export/DownloadPdfButton). */
   exportAction?: ReactNode;
   /** A status note at the end of the bar (the read-only view: e.g. the share page's view count). */
   status?: ReactNode;

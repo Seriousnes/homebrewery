@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { downloadHtml, formatBytes, REVOKE_DELAY_MS } from './download';
+import { downloadFile, formatBytes, REVOKE_DELAY_MS } from './download';
 
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
-describe('downloadHtml', () => {
-  it('clicks a temporary download link to a Blob URL, and revokes the URL later', async () => {
+describe('downloadFile', () => {
+  it('clicks a temporary download link to a Blob URL, and revokes the URL later', () => {
     vi.useFakeTimers();
     const blobs: Blob[] = [];
     const create = vi.fn((blob: Blob) => {
@@ -22,14 +22,15 @@ describe('downloadHtml', () => {
       expect(this.isConnected).toBe(true);
     });
 
-    downloadHtml('<!DOCTYPE html><p>x</p>', 'My brew.html');
+    const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+    downloadFile(pdf, 'My brew.pdf');
 
     expect(clicks).toHaveLength(1);
     expect(clicks[0]!.getAttribute('href')).toBe('blob:http://localhost/1');
-    expect(clicks[0]!.download).toBe('My brew.html');
+    expect(clicks[0]!.download).toBe('My brew.pdf');
     expect(clicks[0]!.isConnected).toBe(false);
-    expect(blobs[0]!.type).toBe('text/html;charset=utf-8');
-    expect(await blobs[0]!.text()).toBe('<!DOCTYPE html><p>x</p>');
+    expect(blobs).toHaveLength(1);
+    expect(blobs[0]).toBe(pdf);
     expect(revoke).not.toHaveBeenCalled();
     vi.advanceTimersByTime(REVOKE_DELAY_MS);
     expect(revoke).toHaveBeenCalledWith('blob:http://localhost/1');

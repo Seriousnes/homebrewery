@@ -1,6 +1,7 @@
-// Helpers of the export and print specs (P6.4): /dev/export, the exported file opened offline,
-// screenshots compared with pixelmatch, PDF sheets.
+// Helpers of the export and print specs (P6.4, issue #2): /dev/export, the exported file opened
+// offline, screenshots compared with pixelmatch, PDF sheets, a stand-in for POST /api/export/pdf.
 import { writeFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { pathToFileURL } from 'node:url';
 import { type Browser, type BrowserContext, expect, type Page, type TestInfo } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
@@ -27,6 +28,43 @@ export interface ExportedFile {
     pageSize: string | null;
     fontsSettled: boolean;
   };
+}
+
+/** A signed-in reader, as GET /api/account/me answers. */
+export const READER = { id: '0190-export-reader', handle: 'export-reader', email: 'reader@example.test', roles: [] };
+
+export interface PdfEndpoint {
+  /** The posted HTML of every request, in order. */
+  requests: string[];
+}
+
+/**
+ * Answers POST /api/export/pdf as the API does: the posted HTML (gzip when large) rendered to PDF by
+ * this browser's Chromium, with JavaScript off, no network and the CSS page size. Register it after
+ * the page's other /api/ stubs (the last matching route runs first). Chromium only (page.pdf).
+ */
+export async function stubPdfEndpoint(page: Page, browser: Browser): Promise<PdfEndpoint> {
+  const endpoint: PdfEndpoint = { requests: [] };
+  await page.route(
+    (url) => url.pathname === '/api/export/pdf',
+    async (route) => {
+      const request = route.request();
+      const raw = request.postDataBuffer() ?? Buffer.alloc(0);
+      const body = (await request.headerValue('content-encoding')) === 'gzip' ? gunzipSync(raw) : raw;
+      const { html } = JSON.parse(body.toString('utf8')) as { html: string };
+      endpoint.requests.push(html);
+      const context = await browser.newContext({ javaScriptEnabled: false, offline: true });
+      try {
+        const renderer = await context.newPage();
+        await renderer.setContent(html, { waitUntil: 'load' });
+        const pdf = await renderer.pdf({ preferCSSPageSize: true, printBackground: true });
+        await route.fulfill({ status: 200, contentType: 'application/pdf', headers: { 'X-Pdf-Missing-Files': '0' }, body: pdf });
+      } finally {
+        await context.close();
+      }
+    },
+  );
+  return endpoint;
 }
 
 /** The API answers nothing (static themes, no account): no API server needed. */

@@ -1,19 +1,21 @@
 // The brew item actions of a list page: Copy link (the share URL, with a toast), Clone (POST
-// /api/brews/{shareId}/clone, then the copy's editor), Download (the stored brew as JSON) and
+// /api/brews/{shareId}/clone, then the copy's editor), Download (the stored brew as a PDF: its
+// HTML export, rendered by POST /api/export/pdf) and
 // Delete / Remove / Decline (DELETE /api/brews/{editId}: removes the caller; the brew is deleted
 // when no owner or author is left) behind one ConfirmDialog. Render `dialog` once in the page.
 import { useMutation } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { type BrewForEdit, type BrewSummary, type DeleteBrewResponse, fetchBrewForEdit, useCloneBrew, useDeleteBrew } from '@/api';
-import type { ApiError } from '@/api';
+import { ApiError, type BrewSummary, type DeleteBrewResponse, fetchBrewForEdit, isAbortError, requestSignIn, useCloneBrew, useDeleteBrew } from '@/api';
 import { paths } from '@/app/paths';
 import { removeRecentBrew } from '@/app/recentBrews';
 import { readDraftsFor } from '@/editor/save/drafts';
+import { EXPORT_TOAST_ID, exportFailure, exportSummary } from '@/editor/export/exportSummary';
 import { defaultDraftStore, defaultSnapshotHistory } from '@/editor/save/stores';
+import { displayTitle } from '@/ported/listPage/listModel';
 import { ConfirmDialog, toast } from '@/ui';
 import type { BrewItemActions } from './BrewItem';
-import { brewFile, removeCopy, saveTextFile } from './brewItemModel';
+import { removeCopy } from './brewItemModel';
 
 export interface UseBrewActionsOptions {
   /** A signed-in reader may clone. */
@@ -63,12 +65,19 @@ function forgetBrew(editId: string, shareId: string, deleted: boolean): void {
 export function useBrewActions({ signedIn, onRemoved, focusAfterRemoval }: UseBrewActionsOptions): UseBrewActionsResult {
   const navigate = useNavigate();
   const clone = useCloneBrew({ onSuccess: (copy) => void navigate(paths.edit(copy.editId)) });
-  const download = useMutation<BrewForEdit, ApiError, string>({
-    mutationFn: (editId) => fetchBrewForEdit(editId),
-    meta: { errorTitle: "Couldn't download the brew" },
-    onSuccess: (brew) => {
-      const file = brewFile(brew);
-      saveTextFile(file.name, file.text);
+  // The export code loads on the first download (the list pages don't need it otherwise).
+  const download = useMutation<void, unknown, string>({
+    mutationFn: async (editId) => {
+      const [brew, exporter] = await Promise.all([fetchBrewForEdit(editId), import('@/editor/export')]);
+      const result = await exporter.exportStoredBrewPdf(brew, { title: displayTitle(brew.meta) });
+      exporter.downloadFile(result.pdf, result.filename);
+      toast({ id: EXPORT_TOAST_ID, ...exportSummary(result, exporter.formatBytes) });
+    },
+    meta: { errorPolicy: 'manual' },
+    onError: (error) => {
+      if (isAbortError(error)) return;
+      if (error instanceof ApiError && error.status === 401) requestSignIn(error);
+      else toast({ id: EXPORT_TOAST_ID, ...exportFailure(error) });
     },
   });
   const remove = useDeleteBrew();
