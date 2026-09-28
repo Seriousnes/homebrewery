@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { Menu, MenuButton } from './Menu';
+import { ContextMenu, Menu, MenuButton } from './Menu';
 import type { MenuEntry } from './menuTypes';
 
 function Harness({ onSelect = vi.fn(), disabledTable = false }: { onSelect?: (id: string) => void; disabledTable?: boolean }) {
@@ -164,5 +164,190 @@ describe('Menu', () => {
     );
     await user.click(screen.getByRole('button', { name: '100%' }));
     expect(await screen.findByRole('menu', { name: 'Zoom levels' })).toBeInTheDocument();
+  });
+
+  it('renders custom content in place of the label; the label stays the name and the typeahead text', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn<(id: string) => void>();
+    render(
+      <MenuButton
+        label="Style"
+        items={[
+          { id: 'plain', label: 'Plain', onSelect: () => onSelect('plain') },
+          { id: 'title', label: 'Title', content: <h1 data-testid="title-preview">Big title</h1>, onSelect: () => onSelect('title') },
+        ]}
+      />,
+    );
+    screen.getByRole('button', { name: 'Style' }).focus();
+    await user.keyboard('{ArrowDown}');
+    const plain = await screen.findByRole('menuitem', { name: 'Plain' });
+    expect(plain).not.toHaveAttribute('aria-label');
+    const title = screen.getByRole('menuitem', { name: 'Title' });
+    expect(title).toHaveAttribute('aria-label', 'Title');
+    expect(title).toContainElement(screen.getByTestId('title-preview'));
+    expect(title).not.toHaveTextContent('Title');
+    await user.keyboard('t');
+    expect(title).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onSelect).toHaveBeenCalledWith('title');
+  });
+});
+
+const nestedItems = (onSelect: (id: string) => void): MenuEntry[] => [
+  { id: 'cut', label: 'Cut', onSelect: () => onSelect('cut') },
+  {
+    id: 'format',
+    type: 'submenu',
+    label: 'Format',
+    items: [
+      { id: 'bold', label: 'Bold', onSelect: () => onSelect('bold') },
+      { id: 'italic', label: 'Italic', onSelect: () => onSelect('italic') },
+    ],
+  },
+  { id: 'off', type: 'submenu', label: 'Off', disabled: true, items: [{ id: 'x', label: 'X', onSelect: () => onSelect('x') }] },
+  { id: 'paste', label: 'Paste', onSelect: () => onSelect('paste') },
+];
+
+describe('submenus', () => {
+  it('ArrowRight, Enter or a click open a submenu on its first item; ArrowLeft and Escape go back to its item', async () => {
+    const user = userEvent.setup();
+    render(<MenuButton label="Edit" items={nestedItems(vi.fn())} />);
+    screen.getByRole('button', { name: 'Edit' }).focus();
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    const format = screen.getByRole('menuitem', { name: 'Format' });
+    expect(format).toHaveFocus();
+    expect(format).toHaveAttribute('aria-haspopup', 'menu');
+    expect(format).toHaveAttribute('aria-expanded', 'false');
+    await user.keyboard('{ArrowRight}');
+    const sub = await screen.findByRole('menu', { name: 'Format' });
+    expect(format).toHaveAttribute('aria-expanded', 'true');
+    expect(format).toHaveAttribute('aria-controls', sub.id);
+    expect(screen.getByRole('menuitem', { name: 'Bold' })).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Italic' })).toHaveFocus();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.queryByRole('menu', { name: 'Format' })).toBeNull();
+    expect(format).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('menuitem', { name: 'Bold' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu', { name: 'Format' })).toBeNull();
+    expect(format).toHaveFocus();
+    expect(screen.getByRole('menu', { name: 'Edit' })).toBeInTheDocument();
+    await user.click(format);
+    expect(await screen.findByRole('menu', { name: 'Format' })).toBeInTheDocument();
+  });
+
+  it('picking an item of a submenu closes every menu and refocuses the trigger', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<MenuButton label="Edit" items={nestedItems(onSelect)} />);
+    const trigger = screen.getByRole('button', { name: 'Edit' });
+    trigger.focus();
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowRight}{Enter}');
+    expect(onSelect).toHaveBeenCalledWith('bold');
+    expect(screen.queryAllByRole('menu')).toHaveLength(0);
+    expect(trigger).toHaveFocus();
+  });
+
+  it('the pointer on a submenu item opens it without taking the focus; on another item closes it; disabled ones stay shut', async () => {
+    const user = userEvent.setup();
+    render(<MenuButton label="Edit" items={nestedItems(vi.fn())} />);
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.hover(screen.getByRole('menuitem', { name: 'Format' }));
+    expect(await screen.findByRole('menu', { name: 'Format' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Format' })).toHaveFocus();
+    await user.hover(screen.getByRole('menuitem', { name: 'Paste' }));
+    expect(screen.queryByRole('menu', { name: 'Format' })).toBeNull();
+    await user.hover(screen.getByRole('menuitem', { name: 'Off' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Off' }));
+    expect(screen.queryByRole('menu', { name: 'Off' })).toBeNull();
+  });
+
+  it('Tab in a submenu closes every menu', async () => {
+    const user = userEvent.setup();
+    render(<MenuButton label="Edit" items={nestedItems(vi.fn())} />);
+    const trigger = screen.getByRole('button', { name: 'Edit' });
+    trigger.focus();
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowRight}{Tab}');
+    expect(screen.queryAllByRole('menu')).toHaveLength(0);
+    expect(trigger).toHaveFocus();
+  });
+});
+
+describe('ContextMenu', () => {
+  function Host({ onClose, onSelect = vi.fn() }: { onClose: (returnFocus: boolean) => void; onSelect?: (id: string) => void }) {
+    const [open, setOpen] = useState(true);
+    return (
+      <>
+        <button type="button">Outside</button>
+        {open ? (
+          <ContextMenu
+            items={nestedItems(onSelect)}
+            point={{ x: 120, y: 80 }}
+            label="Editing"
+            footer="Shift+right-click: browser menu"
+            onClose={(returnFocus) => {
+              setOpen(false);
+              onClose(returnFocus);
+            }}
+            data-testid="ctx"
+          />
+        ) : null}
+      </>
+    );
+  }
+
+  it('opens at the point with the focus on its first item, named, described by its footer', async () => {
+    render(<Host onClose={vi.fn()} />);
+    const menu = await screen.findByRole('menu', { name: 'Editing' });
+    expect(menu).toHaveAccessibleDescription('Shift+right-click: browser menu');
+    expect(menu.style.top).toBe('80px');
+    expect(menu.style.left).toBe('120px');
+    expect(screen.getByRole('menuitem', { name: 'Cut' })).toHaveFocus();
+    // No browser menu over it.
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    screen.getByRole('menuitem', { name: 'Cut' }).dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('picking an item or Escape asks for the focus back; a click outside does not', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onSelect = vi.fn();
+    const { unmount } = render(<Host onClose={onClose} onSelect={onSelect} />);
+    await screen.findByRole('menu');
+    await user.keyboard('{Enter}');
+    expect(onSelect).toHaveBeenCalledWith('cut');
+    expect(onClose).toHaveBeenLastCalledWith(true);
+    unmount();
+
+    render(<Host onClose={onClose} />);
+    await screen.findByRole('menu');
+    await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenLastCalledWith(true);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('a click outside closes it without asking for the focus back', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<Host onClose={onClose} />);
+    await screen.findByRole('menu');
+    await user.click(screen.getByRole('button', { name: 'Outside' }));
+    expect(onClose).toHaveBeenCalledWith(false);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('submenus work in it too; picking in one closes it with the focus asked back', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onSelect = vi.fn();
+    render(<Host onClose={onClose} onSelect={onSelect} />);
+    await screen.findByRole('menu');
+    await user.keyboard('{ArrowDown}{ArrowRight}{ArrowDown}{Enter}');
+    expect(onSelect).toHaveBeenCalledWith('italic');
+    expect(onClose).toHaveBeenCalledWith(true);
+    expect(screen.queryAllByRole('menu')).toHaveLength(0);
   });
 });
