@@ -87,6 +87,9 @@ services:
 
 volumes:
   pgdata:
+    # ./stack creates it (after the one-time copy of the old single stack's data, which needs the volume first), so
+    # compose uses it and never removes it.
+    external: true
     name: homebrewery-shared-pgdata
 
 networks:

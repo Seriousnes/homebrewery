@@ -180,6 +180,8 @@ function prepareSharedDb() {
       fail(`the copy failed; ${OLD_VOLUME} is unchanged. Run this again to retry.`);
     }
   }
+  // External in deploy/stack/shared.yml. Created only here, after the copy check: an empty volume would skip the copy.
+  docker(['volume', 'create', SHARED_VOLUME]);
   docker(['compose', '-f', SHARED_FILE, 'up', '-d', '--wait', '--wait-timeout', '120', 'db'], { inherit: true });
 }
 
