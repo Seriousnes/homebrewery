@@ -92,8 +92,8 @@ function keymapStorage(editor: Editor): HbKeymapStorage | undefined {
 
 /**
  * Listens to the keymap's requests (Mod-S save, Mod-P print, Mod-M / Shift-Mod-M class picker,
- * Mod-K link dialog, Alt-F10 toolbar). The newest listener is asked first. Returns the
- * unsubscribe function. A no-op for an editor without HbKeymap.
+ * Mod-K link dialog, Alt-F10 toolbar, Mod-Alt-U source dialog). The newest listener is asked
+ * first. Returns the unsubscribe function. A no-op for an editor without HbKeymap.
  */
 export function onKeymapRequest(editor: Editor, listener: KeymapListener): () => void {
   const storage = keymapStorage(editor);
@@ -229,7 +229,8 @@ export type ShortcutId =
   | 'liftListItem'
   | 'save'
   | 'print'
-  | 'focusToolbar';
+  | 'focusToolbar'
+  | 'editSource';
 
 /** ProseMirror key names per shortcut; the first is the one shown in tooltips. */
 export const HB_SHORTCUTS: Readonly<Record<ShortcutId, readonly string[]>> = {
@@ -266,6 +267,8 @@ export const HB_SHORTCUTS: Readonly<Record<ShortcutId, readonly string[]>> = {
   save: ['Mod-s'],
   print: ['Mod-p'],
   focusToolbar: ['Alt-F10'],
+  // Cmd-Opt-U is "view source" in Chrome and Safari on macOS (Ctrl-U is underline here).
+  editSource: ['Mod-Alt-u'],
 };
 
 /** Whether "Mod" means Cmd (macOS and iOS), as prosemirror-keymap decides. */
@@ -383,6 +386,7 @@ export const HbKeymap = Extension.create<Record<string, never>, HbKeymapStorage>
     }
     for (const key of HB_SHORTCUTS.print) shortcuts[key] = () => emitKeymapRequest(editor, 'print');
     for (const key of HB_SHORTCUTS.focusToolbar) shortcuts[key] = () => emitKeymapRequest(editor, 'focusToolbar');
+    for (const key of HB_SHORTCUTS.editSource) shortcuts[key] = () => editor.isEditable && emitKeymapRequest(editor, 'editSource');
     return shortcuts;
   },
 });

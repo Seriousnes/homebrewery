@@ -70,6 +70,7 @@ import { MetadataDialog } from '@/editor/ui/metadata/MetadataDialog';
 import { OutlinePanel } from '@/editor/ui/outline/OutlinePanel';
 import { usePageTracker } from '@/editor/ui/pageNav/usePageTracker';
 import { SnippetsPanel, SnippetsToggle, useSnippetsEditor } from '@/editor/ui/snippetsEditor';
+import { SourceEditorHost } from '@/editor/ui/sourceEditor';
 import { StylePanel } from '@/editor/ui/styleDrawer';
 import { TableMenu } from '@/editor/ui/tableMenu/TableMenu';
 import { EditorToolbar } from '@/editor/ui/toolbar';
@@ -731,6 +732,7 @@ export function EditorApp({
           local
         />
       ) : null}
+      {editable && editor ? <SourceEditorHost editor={editor} /> : null}
     </div>
   );
 }

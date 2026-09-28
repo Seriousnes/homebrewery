@@ -1,6 +1,6 @@
 // The composed editor's second toolbar (plan §6.2): panel toggles (outline, style, inspector),
-// page navigation, the layout status (oversize warnings), print and the brew actions (properties,
-// local history). In the read-only view it also carries zoom and page layout, which the editing
+// page navigation, the layout status (oversize warnings), print and the brew actions (source,
+// properties, local history). In the read-only view it also carries zoom and page layout, which the editing
 // toolbar has otherwise. One tab stop with roving focus, like every toolbar.
 import type { Editor } from '@tiptap/core';
 import type { ReactNode, RefObject } from 'react';
@@ -9,6 +9,7 @@ import { shortcutFor } from '@/editor/commands/keymap';
 import { LayoutStatus } from '@/editor/ui/layoutStatus/LayoutStatus';
 import { PageNav } from '@/editor/ui/pageNav/PageNav';
 import type { PageTracker } from '@/editor/ui/pageNav/pageTracker';
+import { openSourceEditor } from '@/editor/ui/sourceEditor/openSourceEditor';
 import { Button, IconButton, type IconName, type MenuEntry, MenuButton, Toolbar, ToolbarGroup, ToolbarSeparator } from '@/ui';
 import { type EditorAppMode, PANEL_ELEMENT_IDS } from './editorAppModel';
 import styles from './EditorApp.module.css';
@@ -45,9 +46,12 @@ const percent = (zoom: number) => `${Math.round(zoom * 100)}%`;
 
 export function EditorAppBar({ mode, editor, tracker, toggleRefs, onProperties, onHistory, propertiesRef, onPrint, exportAction, status, panelToggles }: EditorAppBarProps) {
   const print = shortcutFor('print');
+  const source = shortcutFor('editSource');
   const panels = useUiStore((s) => s.panels);
   const togglePanel = useUiStore((s) => s.togglePanel);
   const editable = mode === 'edit';
+  // The source dialog (T5, editor/ui/sourceEditor): EditorApp mounts its host while editing.
+  const showSource = editable && editor !== null;
 
   const toggle = (id: PanelId, icon: IconName, label: string) => {
     const open = panels[id].open;
@@ -85,8 +89,22 @@ export function EditorAppBar({ mode, editor, tracker, toggleRefs, onProperties, 
         {editable ? <LayoutStatus editor={editor} /> : status}
         <IconButton icon="print" label="Print" tooltip="bottom" shortcut={print.label} aria-keyshortcuts={print.aria} onClick={onPrint} data-testid="print" />
         {exportAction}
-        {onHistory || onProperties ? (
+        {onHistory || onProperties || showSource ? (
           <ToolbarGroup label="Brew">
+            {showSource ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon="code"
+                aria-haspopup="dialog"
+                aria-keyshortcuts={source.aria}
+                title={`Edit the HTML source (${source.label})`}
+                onClick={() => openSourceEditor(editor)}
+                data-testid="open-source"
+              >
+                Source
+              </Button>
+            ) : null}
             {onHistory ? (
               <Button size="sm" variant="ghost" icon="undo" aria-haspopup="dialog" onClick={onHistory} data-testid="open-local-history">
                 Local history

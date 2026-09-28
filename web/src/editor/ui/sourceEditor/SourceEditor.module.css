@@ -1,0 +1,105 @@
+/* The source dialog: wider than the kit's lg dialog, the code editor filling the height. */
+.dialog.dialog {
+  max-width: min(1120px, 100%);
+  height: min(900px, 100%);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  height: 100%;
+  min-height: 0;
+}
+
+.scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hbui-space-3);
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.legend {
+  float: left;
+  padding: 0;
+  margin-right: var(--hbui-space-1);
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--hbui-label-spacing);
+}
+
+.scope {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.scope input {
+  margin: 0;
+  accent-color: var(--hbui-color-accent);
+}
+
+.hint,
+.keys {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.code {
+  flex: 1 1 auto;
+  min-height: 240px;
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.report {
+  flex: none;
+  max-height: 30%;
+  padding: var(--hbui-space-2) var(--hbui-space-3);
+  overflow: auto;
+  color: var(--hbui-color-text);
+  background: var(--hbui-color-warning-subtle);
+  border-left: 4px solid var(--hbui-color-warning);
+  border-radius: var(--hbui-radius-sm);
+}
+
+.reportTitle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 4px;
+  font-weight: var(--hbui-label-weight);
+}
+
+.problems {
+  padding-left: 1.4em;
+  margin: 0;
+}
+
+.count {
+  color: var(--hbui-color-text-muted);
+}
+
+.error {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: var(--hbui-color-danger);
+}
+
+@media (forced-colors: active) {
+  .report {
+    border: 1px solid CanvasText;
+  }
+}
+
+.footerStart {
+  margin-right: auto;
+}
