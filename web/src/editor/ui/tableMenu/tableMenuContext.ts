@@ -1,18 +1,8 @@
-// What the TableMenu offers for an editor state (plain data for useEditorState).
+// What the table UI (TableMenu, the table controls, tableMenuEntries) offers for an editor state
+// (plain data for useEditorState).
 import type { EditorState } from '@tiptap/pm/state';
-import {
-  addColumnAfter,
-  addColumnBefore,
-  addRowAfter,
-  addRowBefore,
-  deleteColumn,
-  deleteRow,
-  deleteTable,
-  isInTable,
-  mergeCells,
-  splitCell,
-} from '@tiptap/pm/tables';
-import { insertTable, isHeaderRowSelected, resetColumnWidths, selectedColumnWidth, tableClasses, type TableClass } from '../../tables/commands';
+import { addColumnAfter, addColumnBefore, addRowAfter, addRowBefore, deleteColumn, deleteRow, isInTable, mergeCells, splitCell } from '@tiptap/pm/tables';
+import { insertTable, isHeaderRowSelected, removeTable, resetColumnWidths, selectedColumnWidth, tableClasses, type TableClass } from '../../tables/commands';
 
 export interface TableMenuContext {
   inTable: boolean;
@@ -48,7 +38,7 @@ export function tableMenuContext(state: EditorState): TableMenuContext {
       deleteColumn: inTable && deleteColumn(state),
       mergeCells: inTable && mergeCells(state),
       splitCell: inTable && splitCell(state),
-      deleteTable: inTable && deleteTable(state),
+      deleteTable: inTable && removeTable(state),
       resetColumnWidths: inTable && resetColumnWidths(state),
     },
     headerRow: inTable && isHeaderRowSelected(state),

@@ -1,0 +1,51 @@
+/* The table controls (TableControls.tsx): upstream's light snippet bar, like the theme block's label. */
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--hbui-z-layer, 1000);
+  font-family: var(--hbui-font);
+  font-size: var(--hbui-font-size-sm);
+  line-height: 1.2;
+  color: var(--hbui-color-text);
+  background: var(--hbui-bar-bg);
+  border: 1px solid var(--hbui-bar-divider);
+  border-radius: 0;
+  box-shadow: var(--hbui-shadow-popover);
+  user-select: none;
+}
+
+.toolbar {
+  flex-wrap: nowrap;
+  gap: 2px;
+  align-items: center;
+  min-height: 0;
+  padding: 1px 2px;
+  border-bottom: 0;
+}
+
+.group {
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+
+.label {
+  padding: 0 6px;
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.toggle {
+  min-height: 22px;
+  padding-block: 0;
+  white-space: nowrap;
+}
+
+@media (forced-colors: active) {
+  .panel {
+    border-color: CanvasText;
+  }
+}

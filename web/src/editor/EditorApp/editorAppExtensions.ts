@@ -17,7 +17,7 @@ export const EDITOR_LABEL = 'Brew pages';
  * description (EditorApp renders it, visually hidden, and passes its id as `describedBy`).
  */
 export const EDITOR_KEYBOARD_HINT =
-  'Alt+F10 moves to the editing toolbar; Escape comes back to the text. Shift+Alt+F10 moves to the controls of the theme block at the caret. In lists Tab indents and in tables it moves between cells; elsewhere Shift+Tab reaches the toolbars and Tab the panels.';
+  'Alt+F10 moves to the editing toolbar; Escape comes back to the text. Shift+Alt+F10 moves to the controls of the table or theme block at the caret. In lists Tab indents and in tables it moves between cells; elsewhere Shift+Tab reaches the toolbars and Tab the panels.';
 
 export interface EditorAccessibilityOptions {
   label: string;

@@ -7,6 +7,8 @@ import { ThemeBlockWithView, TocWithView } from '../themeBlocks/extension';
 // Objects lane (P5.6, plan §6.6): header rows styled like <thead>; images with natural sizes.
 import { ImageWithView } from '../objects/imageView';
 import { TableHeaderRows } from '../tables/headerRows';
+// Tables (T3): the table controls under the table at the caret (editable canvases only).
+import { TableControls } from '../tables/controls';
 import { CaretBlock } from '../ui/blockMenu/caretBlock';
 
 export {
@@ -22,5 +24,5 @@ export {
 export { HbTableView } from './TableView';
 export { PageWithView, TableWithView } from './nodeViewExtensions';
 
-/** Every NodeView extension of the canvas lane (P3.2): page and table; plus the snippets lane's theme block and toc; plus the objects lane's image view, header-row and caret-block decorations. */
-export const editorNodeViews: AnyExtension[] = [PageWithView, TableWithView, ThemeBlockWithView, TocWithView, ImageWithView, TableHeaderRows, CaretBlock];
+/** Every NodeView extension of the canvas lane (P3.2): page and table; plus the snippets lane's theme block and toc; plus the objects lane's image view, header-row and caret-block decorations; plus the table controls. */
+export const editorNodeViews: AnyExtension[] = [PageWithView, TableWithView, ThemeBlockWithView, TocWithView, ImageWithView, TableHeaderRows, CaretBlock, TableControls];
