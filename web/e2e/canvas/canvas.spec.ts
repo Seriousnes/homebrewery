@@ -4,6 +4,7 @@
 import { writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
 import { expect, type Page } from '@playwright/test';
+import { pauseClock } from '../clock';
 import { newSharedPage, openCanvas, READY_TIMEOUT, test } from './helpers';
 
 test.use({ viewport: { width: 1400, height: 1300 } });
@@ -64,16 +65,6 @@ async function holdRequests(page: Page, url: RegExp): Promise<HeldRequests> {
     await route.continue().catch(() => undefined); // the page closed meanwhile
   });
   return { arrived, release };
-}
-
-/**
- * Stops the page's clock (Date, performance, timers, animation frames; page.clock.install() before
- * the page loads): from now on only page.clock.runFor() fires timers, so a timeout can't decide
- * the outcome.
- */
-async function pauseClock(page: Page): Promise<void> {
-  const now = await page.evaluate(() => Date.now());
-  await page.clock.pauseAt(now + 1_000);
 }
 
 /** The state of the canvas's theme styles at one moment. */

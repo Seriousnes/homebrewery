@@ -71,6 +71,16 @@ export async function waitForSavePage(page: Page): Promise<Locator> {
   return frame;
 }
 
+/** Whether pagination has nothing left to do in /dev/save's editor (autosave waits for that). */
+export function paginationSettled(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const { state } = window.__hbSave!.editor;
+    const plugin = state.plugins.find((p) => (p as unknown as { key: string }).key === 'hbPagination$');
+    const s = plugin?.getState(state) as { dirtyFrom: number | null; waiting: number[] } | undefined;
+    return !s || (s.dirtyFrom === null && s.waiting.length === 0);
+  });
+}
+
 /** Puts the caret at the end of text block `index` (focusing the editor synchronously) and types. */
 export async function typeAt(page: Page, text: string, index = 0): Promise<void> {
   await page.evaluate((i) => {

@@ -4,6 +4,7 @@
 // imported document (window.__hbImport).
 import { expect, type Page } from '@playwright/test';
 import { PNG } from 'pngjs';
+import { pauseClock } from '../clock';
 import { DOM_READY, test } from './helpers';
 
 /**
@@ -94,24 +95,30 @@ test('welcome: footer, positioned image and manual page number; the artist credi
   expect(report.unknownClasses?.map((c) => c.name)).toEqual(expect.arrayContaining(['pen', 'purple']));
 });
 
-/**
- * hbfmToDoc on arbitrary text through /dev/import's test API (window.__hbImportApi). `ms` is the
- * import alone, measured in the page (performance marks around the call): the page load before
- * it doesn't count, however slow the dev server is.
- */
-async function importText(page: Page, text: string): Promise<Imported & { ms: number }> {
+/** Opens /dev/import for its test API (window.__hbImportApi). */
+async function openImportApi(page: Page): Promise<void> {
   await page.route('**/api/themes/*/bundle', (route) =>
     route.fulfill({ status: 404, contentType: 'application/problem+json', body: '{"status":404}' }),
   );
   await page.goto('/dev/import', DOM_READY);
   await page.waitForFunction(() => Boolean((window as unknown as { __hbImportApi?: unknown }).__hbImportApi), undefined, IMPORTED);
+}
+
+/** hbfmToDoc on `text` through the test API; window.__hbImportDone turns true when it has returned. */
+function runImport(page: Page, text: string): Promise<Imported> {
   return page.evaluate(async (t) => {
-    const api = (window as unknown as { __hbImportApi: { hbfmToDoc: (text: string) => Promise<Imported> } }).__hbImportApi;
-    performance.mark('hbfmToDoc-start');
-    const { doc, style, report } = await api.hbfmToDoc(t);
-    const ms = performance.measure('hbfmToDoc', 'hbfmToDoc-start').duration;
-    return { doc, style, report, ms };
+    const w = window as unknown as { __hbImportApi: { hbfmToDoc: (text: string) => Promise<Imported> }; __hbImportDone?: boolean };
+    w.__hbImportDone = false;
+    const { doc, style, report } = await w.__hbImportApi.hbfmToDoc(t);
+    w.__hbImportDone = true;
+    return { doc, style, report };
   }, text);
+}
+
+/** hbfmToDoc on arbitrary text through /dev/import's test API. */
+async function importText(page: Page, text: string): Promise<Imported> {
+  await openImportApi(page);
+  return runImport(page, text);
 }
 
 const para = (i: number) => `Paragraph ${i}: the caravan road bends east past the old mill, where the river runs fast and cold in spring.`;
@@ -135,14 +142,26 @@ test('images get their natural size: the probe waits for slow images, failed and
   const png = new PNG({ width: 30, height: 20 });
   png.data.fill(200);
   const body = PNG.sync.write(png);
+  // The slow image is held until the test lets it go; the lazy one never answers.
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let requested!: () => void;
+  const slowRequested = new Promise<void>((resolve) => (requested = resolve));
   await page.route('**/e2e-slow.png', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    requested();
+    await released;
     await route.fulfill({ status: 200, contentType: 'image/png', body });
   });
   await page.route('**/e2e-missing.png', (route) => route.fulfill({ status: 404, body: '' }));
   await page.route('**/e2e-lazy.png', () => undefined); // never answers
+  // The page's clock stands still during the import (e2e/clock.ts), so the probe's 10 s image
+  // timeout (canvas/probe.ts waitForImages) can't fire: the import returns only if it doesn't wait
+  // for the lazy image, however slow the machine.
+  await page.clock.install();
+  await openImportApi(page);
+  await pauseClock(page);
   const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80"/></svg>').toString('base64');
-  const { doc, report, ms } = await importText(
+  const imported = runImport(
     page,
     [
       '![Slow](/e2e-slow.png) ![Missing](/e2e-missing.png)',
@@ -152,7 +171,11 @@ test('images get their natural size: the probe waits for slow images, failed and
       '<img loading="lazy" src="/e2e-lazy.png">',
     ].join('\n'),
   );
-  expect(ms).toBeLessThan(9_000); // the import didn't wait for the 10 s image timeout
+  await slowRequested;
+  // Held: the import is still waiting for it.
+  expect(await page.evaluate(() => (window as unknown as { __hbImportDone?: boolean }).__hbImportDone), 'the import returned before the slow image loaded').toBe(false);
+  release();
+  const { doc, report } = await imported;
   const sizes: unknown[] = [];
   type Json = { type?: string; attrs?: Record<string, unknown>; content?: Json[] };
   const walk = (n: Json) => {

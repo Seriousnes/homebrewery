@@ -1,4 +1,4 @@
-// The P8.1 pagination optimisations on the real layout (plan §4.10; the timings are perf.spec.ts):
+// The P8.1 pagination optimisations on the real layout (plan §4.10; the big fixtures are perf.spec.ts):
 //
 //   - typing in the middle of a page checks that page only (not the page before it), and the
 //     steps that only measure go out as one transaction, not one each

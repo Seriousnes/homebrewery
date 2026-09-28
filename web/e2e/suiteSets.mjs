@@ -2,7 +2,8 @@
 // (private API, as CI) and e2e/run-playwright.mjs (`npm run e2e`, no API). Every Playwright run is
 // capped at 5 minutes (playwright.config.ts globalTimeout; CLAUDE.md "Tests fail fast"), so a big
 // suite is never one run: first the parallel projects (chromium, firefox) in groups of folders
-// (SETS), then the @serial tests (time budgets: one worker, nothing else running) in
+// (SETS), then the @serial tests (the performance work on the big fixtures and S2: one worker,
+// nothing else running, so the timings they report are clean; they assert counts, not times) in
 // chromium-serial and in firefox-serial. Firefox runs only the editing and pagination specs
 // (playwright.config.ts FIREFOX_SPECS), so most sets are Chromium only. The runner stops at the
 // first set that fails and prints each set's wall time; a set over 4 minutes is flagged: split it

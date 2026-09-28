@@ -2,13 +2,14 @@
 // an in-memory brew server routed per context (fakeServer.ts), so it runs without the API.
 // autosave-api.spec.ts runs the main flows against a real API.
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { pauseClock } from '../clock';
+import { pauseClock, runClockUntil } from '../clock';
 import { installFakeServer } from './fakeServer';
 import {
   AUTOSAVE_DELAY_MS,
   conflictDialog,
   docOf,
   editorTexts,
+  paginationSettled,
   killTab,
   openSavePage,
   SAVE_TIMEOUT,
@@ -26,6 +27,8 @@ const saveState = (page: Page) =>
     return { status, baseVersion, unsaved };
   });
 
+// The page's clock is paused while these tests type and save (e2e/clock.ts): the autosave delay
+// runs out when the test moves the clock to it, however slow the machine.
 test('autosaves 3 s after typing (not for pagination), and a reload shows the text', async ({ page, context }) => {
   // Two loads of /dev/save (about 7 s each in Firefox under load).
   test.setTimeout(30_000);
@@ -33,6 +36,7 @@ test('autosaves 3 s after typing (not for pagination), and a reload shows the te
   await page.clock.install();
   const server = await installFakeServer(context);
   const brew = server.add({ doc: docOf('Autosave start') });
+  await page.clock.install();
   const frame = await openSavePage(page, brew.editId);
   // Pagination runs (every frame and timer of the next 3.5 s): nothing to save.
   await page.clock.runFor(AUTOSAVE_DELAY_MS + 500);
@@ -50,6 +54,8 @@ test('autosaves 3 s after typing (not for pagination), and a reload shows the te
   await page.clock.resume();
   await expect(frame).toHaveAttribute('data-base-version', '2', SAVE_TIMEOUT);
   await expect(statusLabel(page)).toHaveText('Saved');
+  expect(server.saves()).toHaveLength(1);
+  await page.clock.resume();
   const [put] = server.saves(brew.editId);
   expect(put!.body).toMatchObject({ baseVersion: 1, style: '', docSchemaVersion: 1, meta: { title: 'Fake brew' } });
   expect(JSON.stringify(put!.body!.doc)).toContain('Autosave start typed');
@@ -63,18 +69,26 @@ test('autosaves 3 s after typing (not for pagination), and a reload shows the te
 test('Ctrl/Cmd+S saves at once; a hidden page saves at once, gzip-compressed', async ({ page, context }) => {
   const server = await installFakeServer(context);
   const brew = server.add({ doc: docOf('Shortcut') });
+  await page.clock.install();
   const frame = await openSavePage(page, brew.editId);
+  await expect.poll(() => paginationSettled(page)).toBe(true);
+  await pauseClock(page);
   await typeAt(page, ' one');
+  // Pagination settles (Mod-S waits for it), well before the autosave delay runs out.
+  const settledAfter = await runClockUntil(page, () => paginationSettled(page), 1000);
   await page.keyboard.press('ControlOrMeta+s');
-  await expect(frame).toHaveAttribute('data-base-version', '2', { timeout: 2500 });
+  await expect(frame).toHaveAttribute('data-base-version', '2', SAVE_TIMEOUT);
   await expect(page.getByTestId('save-status-live')).toHaveText(/^Saved at /);
+  expect(server.saves(), `one save, ${settledAfter} ms of page time after typing`).toHaveLength(1);
 
   await typeAt(page, ' two');
   await page.evaluate(() => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(frame).toHaveAttribute('data-base-version', '3', { timeout: 2500 });
+  // The clock hasn't moved since typing: only hiding the page can have saved.
+  await expect(frame).toHaveAttribute('data-base-version', '3', SAVE_TIMEOUT);
+  expect(server.saves()).toHaveLength(2);
   expect(server.saves().at(-1)!.gzip).toBe(true);
 });
 

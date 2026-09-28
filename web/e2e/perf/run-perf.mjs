@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Runs the performance e2e (web/e2e/perf, plan §4.10 / P8.1) on its own: one worker (the specs
-// measure time, so nothing else may run beside them), against a server nobody edits under it.
+// report timings, which other work beside them would skew; they assert counts, never times),
+// against a server nobody edits under it.
 //
 //   node e2e/perf/run-perf.mjs [playwright args…]          (from web/) Vite dev server, no HMR
 //   node e2e/perf/run-perf.mjs --prod [playwright args…]   a production build with the dev routes
@@ -9,8 +10,9 @@
 //
 // Three short sets (each its own Playwright run, under the 5-minute cap; the next runs only when
 // one passed): 1, the smoke tests and pagination-work.spec.ts (chromium; firefox runs only
-// pagination-work.spec.ts, playwright.config.ts FIREFOX_SPECS); 2, the time budgets (@serial) in
-// chromium-serial; 3, the same in firefox-serial (about 2 minutes each).
+// pagination-work.spec.ts, playwright.config.ts FIREFOX_SPECS); 2, the performance work on the big
+// fixtures (@serial) in chromium-serial; 3, the same in firefox-serial (about 2 minutes each).
+// The timings are the output: one line per result, attachments, HB_PERF_OUT (perf.spec.ts).
 // --set=<n>[,<n>…] runs only those. With a --project argument it runs once, as given.
 //
 // Environment: E2E_PORT (5375). The API is stubbed by the specs (no account, static themes).

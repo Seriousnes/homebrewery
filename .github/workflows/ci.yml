@@ -151,8 +151,8 @@ jobs:
         working-directory: .
         run: dotnet build src/Homebrewery.Api --configuration Debug --artifacts-path "$HB_ARTIFACTS"
 
-      # Tests tagged @serial (time budgets) run in the e2e-serial job instead; the import fidelity
-      # smoke subset in the fidelity job.
+      # Tests tagged @serial (the performance work on the big fixtures, S2) run in the e2e-serial job
+      # instead; the import fidelity smoke subset in the fidelity job.
       - name: End-to-end tests
         run: node e2e/matrix/run-suite.mjs --project=${{ matrix.project }} --shard=${{ matrix.shard }}/$SHARDS --grep-invert "S3 import fidelity"
 
@@ -174,10 +174,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # The @serial tests (the S2 30-page budget and the §4.10 performance budgets), one at a time on a
-  # quiet runner: about 2 minutes per browser locally (the typing budgets type at a person's pace).
+  # The @serial tests (S2's 30-page section and the §4.10 performance work on the big fixtures),
+  # one at a time: about 2 minutes per browser locally (the typing tests type at a person's pace).
+  # They assert pagination work as counts; their timings are reports (attachments, log lines) and
+  # never fail the job, so nothing they assert needs the serial run: it only keeps the reported
+  # timings free of other tests' load.
   e2e-serial:
-    name: E2E serial ${{ matrix.browser }} (time budgets)
+    name: E2E serial ${{ matrix.browser }} (performance work)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
@@ -228,7 +231,7 @@ jobs:
         working-directory: .
         run: dotnet build src/Homebrewery.Api --configuration Debug --artifacts-path "$HB_ARTIFACTS"
 
-      - name: Serial end-to-end tests (time budgets)
+      - name: Serial end-to-end tests (performance work)
         run: node e2e/matrix/run-suite.mjs --project=${{ matrix.browser }}-serial
 
       - name: Upload blob report

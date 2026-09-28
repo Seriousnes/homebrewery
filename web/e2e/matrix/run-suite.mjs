@@ -22,9 +22,10 @@
 // The suite runs as several short SETS, one Playwright run each, one after the other: every
 // Playwright run is capped at 5 minutes (playwright.config.ts globalTimeout), so a big suite is
 // never one run (CLAUDE.md "Tests fail fast"). First the parallel projects (chromium, firefox) in
-// groups of folders (SETS in e2e/suiteSets.mjs), then the @serial tests (time budgets: one worker,
-// nothing else running) in chromium-serial and in firefox-serial. It stops at the first set that
-// fails and prints each set's wall time and test time per folder; a set over 4 minutes is flagged:
+// groups of folders (SETS in e2e/suiteSets.mjs), then the @serial tests (the performance work on
+// the big fixtures and S2: one worker, nothing else running, so the timings they report are
+// clean; they assert counts, not times) in chromium-serial and in firefox-serial. It stops at the
+// first set that fails and prints each set's wall time and test time per folder; a set over 4 minutes is flagged:
 // split it (move folders to another set). A folder no set names runs in the last parallel set.
 //   - With a file or folder filter: one parallel set with the filter, then the two serial sets.
 //   - With --set=<n>[,<n>…]: only those sets (numbered from 1 in the order they run), e.g. to rerun

@@ -20,7 +20,7 @@ export interface InspectorDevGlobals {
   selectedObjects: { pageIndex: number; id: string }[];
   settled: () => boolean;
   selectedObject: () => { pagePos: number; id: string } | null;
-  lastCssEdit: number;
+  committedCss: string;
 }
 
 declare global {

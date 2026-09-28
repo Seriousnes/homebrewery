@@ -14,14 +14,15 @@ import { slotPort } from './scripts/worktree';
 //   chromium                          every test except those tagged @serial, in parallel
 //   firefox                           the same, but only the editing and pagination specs
 //                                     (FIREFOX_SPECS; E2E_FIREFOX=all runs every spec in Firefox)
-//   chromium-serial, firefox-serial   the @serial tests (time budgets: S2's 30-page settle, the
-//                                     §4.10 perf budgets): one worker per project, so they never
-//                                     run beside each other.
+//   chromium-serial, firefox-serial   the @serial tests (S2's 30-page section, the §4.10 perf work
+//                                     on the big fixtures): one worker per project, so they never
+//                                     run beside each other. They assert counts, not times; one
+//                                     at a time keeps the timings they report clean.
 // The smoke set (tests tagged @smoke, Chromium, about 50 tests in under 3 minutes) is
 // `npm run e2e:smoke`.
 // In a bare full run (`npx playwright test`, no file, --grep, --project, --shard … filter) the
 // serial projects run after the parallel ones (project dependencies), so no other test competes
-// with their budgets; a failure in the parallel projects then skips them. With a filter there are
+// with the timings they report; a failure in the parallel projects then skips them. With a filter there are
 // no dependencies: Playwright runs a dependency project unfiltered, so a filtered run that selects
 // one @serial test would otherwise run the whole suite first. run-suite.mjs runs the suite as short
 // sets one after the other (groups of folders in chromium + firefox, then each serial project).

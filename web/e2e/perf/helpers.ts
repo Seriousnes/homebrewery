@@ -100,9 +100,29 @@ export interface EditReport {
 
 export interface CaretReport {
   page: number;
+  /** index of the caret's paragraph among the page's blocks, and the headings the page starts with */
+  block: number;
+  leadingHeadings: number;
+  kind: string;
   pos: number;
   before: string;
   after: string;
+}
+
+/** The work since the last work() call, as counts: the same on every run (perfController.ts). */
+export interface WorkReport {
+  /** the pagination passes, each its steps in order (a pass ends with the scheduler run that settled) */
+  passes: { page: number; action: string }[][];
+  /** pagination's transactions (dispatches) */
+  transactions: number;
+  /** REPAGINATE transactions (theme, CSS and fonts triggers) */
+  repaginations: number;
+  /** pages whose text or child nodes changed in the DOM (indexes now; -1: removed since) */
+  mutatedPages: number[];
+  /** page elements added to and removed from the editor */
+  pagesAdded: number;
+  pagesRemoved: number;
+  pages: number;
 }
 
 export interface EnvReport {
@@ -126,11 +146,17 @@ export interface HbPerfApi {
   placeCaret(page: number, where?: 'middle' | 'end'): CaretReport;
   startTyping(): void;
   stopTyping(): TypingReport;
+  /** Waits until `keys` keystrokes are recorded, the last one painted, and pagination has settled. */
+  afterKeys(keys: number, timeoutMs?: number): Promise<void>;
+  /** The work since the last call. */
+  work(): WorkReport;
   insertText(text: string): Promise<EditReport>;
   setTheme(theme: string): Promise<ThemeSwitchReport>;
   frameCount(): number;
   json(): JsonNode;
   pageKinds(): string[];
+  /** Indexes of the pages with a block of type `type` at their top level. */
+  pagesWith(type: string): number[];
   env(): EnvReport;
   /** Debugging: page `index`'s measurement, its pull estimate, its last block and the next page's first block. */
   inspect(index: number): unknown;
@@ -168,7 +194,7 @@ export async function openPerf(page: Page): Promise<void> {
  * Playwright's test for the smoke tests: one /dev/perf page per worker, shared by the smoke tests
  * that run in it (each mounts its own document; the mount is unmounted after the test). Loading
  * /dev/perf is most of such a test's time in Firefox; the worker's one load is kept out of the
- * tests' own time. The budget tests take fresh pages (openPerf): they measure.
+ * tests' own time. The tests on the big fixtures take fresh pages (openPerf): their timings are reported.
  */
 export const smokeTest = base.extend<object, { perfPage: Page }>({
   perfPage: [
@@ -265,11 +291,33 @@ export async function record(testInfo: TestInfo, name: string, data: unknown, li
 }
 
 /**
- * Tolerance for the time budgets (plan §4.10 targets): HB_PERF_TOLERANCE, default 1.5 (CI
- * hardware and a loaded development machine are slower than a quiet one). The budget tests are
- * tagged @serial: they run in the serial projects (one worker), so nothing else in the suite
- * competes with them.
+ * Types `text` at the caret one key at a time, each once pagination has settled after the key
+ * before (and that key was painted): so each keystroke's work is its own, the same on every run
+ * however fast the machine is (a key typed while a pass runs would join it). Keys are at least
+ * `meanMs` (±`jitterMs`, seeded) apart, a person's pace, for the timings: keys sent the moment the
+ * page is idle again arrive while it still produces frames, and Chromium then holds input for the
+ * next frame. Returns each key's work and the recording of the keystrokes (their timings: the
+ * report, never asserted).
  */
-export function tolerance(): number {
-  return Number(process.env.HB_PERF_TOLERANCE) || 1.5;
+export async function typeKeyByKey(
+  page: Page,
+  text: string,
+  opts: { meanMs?: number; jitterMs?: number; seed?: number } = {},
+): Promise<{ keys: { key: string; work: WorkReport }[]; typing: TypingReport }> {
+  const { meanMs = 110, jitterMs = 40, seed = 8101 } = opts;
+  const rand = prng(seed);
+  await page.evaluate(() => {
+    window.__hbPerf.work(); // count from here
+    window.__hbPerf.startTyping();
+  });
+  const keys: { key: string; work: WorkReport }[] = [];
+  let next = Date.now();
+  for (const key of text) {
+    const wait = next - Date.now();
+    if (wait > 0) await page.waitForTimeout(wait);
+    next = Date.now() + meanMs + (rand() * 2 - 1) * jitterMs;
+    await page.keyboard.type(key);
+    keys.push({ key, work: await page.evaluate((n) => window.__hbPerf.afterKeys(n).then(() => window.__hbPerf.work()), keys.length + 1) });
+  }
+  return { keys, typing: await page.evaluate(() => window.__hbPerf.stopTyping()) };
 }

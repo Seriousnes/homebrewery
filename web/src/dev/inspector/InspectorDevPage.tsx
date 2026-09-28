@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/core';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUiStore } from '@/app/uiStore';
 import { createCanvasGate } from '@/editor/canvas/canvasState';
@@ -28,8 +28,11 @@ export interface InspectorDevGlobals {
   settled: () => boolean;
   /** The objects lane's selected object. */
   selectedObject: () => ObjectRef | null;
-  /** performance.now() of the last CSS edit the Style drawer reported (for the 300 ms budget). */
-  lastCssEdit: number;
+  /**
+   * The brew CSS of the last render that committed (set by an effect): once it is the edited CSS,
+   * the canvas has it, and its debounce (userCssDelayMs) runs from then.
+   */
+  committedCss: string;
 }
 
 declare global {
@@ -72,13 +75,15 @@ export function InspectorDevPage() {
   const onReady = useCallback((next: Editor, handle: EditorCanvasHandle) => {
     const selectedObjects: PageObjectRef[] = [];
     next.view.dom.addEventListener(OBJECT_SELECT_EVENT, (event) => selectedObjects.push((event as CustomEvent<PageObjectRef>).detail));
-    window.__hbInspector = { editor: next, handle, style: () => styleRef.current, repaginations: [], selectedObjects, settled: () => isSettled(next.state), selectedObject: () => selectedObject(next.state), lastCssEdit: 0 };
+    window.__hbInspector = { editor: next, handle, style: () => styleRef.current, repaginations: [], selectedObjects, settled: () => isSettled(next.state), selectedObject: () => selectedObject(next.state), committedCss: '' };
     setEditor(next);
   }, []);
-  const onCssChange = useCallback((next: string) => {
-    if (window.__hbInspector) window.__hbInspector.lastCssEdit = performance.now();
-    setCss(next);
-  }, []);
+  // After the canvas's own effects of the same commit (children's effects run first), so its
+  // debounce of this CSS is set when this reports it.
+  useEffect(() => {
+    if (window.__hbInspector) window.__hbInspector.committedCss = css;
+  }, [css, editor]);
+  const onCssChange = useCallback((next: string) => setCss(next), []);
   const onRepaginate = useCallback((event: RepaginateEvent) => {
     window.__hbInspector?.repaginations.push(event);
     setRepaginations((n) => n + 1);
