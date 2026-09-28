@@ -5,8 +5,8 @@ name: CI
 # capped at 5 minutes (playwright.config.ts globalTimeout), so each e2e job is one short run (a
 # shard, a serial project, the fidelity smoke, the CSP walk) and the shard counts keep each well
 # under the cap at CI's 2 workers; the runner scripts kill a run that makes no progress for 60 s.
-# The whole e2e suite runs only here; locally the default loop is the unit tests, the specs of the
-# area being changed and `npm --prefix web run e2e:smoke`.
+# The whole e2e suite runs only here. Locally, `npm --prefix web run verify` runs the web, unit and
+# .NET jobs below with the same commands; then the specs the change can reach and e2e:smoke.
 on:
   push:
   pull_request:

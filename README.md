@@ -164,16 +164,24 @@ must be running). Every suite fails fast: short
 per-test timeouts, every Playwright run capped at 5 minutes (a big suite runs as several short sets), and runner
 scripts that kill a run making no progress for 60 s. There are no long tests.
 
-The everyday loop is the unit tests, the e2e specs of the area you change, and the smoke set (about 50 e2e tests
+The everyday loop is `verify`, the e2e specs your change can reach, and the smoke set (about 50 e2e tests
 tagged `@smoke`, Chromium, under 3 minutes: the plan §12 flow, core pagination in the editor, an import smoke).
 The full e2e suite runs in CI only.
 
 ```
-dotnet test
-npm --prefix web test
-npm --prefix web run e2e -- e2e/matrix/typing.spec.ts   # the specs of the area you change
+npm --prefix web run verify                           # what CI checks besides e2e (about 2 minutes)
+npm --prefix web run e2e -- e2e/matrix/typing.spec.ts   # the specs your change can reach
 npm --prefix web run e2e:smoke                        # the smoke set
 ```
+
+`verify` runs CI's non-e2e jobs with the same commands, in parallel: lint, typecheck, the schema manifest check
+and the production build; the web unit tests; the .NET Release build (warnings are errors) and `dotnet test`. It
+runs `dotnet test` whatever you changed, because API tests read web files (fonts, the theme catalog). A green
+`verify` means those CI jobs pass; run it before every push. `verify web unit` (or `dotnet`) runs some lanes.
+
+"The specs your change can reach" is wider than its folder: a change to shared styles or theme tokens also runs
+the axe (color-contrast) checks of every page (`e2e/a11y`, `e2e/admin`, `e2e/lists`, `e2e/shell`); a change to
+navigation or sign-in also runs `e2e/shell` and `e2e/import-ui`.
 
 Before the first e2e run, install the browsers from `web/`: `npx playwright install chromium firefox`.
 `npm run e2e` with a file or folder starts its own Vite (under the no-progress watchdog); the specs that need an API

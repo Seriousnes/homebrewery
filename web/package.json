@@ -18,6 +18,7 @@
     "e2e": "node e2e/run-playwright.mjs",
     "e2e:smoke": "node e2e/matrix/run-suite.mjs --project=chromium --grep=@smoke",
     "lint": "eslint .",
+    "verify": "node scripts/verify.mjs",
     "typecheck": "tsc -b",
     "api:types": "openapi-typescript ../shared/openapi.json -o src/api/schema.d.ts",
     "fidelity": "tsx scripts/fidelity-run.ts"
