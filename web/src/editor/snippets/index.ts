@@ -57,7 +57,8 @@ export {
   pageNumberTr,
 } from './nativeCommands';
 export { addPageMarkers, hasEmptyFlow, isBlankPage, pagePos, sectionBounds, setSectionAttrs, type SectionAttrName } from './sections';
-export { createProbeCache, createSnippetInserter, type SnippetInserter, type SnippetInserterOptions, type SnippetOutcome } from './inserter';
+export { createProbeCache, createSnippetInserter, type PreparedSnippet, type SnippetInserter, type SnippetInserterOptions, type SnippetOutcome } from './inserter';
+export { markdownPreview, nativePreview, renderPreviewPages, type SnippetPreview } from './preview';
 export { generateStyleSnippet, insertStyleSnippet } from './styleSnippets';
 export { useSnippetGroups, type SnippetGroupsState } from './useSnippetGroups';
 export { FOOTER_PLACEHOLDER } from './shims/footer.gen';

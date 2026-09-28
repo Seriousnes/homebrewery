@@ -1,0 +1,99 @@
+/* The snippet list (SnippetPicker, SnippetGallery): upstream's snippet menus (snippetbar.less),
+   bold uppercase group labels, a darker row for the active snippet. Colours come from the kit
+   tokens of the popup it sits in. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  min-height: 0;
+}
+
+.search {
+  flex: none;
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.group + .group {
+  margin-top: var(--hbui-space-2);
+}
+
+.heading,
+.subheading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 4px 8px 2px;
+  font-size: var(--hbui-font-size-sm);
+  font-weight: var(--hbui-label-weight);
+  color: var(--hbui-color-text-muted);
+  text-transform: uppercase;
+  background: var(--hbui-color-surface);
+}
+
+.subheading {
+  font-size: 10px;
+}
+
+.option {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  padding: 5px 8px 5px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.option:hover {
+  background: var(--hbui-color-surface-hover);
+}
+
+.option[aria-selected='true'] {
+  background: var(--hbui-color-surface-active);
+  box-shadow: inset 3px 0 0 var(--hbui-color-text);
+}
+
+.option[aria-disabled='true'] {
+  color: var(--hbui-color-text-muted);
+}
+
+/* Long unbroken names (some theme snippets) wrap instead of widening the list. */
+.name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  padding: 0 6px;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+  border: 1px solid var(--hbui-color-border-strong);
+  border-radius: var(--hbui-radius-lg);
+}
+
+.hint {
+  flex-basis: 100%;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.status {
+  flex: none;
+  padding: 0 8px;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .option[aria-selected='true'] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

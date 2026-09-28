@@ -1,0 +1,61 @@
+/* The snippet preview box: a neutral backdrop (the editor's desk) around the scaled pages. */
+.box {
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--hbui-color-backdrop);
+}
+
+.box:focus-visible {
+  outline: 2px solid var(--hbui-color-focus);
+  outline-offset: -2px;
+}
+
+.frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+}
+
+.frame[data-measured='false'] {
+  visibility: hidden;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* The pages stacked (the editor's page gap, PAGE_GAP in SnippetPreview.tsx). What the editor's
+   root (.ProseMirror, canvas.css and TipTap) gives its text, without that class: it must stay
+   the only editor root on the page. */
+.pages {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  white-space: pre-wrap;
+  font-variant-ligatures: normal;
+  font-feature-settings: normal;
+  word-wrap: break-word;
+}
+
+.pages [contenteditable='false'] {
+  white-space: normal;
+}
+
+.pages img:global(.ProseMirror-separator) {
+  display: inline !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}

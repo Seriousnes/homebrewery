@@ -1,0 +1,82 @@
+/* The Insert snippet gallery: a large Dialog (like Properties), wider than the kit's lg so the
+   preview can show a page at a readable scale, and of a fixed height so filtering doesn't make it
+   jump. The list on the left, the preview on the right; stacked on narrow screens. */
+.dialog.dialog {
+  max-width: 1120px;
+  height: min(760px, 100%);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: var(--hbui-space-4);
+  height: 100%;
+  min-height: 0;
+}
+
+.list {
+  min-height: 0;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hbui-space-2);
+  min-width: 0;
+  min-height: 0;
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--hbui-space-2);
+  align-items: baseline;
+}
+
+.name {
+  margin: 0;
+  font-size: var(--hbui-font-size-lg);
+  font-weight: var(--hbui-label-weight);
+  overflow-wrap: anywhere;
+}
+
+.path,
+.hint,
+.note {
+  margin: 0;
+  font-size: var(--hbui-font-size-sm);
+  color: var(--hbui-color-text-muted);
+}
+
+.stage {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.view {
+  flex: 1 1 auto;
+}
+
+.placeholder {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--hbui-color-text-muted);
+  border: 1px dashed var(--hbui-color-border);
+}
+
+.error {
+  margin: 0;
+  color: var(--hbui-color-danger);
+}
+
+@media (max-width: 640px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
