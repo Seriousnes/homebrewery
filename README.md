@@ -185,7 +185,7 @@ the axe (color-contrast) checks of every page (`e2e/a11y`, `e2e/admin`, `e2e/lis
 navigation or sign-in also runs `e2e/shell` and `e2e/import-ui`.
 
 `e2e/run-linux.mjs` runs specs where CI does: in the CI e2e job's Playwright image (Linux, its fonts and
-browsers, the .NET SDK, `npm ci`), with `CI=true` (2 workers, retries), 4 CPUs and 16 GB like CI's runner, a
+browsers, the .NET SDK, `npm ci`), with `CI=true` (2 workers, no retries), 4 CPUs and 16 GB like CI's runner, a
 `postgres:18` next to it, and a main checkout with LF line endings made from your working tree (uncommitted
 changes included). Pixel diffs, font metrics, line endings and timing behave as in CI, not as on Windows. Its
 arguments go to `run-suite.mjs`: a spec or folder (plus `--project=chromium` for one browser), or a CI shard

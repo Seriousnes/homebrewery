@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // E2E specs on CI's machine, locally: the CI e2e job's Playwright container image (Linux, its
-// fonts and browsers), CI=true (2 workers, retries, forbidOnly), a main checkout with LF line
+// fonts and browsers), CI=true (2 workers, no retries, forbidOnly), a main checkout with LF line
 // endings, a postgres:18 next to it as CI's service container, and e2e/matrix/run-suite.mjs, as
 // .github/workflows/ci.yml runs them. A spec that passes here and fails in CI is rare; one that
 // passes on Windows only is not (fonts, line endings, speed).

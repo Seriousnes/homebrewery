@@ -72,7 +72,9 @@ export default defineConfig({
   // time out. E2E_WORKERS overrides (also in CI).
   workers: Number(process.env.E2E_WORKERS) || (isCI ? 2 : 6),
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
+  // No retries anywhere: every test is deterministic, so one run is the answer. A test that can't
+  // be made deterministic is removed, not retried.
+  retries: 0,
   // Fail fast (CLAUDE.md "Tests fail fast"): a stalled test or set surfaces in seconds. There are no
   // long tests: an explicit per-test timeout may go up to 60 s at most (scripts/testTimeouts.test.ts),
   // and a test that needs more is split into several short tests.
@@ -86,7 +88,7 @@ export default defineConfig({
   reporter: isCI ? [['github'], ['blob', { outputDir: 'blob-report' }], ['list']] : [['list']],
   use: {
     baseURL: externalBaseURL ?? `http://localhost:${port}`,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     // Without these, a stuck click or page load waits for the whole test timeout.
     actionTimeout: 5_000,
     navigationTimeout: 10_000,
