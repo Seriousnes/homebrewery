@@ -1,5 +1,5 @@
 // Typed API client (plan §9): openapi-fetch over the OpenAPI types in schema.d.ts (generated from
-// shared/openapi.json by `npm run api:types`). Same origin, with credentials, so the Identity cookie
+// shared/openapi.json by `pnpm run api:types`). Same origin, with credentials, so the Identity cookie
 // travels with every call; SameOriginWriteGuard accepts the browser's Origin header on writes.
 import createClient, { type Client } from 'openapi-fetch';
 import { ApiError, isAbortError } from './errors';

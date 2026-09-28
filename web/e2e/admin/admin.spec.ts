@@ -161,7 +161,11 @@ test('anonymous visitors get the sign-in page and other accounts a 403 page; an 
   }
   if (ADMIN_EMAIL) {
     const adminApi = await playwright.request.newContext({ baseURL });
-    await register(adminApi, baseURL!, ADMIN_EMAIL).finally(() => adminApi.dispose());
+    try {
+      await register(adminApi, baseURL!, ADMIN_EMAIL);
+    } finally {
+      await adminApi.dispose();
+    }
   }
 
   await open(page, '/admin/locks');

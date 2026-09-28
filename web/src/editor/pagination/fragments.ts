@@ -453,6 +453,7 @@ function setAttributes(tr: Transaction, pos: number, node: PMNode, attributes: A
  * the ones TipTap picks: with a caret, the innermost node of the type around it; with a range, the
  * nodes of the type starting in it and the innermost one it starts in. Marks: TipTap's command.
  */
+// oxlint-disable-next-line typescript/no-useless-default-assignment -- TipTap's own default: commands called from untyped code
 export const updateAttributes: RawCommands['updateAttributes'] = (typeOrName, attributes = {}) => (props) => {
   const { tr, dispatch } = props;
   const name = typeof typeOrName === 'string' ? typeOrName : typeOrName.name;

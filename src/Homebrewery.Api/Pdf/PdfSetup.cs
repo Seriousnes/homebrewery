@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Homebrewery.Api.Pdf;
 
@@ -32,6 +33,7 @@ public static class PdfSetup
                 ConnectTimeout = TimeSpan.FromSeconds(5),
                 PooledConnectionLifetime = TimeSpan.FromMinutes(2),
             });
+        services.TryAddSingleton(TimeProvider.System);                     // the render timeout's clock
         services.AddSingleton<IRemoteFileFetcher, RemoteFileFetcher>();
         services.AddSingleton<IPdfRenderer, PdfRenderer>();
         return services;

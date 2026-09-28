@@ -103,6 +103,8 @@ test.describe('axe', () => {
 
 test.describe('Menu', () => {
   test('keyboard: open, move, jump, typeahead, activate, close', async ({ page }) => {
+    // Playwright's fake clock (web/e2e/clock.ts), for the typeahead buffer's timeout below.
+    await page.clock.install();
     await openKit(page);
     const trigger = page.getByTestId('insert-menu');
     await trigger.focus();
@@ -136,7 +138,7 @@ test.describe('Menu', () => {
     // Checkbox item with closeOnSelect false: Space toggles and the menu stays.
     await page.keyboard.press('Enter');
     await expect(item('Table')).toBeFocused();
-    await page.waitForTimeout(600); // the typeahead buffer clears after 500 ms (TYPEAHEAD_TIMEOUT_MS)
+    await page.clock.fastForward(501); // the typeahead buffer clears after 500 ms (TYPEAHEAD_TIMEOUT_MS)
     await page.keyboard.press('w');
     const wide = menu.getByRole('menuitemcheckbox', { name: 'Wide' });
     await expect(wide).toBeFocused();

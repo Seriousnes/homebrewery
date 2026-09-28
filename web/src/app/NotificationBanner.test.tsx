@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { NotificationInfo } from '@/api';
+import { type NotificationInfo, queryKeys } from '@/api';
 import { jsonResponse, mockApi, problemResponse } from '@/api/testing';
 import { NotificationBanner } from './NotificationBanner';
 import { NOTICE_DISMISSALS_KEY, noticeDismissalsStore } from './noticeDismissals';
@@ -62,9 +62,11 @@ describe('NotificationBanner', () => {
     const notify = vi.fn();
     const api = mockApi(() => problemResponse(500, { title: 'Server error' }));
     const { testQueryClient } = await import('./testing');
-    renderRoute(<NotificationBanner />, { client: testQueryClient(notify) });
-    await waitFor(() => expect(api.requests).toHaveLength(1));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    const client = testQueryClient(notify);
+    renderRoute(<NotificationBanner />, { client });
+    // Failed: the query cache's error handler (which would toast) runs in the same step.
+    await waitFor(() => expect(client.getQueryState(queryKeys.notifications.active())?.status).toBe('error'));
+    expect(api.requests).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Site notices' })).toBeNull();
     expect(notify).not.toHaveBeenCalled();
   });

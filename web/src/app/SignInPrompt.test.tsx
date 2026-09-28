@@ -1,13 +1,15 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, requestSignIn } from '@/api';
 import { emptyResponse, jsonResponse, mockApi, problemResponse } from '@/api/testing';
 import { SignInRequired } from '@/pages/auth/SignInRequired';
+import { advance } from '@/test/fakeClock';
 import { clearToasts, toastStore } from '@/ui';
-import { signInPromptStore } from './signInPromptStore';
+import { SIGN_IN_PROMPT_DELAY_MS, signInPromptStore } from './signInPromptStore';
 import { ALICE, renderRoute } from './testing';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   signInPromptStore.reset();
   clearToasts();
@@ -81,10 +83,12 @@ describe('SignInPrompt', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sign in' })).toBeNull());
   });
 
+  // The request on a fake clock, run well past the dialog's delay.
   it('stays closed on the sign-in pages', async () => {
     renderRoute(<p>Login page</p>, { url: '/login', me: null });
-    requestSignIn();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    vi.useFakeTimers();
+    act(() => requestSignIn());
+    await advance(10 * SIGN_IN_PROMPT_DELAY_MS);
     expect(screen.queryByRole('dialog', { name: 'Sign in' })).toBeNull();
   });
 
@@ -92,9 +96,20 @@ describe('SignInPrompt', () => {
     mockApi(() => emptyResponse(204));
     renderRoute(<SignInRequired />, { me: null });
     expect(await screen.findByRole('heading', { level: 1, name: 'Sign in required' })).toBeInTheDocument();
-    requestSignIn();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    vi.useFakeTimers();
+    act(() => requestSignIn());
+    await advance(10 * SIGN_IN_PROMPT_DELAY_MS);
     expect(screen.queryByRole('dialog', { name: 'Sign in' })).toBeNull();
+  });
+
+  it('opens after its delay (what the two above run past)', async () => {
+    renderRoute(<p>Page</p>, { me: null });
+    vi.useFakeTimers();
+    act(() => requestSignIn());
+    await advance(SIGN_IN_PROMPT_DELAY_MS - 1);
+    expect(screen.queryByRole('dialog', { name: 'Sign in' })).toBeNull();
+    await advance(1);
+    expect(screen.getByRole('dialog', { name: 'Sign in' })).toBeInTheDocument();
   });
 
   it('a 401 from any query clears `me` and prompts (through the app query client)', async () => {

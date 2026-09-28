@@ -1,8 +1,8 @@
 // Aggregates the S3 fidelity results (JSON written by e2e/import/fidelity.spec.ts) into
 // web/e2e/fixtures/fidelity-report.md. Usually run by scripts/fidelity-run.ts; by hand:
 //
-//   E2E_PORT=5303 FIDELITY_FILTER='^md-emojis' npx playwright test e2e/import/fidelity.spec.ts --project=chromium
-//   npx tsx scripts/fidelity-report.ts [--results test-results/5303/fidelity-results/chromium] [--out e2e/fixtures/fidelity-report.md]
+//   E2E_PORT=5303 FIDELITY_FILTER='^md-emojis' pnpm exec playwright test e2e/import/fidelity.spec.ts --project=chromium
+//   pnpm exec tsx scripts/fidelity-report.ts [--results test-results/5303/fidelity-results/chromium] [--out e2e/fixtures/fidelity-report.md]
 //     [--threshold 2] [--alt <results dir> --alt-label <label>]…   other runs (Firefox, variables=keep, …) as extra columns
 //
 // A fixture passes when every page is under the threshold and the page counts match. A fixture

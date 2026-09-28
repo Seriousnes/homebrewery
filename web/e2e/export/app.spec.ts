@@ -197,17 +197,27 @@ test('share page: Print waits for lazy images, then prints only the pages, one p
   // The picture on page 3 (lazy) is not there: its file answers only once released.
   const loaded = () => page.locator(`.hb-canvas img[src="${LAZY_IMAGE}"]`).evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0);
   expect(await loaded()).toBe(false);
+  // Print's preparation (printCanvas, web/src/editor/canvas/print.ts) announces its start and end.
+  await page.evaluate(() => {
+    const prep: string[] = [];
+    (window as unknown as { __hbPrintPrep: string[] }).__hbPrintPrep = prep;
+    for (const type of ['print:startprep', 'print:finishedprep']) document.addEventListener(type, () => prep.push(type));
+  });
+  const prep = () => page.evaluate(() => (window as unknown as { __hbPrintPrep: string[] }).__hbPrintPrep);
   await page.getByTestId('print').click();
-  // Print waits for it: the file is asked for (Print loads lazy images first; the browser may have
-  // asked earlier), and nothing is printed while it is held back.
+  // Print waits for it: the preparation has started, the file is asked for (Print loads lazy
+  // images first; the browser may have asked earlier), and while it is held back the preparation
+  // goes on and nothing is printed (after the release, the print log shows the image loaded).
+  await expect.poll(prep).toEqual(['print:startprep']);
   await expect.poll(() => imageGate.requested, { message: 'the lazy image is requested' }).toBe(true);
-  await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.__hbPrintLog!.length)).toBe(0);
+  expect(await prep()).toEqual(['print:startprep']);
   release();
   // Printed with the image loaded (so after the release: the check above is not a matter of timing).
   await page.waitForFunction(() => (window.__hbPrintLog?.length ?? 0) > 0, undefined, LOAD_TIMEOUT);
   const log = await page.evaluate(() => window.__hbPrintLog!);
   expect(log).toEqual([{ images: 1, complete: 1, broken: 0 }]);
+  expect(await prep()).toEqual(['print:startprep', 'print:finishedprep']);
 
   await page.emulateMedia({ media: 'print' });
   expect(await visibleChrome(page)).toEqual([]);

@@ -152,7 +152,7 @@ test('an empty paste and an oversized paste are refused', async ({ page }) => {
   // page with the native setter plus an input event (what React listens to): fill() of a text this
   // long takes minutes in Firefox.
   await field.evaluate((el: HTMLTextAreaElement, text) => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- the prototype's setter, called on the element
+    // oxlint-disable-next-line typescript/unbound-method -- the prototype's setter, called on the element
     const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
     setValue?.call(el, text);
     el.dispatchEvent(new Event('input', { bubbles: true }));

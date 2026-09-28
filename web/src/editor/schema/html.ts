@@ -33,7 +33,7 @@ export function stripHbSrc(style: string | null): string | null {
 // ---------------------------------------------------------------------------------------------
 
 const UNSAFE_URL = /^\s*(?:javascript|vbscript|data)\s*:/i;
-// eslint-disable-next-line no-control-regex -- strips the control characters browsers ignore in schemes
+// oxlint-disable-next-line no-control-regex -- strips the control characters browsers ignore in schemes
 const IGNORED_URL_CHARS = /[\u0000-\u001F\u007F\s]+/g;
 
 /**

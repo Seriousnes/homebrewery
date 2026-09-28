@@ -2,12 +2,12 @@
 // view count, Edit or Clone) as the reader signs in and out, and that a visit after an edit shows
 // the saved version.
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { requestSignIn } from '@/api';
 import { ALICE } from '@/app/testing';
 import { uiStore } from '@/app/uiStore';
 import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader';
-import { appEditor, createBrewServer, docText, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp } from '@/pages/routeTesting';
+import { appEditor, createBrewServer, docText, fakeBrew, logOf, pressSaveKey, renderApp } from '@/pages/routeTesting';
 import { clearToasts } from '@/ui';
 
 const loader = vi.hoisted(() => ({
@@ -19,9 +19,6 @@ const loader = vi.hoisted(() => ({
 vi.mock('@/editor/canvas/themeLoader', () => loader);
 
 const chainOf = (theme: string): ThemeChain => ({ theme, source: 'static', name: theme, author: null, styles: [], snippets: [] });
-
-// The editor pages are lazy chunks: load them once, before the tests' waits start (hook timeout).
-beforeAll(() => preloadAppPages());
 
 beforeEach(() => {
   uiStore.getState().resetUi();
@@ -40,7 +37,7 @@ afterEach(() => {
 });
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
-const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull(), { timeout: 3000 });
+const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull());
 const shareGets = (server: ReturnType<typeof createBrewServer>, shareId = 'shareorigA') => logOf(server, 'GET', `/api/brews/share/${shareId}`);
 
 async function signInThroughDialog(user: ReturnType<typeof renderApp>['user']) {
@@ -110,13 +107,14 @@ describe('share page', () => {
 
   it('an author who signs out loses the Edit link, and no view is counted', async () => {
     const server = createBrewServer({ me: ALICE, brews: [fakeBrew('origA')] });
-    const { user } = renderApp({ url: '/share/shareorigA', me: ALICE });
+    const { user, queryClient } = renderApp({ url: '/share/shareorigA', me: ALICE });
     await waitForEditor();
     expect(await within(nav()).findByTestId('nav-edit')).toBeInTheDocument();
     await user.click(within(nav()).getByRole('button', { name: 'Account: alice' }));
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await within(nav()).findByRole('link', { name: 'Sign in' });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    // The sign-out is over, with what it refetched: the logout mutation ends after that refresh.
+    await waitFor(() => expect(queryClient.isMutating() + queryClient.isFetching()).toBe(0));
     expect(within(nav()).queryByTestId('nav-edit')).toBeNull();
     expect(within(nav()).queryByTestId('nav-clone')).toBeNull();
     expect(shareGets(server)).toEqual(['200']);

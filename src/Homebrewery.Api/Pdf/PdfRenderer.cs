@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -38,7 +37,8 @@ public sealed class PdfRenderFailedException(string message, Exception? inner = 
 /// The PDF uses the page size that the HTML's <c>@page</c> rule sets (the exporter writes the measured brew page size),
 /// prints backgrounds, and is tagged with an outline from the headings.
 /// </summary>
-public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<PdfOptions> options, ILogger<PdfRenderer> logger)
+public sealed partial class PdfRenderer(
+    IRemoteFileFetcher fetcher, IOptions<PdfOptions> options, TimeProvider clock, ILogger<PdfRenderer> logger)
     : IPdfRenderer, IAsyncDisposable
 {
     /// <summary>The address the HTML is served at. <c>.invalid</c> never resolves, so nothing else can answer for it.</summary>
@@ -68,21 +68,22 @@ public sealed partial class PdfRenderer(IRemoteFileFetcher fetcher, IOptions<Pdf
         if (!await _slots.WaitAsync(settings.QueueTimeout, ct)) throw new PdfRendererBusyException();
         try
         {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeout.CancelAfter(settings.RenderTimeout);
-            var started = Stopwatch.GetTimestamp();
+            // The render timeout runs on the injected clock, from the moment the render has a slot.
+            using var deadline = new CancellationTokenSource(settings.RenderTimeout, clock);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct, deadline.Token);
+            var started = clock.GetTimestamp();
             var browser = await BrowserAsync(timeout.Token);
             try
             {
                 var result = await RenderPageAsync(browser, html, settings, timeout.Token);
                 LogRendered(logger, result.Pdf.Length, result.RemoteFiles, result.MissingFiles,
-                    (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                    (long)clock.GetElapsedTime(started).TotalMilliseconds);
                 return result;
             }
             catch (Exception ex) when (ex is PlaywrightException or TimeoutException or OperationCanceledException)
             {
                 ct.ThrowIfCancellationRequested();                   // the client went away
-                if (timeout.IsCancellationRequested)
+                if (deadline.IsCancellationRequested)
                 {
                     throw new PdfRenderFailedException(
                         $"The PDF took longer than {settings.RenderTimeout.TotalSeconds:0} seconds to make.", ex);

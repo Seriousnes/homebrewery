@@ -24,14 +24,18 @@ import {
   waitForEditor,
   waitForNewDraft,
 } from '../flows/helpers';
-import { PAGE_READY, SAVE_TIMEOUT } from './helpers';
-
-/** A create whose first answer is lost: the autosave's 3 s delay, then the retry after 2 s (RETRY_DELAYS_MS). */
-const RETRIED_SAVE = { timeout: 12_000 };
-/** A create whose answer is held back (delayMs 3 s) after the autosave's 3 s delay. */
-const HELD_SAVE = { timeout: 12_000 };
+import { AUTOSAVE_DELAY_MS, FIRST_RETRY_MS, PAGE_READY, SAVE_TIMEOUT } from './helpers';
 
 test.skip(!privateApi, 'Needs a private API: HB_API_URL=http://localhost:5425 (see run-with-api.mjs)');
+
+// The autosave's delay and its retries run on Playwright's fake clock (web/e2e/clock.ts), installed
+// before each test's first navigation: page.clock.runFor(AUTOSAVE_DELAY_MS) is the autosave, now.
+test.beforeEach(async ({ page }) => {
+  await page.clock.install();
+});
+
+/** When the app's autosave retries a failed save (epoch ms, the page's clock), or null. */
+const retryAt = (page: Page) => page.evaluate(() => (window.__hbEditorApp?.save() as { retryAt?: number | null } | null | undefined)?.retryAt ?? null);
 
 interface SeenPost {
   key: string | null;
@@ -42,9 +46,9 @@ interface SeenPost {
 
 /**
  * Routes POST /api/brews through route.fetch(): `lose(n)` decides whether the n-th answer (0-based)
- * is dropped after the server handled the request, `delayMs` holds every answer back.
+ * is dropped after the server handled the request, `hold` holds every answer back until it resolves.
  */
-async function watchCreates(page: Page, { lose = () => false, delayMs = 0 }: { lose?: (n: number) => boolean; delayMs?: number } = {}) {
+async function watchCreates(page: Page, { lose = () => false, hold }: { lose?: (n: number) => boolean; hold?: Promise<void> } = {}) {
   const posts: SeenPost[] = [];
   await page.route('**/api/brews', async (route: Route) => {
     const request = route.request();
@@ -56,7 +60,7 @@ async function watchCreates(page: Page, { lose = () => false, delayMs = 0 }: { l
     seen.status = response.status();
     if (seen.status === 201) seen.editId = ((await response.json()) as { editId: string }).editId;
     if (seen.lost) return route.abort('failed'); // stored on the server; the answer never arrives
-    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await hold;
     return route.fulfill({ response });
   });
   return posts;
@@ -80,7 +84,12 @@ test('a /new POST whose answer is lost is sent again with the same key: exactly 
   const posts = await watchCreates(page, { lose: (n) => n === 0 });
   await openEditorPage(page, '/new');
   await typeAt(page, 'Lost answer');
-  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, RETRIED_SAVE);
+  await page.clock.runFor(AUTOSAVE_DELAY_MS);
+  // The answer is lost: the autosave waits for its first retry.
+  await expect.poll(() => retryAt(page)).not.toBeNull();
+  expect(posts).toHaveLength(1);
+  await page.clock.runFor(FIRST_RETRY_MS);
+  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
 
   expect(posts).toHaveLength(2);
   const [lost, retry] = posts;
@@ -99,16 +108,22 @@ test('"New brew" while the unmount save creates the brew: the fresh /new waits, 
   page,
   baseURL,
 }) => {
-  // Two creates whose answers are held back 3 s each, two autosave delays (3 s) and two loads of /new.
+  // Two loads of /new.
   test.setTimeout(30_000);
   await signUpApi(page.request, baseURL!);
-  const posts = await watchCreates(page, { delayMs: 3000 });
+  // Every create's answer is held back until the test releases them.
+  let release: () => void = () => {};
+  const posts = await watchCreates(page, { hold: new Promise<void>((resolve) => (release = resolve)) });
   await openEditorPage(page, '/new');
   await typeAt(page, 'Race text');
   await waitForNewDraft(page, 'Race text');
   await clickNewBrew(page);
 
-  // The fresh /new: it waited for that create (whose answer is held back), then started blank.
+  // The fresh /new waits for that create (the unmount save's, or the autosave's had it gone out
+  // already), whose answer is held back; once it has its answer, the page starts blank.
+  await expect(page.getByTestId('page-loading')).toContainText('Saving your previous brew…', PAGE_READY);
+  await expect.poll(() => posts.length).toBe(1);
+  release();
   await expect(page.getByText('Your new brew was saved', { exact: true })).toBeVisible(SAVE_TIMEOUT);
   await expect.poll(() => editorTexts(page), PAGE_READY).toEqual(['']);
   await waitForEditor(page);
@@ -121,7 +136,8 @@ test('"New brew" while the unmount save creates the brew: the fresh /new waits, 
 
   // The fresh page is a brew of its own.
   await typeAt(page, 'Second brew');
-  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, HELD_SAVE);
+  await page.clock.runFor(AUTOSAVE_DELAY_MS);
+  await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
   expect(posts).toHaveLength(2);
   expect(posts[1]!.key).not.toBe(posts[0]!.key);
   expect(await myBrews(page)).toHaveLength(2);
@@ -148,6 +164,7 @@ test('"New brew" while that create gets no answer: the fresh /new loads the draf
   expect(await editorTexts(page)).toEqual(['Race text']);
   losing = false;
   await typeAt(page, ' and more');
+  await page.clock.runFor(AUTOSAVE_DELAY_MS);
   await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);
 
   const lost = posts.filter((p) => p.lost);

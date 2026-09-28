@@ -44,6 +44,7 @@ describe('ErrorNavItem', () => {
 
   it('409: offers a reload, no retry', async () => {
     const reload = vi.fn();
+    // oxlint-disable-next-line typescript/no-misused-spread -- jsdom's Location properties are its own, so they copy
     vi.stubGlobal('location', { ...window.location, reload });
     const { user } = renderRoute(<ErrorNavItem error={http(409, { serverVersion: 3 })} onRetry={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: /Oops!/ }));

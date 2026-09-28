@@ -10,7 +10,7 @@
 // short. The editor's states share one loaded brew per scheme (a page load per state would cost
 // more than its scans); each of those tests starts from the editor as it opened. The API is the
 // in-memory fake (fakeApi.ts): no API server is needed.
-//   E2E_PORT=5376 npx playwright test e2e/a11y/axe.spec.ts
+//   E2E_PORT=5376 pnpm exec playwright test e2e/a11y/axe.spec.ts
 import { expect, type Locator, type Page, test } from '@playwright/test';
 import { waitForDraft } from '../flows/helpers';
 import { oversizeDoc, richDoc, TEXTS } from './docs';

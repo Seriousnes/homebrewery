@@ -76,7 +76,7 @@ export default function VaultPage() {
   const data = search.data;
   const error = search.error;
   const qMessage = error?.fieldError('q');
-  const qError = qMessage ? (/^must /.test(qMessage) ? `The search ${qMessage}.` : qMessage) : undefined;
+  const qError = qMessage ? (qMessage.startsWith('must ') ? `The search ${qMessage}.` : qMessage) : undefined;
   const pages = data ? totalPages(data.total, data.pageSize || query.pageSize) : 1;
   const page = data?.page ?? query.page;
 

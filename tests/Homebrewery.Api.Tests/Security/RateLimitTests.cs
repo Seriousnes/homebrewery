@@ -17,7 +17,8 @@ namespace Homebrewery.Api.Tests.Security;
 
 /// <summary>
 /// P2.7 rate limits: the auth policy (per IP), the import and PDF export policies (per user) and the global write limiter
-/// (per IP), each answering 429 problem+json with Retry-After. Each test runs its own host with low limits.
+/// (per IP), each answering 429 problem+json with Retry-After. Each test runs its own host with low limits; the test hosts'
+/// windows are a day long (<see cref="HomebreweryApiFactory.RateLimitWindow"/>), so no limit replenishes mid-test.
 /// </summary>
 [Collection(ApiCollection.Name)]
 public sealed class RateLimitTests(ApiFixture api)
@@ -28,7 +29,8 @@ public sealed class RateLimitTests(ApiFixture api)
         var settings = api.Factory.Services.GetRequiredService<IOptions<RateLimitSettings>>().Value;
         var defaults = new RateLimitSettings();
 
-        Assert.Equal(HomebreweryApiFactory.GenerousPermitLimit, settings.Writes.PermitLimit);     // the test hosts' override
+        Assert.Equal(HomebreweryApiFactory.GenerousPermitLimit, settings.Writes.PermitLimit);     // the test hosts' overrides
+        Assert.Equal(HomebreweryApiFactory.RateLimitWindow, settings.Writes.Window);
         Assert.Equal(20, defaults.Auth.PermitLimit);
         Assert.Equal(10, defaults.Import.PermitLimit);
         Assert.Equal(10, defaults.Pdf.PermitLimit);
@@ -196,6 +198,6 @@ public sealed class RateLimitTests(ApiFixture api)
         Assert.Equal(429, problem.GetProperty("status").GetInt32());
         Assert.Equal("Too many requests", problem.GetProperty("title").GetString());
         var retryAfter = Assert.Single(response.Headers.GetValues("Retry-After"));
-        Assert.InRange(int.Parse(retryAfter, System.Globalization.CultureInfo.InvariantCulture), 1, 60);
+        Assert.InRange(int.Parse(retryAfter, System.Globalization.CultureInfo.InvariantCulture), 1, (int)HomebreweryApiFactory.RateLimitWindow.TotalSeconds);
     }
 }

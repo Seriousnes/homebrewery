@@ -166,7 +166,7 @@ export function serializeBrew(doc: PMNode, options: SerializeBrewOptions = {}): 
   // textblocks and after a trailing inline node, and the separator after an uneditable one.
   for (const { el, node } of textblocks) {
     const last = node.lastChild;
-    if (!last || !last.isText || /\n$/.test(last.text ?? '')) {
+    if (!last || !last.isText || (last.text ?? '').endsWith('\n')) {
       if (options.separators !== false) {
         // The last inline DOM node, inside the mark wrappers around it.
         let parent: Element = el;

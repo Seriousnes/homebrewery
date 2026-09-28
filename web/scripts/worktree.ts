@@ -46,8 +46,8 @@ function git(cwd: string, args: string[]): string[] | null {
   }
 }
 
-/** Takes <dir>.lock (mkdir is atomic), runs `fn`, releases it. A lock older than 10 s is stale. */
-function withLock<T>(dir: string, fn: () => T): T {
+/** Takes <dir>.lock (mkdir is atomic), runs `fn`, releases it. A lock older than 10 s (by `now`) is stale. */
+function withLock<T>(dir: string, fn: () => T, now: () => number = Date.now): T {
   const lock = path.join(dir, `${REGISTRY}.lock`);
   const deadline = Date.now() + 5000;
   for (;;) {
@@ -55,9 +55,11 @@ function withLock<T>(dir: string, fn: () => T): T {
       fs.mkdirSync(lock);
       break;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      // Windows answers EPERM while a lock another process just released is still being deleted.
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'EEXIST' && !(code === 'EPERM' && process.platform === 'win32')) throw error;
       try {
-        if (Date.now() - fs.statSync(lock).mtimeMs > 10_000) fs.rmSync(lock, { recursive: true, force: true });
+        if (now() - fs.statSync(lock).mtimeMs > 10_000) fs.rmSync(lock, { recursive: true, force: true });
       } catch {
         // released meanwhile
       }
@@ -73,7 +75,7 @@ function withLock<T>(dir: string, fn: () => T): T {
 }
 
 /** The slot of `root` in the registry under `commonDir`: its entry, or the lowest free slot (then stored). */
-export function registerSlot(commonDir: string, root: string): number {
+export function registerSlot(commonDir: string, root: string, now: () => number = Date.now): number {
   return withLock(commonDir, () => {
     const file = path.join(commonDir, REGISTRY);
     let slots: Record<string, number> = {};
@@ -95,7 +97,7 @@ export function registerSlot(commonDir: string, root: string): number {
     }
     fs.writeFileSync(file, `${JSON.stringify(slots, null, 2)}\n`);
     return slot;
-  });
+  }, now);
 }
 
 let cached: WorktreeInfo | undefined;
@@ -106,13 +108,16 @@ export function worktreeInfo(cwd = here): WorktreeInfo {
   return cached;
 }
 
-/** The worktree, branch and slot of the checkout that contains `cwd` (not cached). */
-export function readWorktreeInfo(cwd: string): WorktreeInfo {
+/** `git rev-parse --show-toplevel --git-common-dir --abbrev-ref HEAD` in `cwd`: its lines, or null when git fails. */
+const revParse = (cwd: string): string[] | null => git(cwd, ['rev-parse', '--show-toplevel', '--git-common-dir', '--abbrev-ref', 'HEAD']);
+
+/** The worktree, branch and slot of the checkout that contains `cwd` (not cached). `rev` runs git (tests pass its output). */
+export function readWorktreeInfo(cwd: string, rev: (cwd: string) => string[] | null = revParse): WorktreeInfo {
   const forced = process.env.HB_SLOT !== undefined && process.env.HB_SLOT !== '' ? Number(process.env.HB_SLOT) : null;
   if (forced !== null && !(Number.isInteger(forced) && forced >= 0 && forced <= MAX_SLOT)) {
     throw new Error(`HB_SLOT must be a whole number from 0 to ${MAX_SLOT}`);
   }
-  const out = git(cwd, ['rev-parse', '--show-toplevel', '--git-common-dir', '--abbrev-ref', 'HEAD']);
+  const out = rev(cwd);
   const [top, common, head] = out ?? [];
   if (!top || !common) {
     // No git (or a checkout git refuses): the main checkout, in the repository this file is in.

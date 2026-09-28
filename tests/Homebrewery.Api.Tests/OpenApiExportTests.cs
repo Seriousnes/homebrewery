@@ -16,7 +16,7 @@ namespace Homebrewery.Api.Tests;
 /// After changing an endpoint or a DTO, regenerate both (Git Bash / sh):
 /// <code>
 /// HB_UPDATE_OPENAPI=1 dotnet test --project tests/Homebrewery.Api.Tests --filter-class Homebrewery.Api.Tests.OpenApiExportTests
-/// npm --prefix web run api:types
+/// pnpm -C web run api:types
 /// </code>
 /// PowerShell: <c>$env:HB_UPDATE_OPENAPI=1; dotnet test ...; Remove-Item Env:HB_UPDATE_OPENAPI</c>.
 /// </remarks>
@@ -150,7 +150,7 @@ public sealed class OpenApiExportTests(ApiFixture api)
 
     private const string Regenerate =
         "Regenerate with HB_UPDATE_OPENAPI=1 dotnet test --project tests/Homebrewery.Api.Tests --filter-class " +
-        "Homebrewery.Api.Tests.OpenApiExportTests, then npm --prefix web run api:types.";
+        "Homebrewery.Api.Tests.OpenApiExportTests, then pnpm -C web run api:types.";
 
     /// <summary>
     /// The served document with CRLF in its strings turned into LF: descriptions from multi-line XML comments carry the

@@ -36,8 +36,8 @@ function renderPage(rawPage: string, index: number): LegacyPage {
   return {
     html: safeHTML(hbfm.render(pageText, index)),
     classes: (tags?.classes ?? '').split(/\s+/).filter(Boolean),
-    styles: { ...(tags?.styles ?? {}) },
-    attributes: { ...(tags?.attributes ?? {}) },
+    styles: { ...tags?.styles },
+    attributes: { ...tags?.attributes },
   };
 }
 

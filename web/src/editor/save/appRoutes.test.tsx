@@ -1,9 +1,11 @@
 // Autosave on the app's real pages (/new, /edit/:editId, /local/:localId) over the fake brew API of
 // web/src/pages/routeTesting.tsx: a signed-out visitor's new brew (a local brew, issue #4) and
 // leaving a brew whose changes can't be saved (SAVE-2). Real timers, with the app's autosave timings scaled down (see
-// DELAY below) so that a test with two save cycles stays well within the 5 s test timeout.
+// DELAY below) so that a test with two save cycles stays well within the 5 s test timeout. What
+// must not happen is checked on a fake clock (src/test/fakeClock.ts), run past the delay that would
+// make it happen; where the autosave must not run on its own, its delay is out of reach (NEVER).
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryKeys, type AccountInfo } from '@/api';
 import { jsonResponse } from '@/api/testing';
 import { ALICE } from '@/app/testing';
@@ -22,6 +24,8 @@ import {
   type BrewServer,
 } from '@/pages/routeTesting';
 import { createLocalBrewLibrary, defaultLocalBrews, type LocalBrew, type LocalBrewSummary, setDefaultLocalBrews } from '@/editor/local/localBrews';
+import { LOCAL_SAVE_DELAY_MS } from '@/editor/local/useLocalSave';
+import { advance, tickUntil } from '@/test/fakeClock';
 import { clearToasts, toastStore } from '@/ui';
 import { NEW_DRAFT_KEY, readDraft, type Draft } from './drafts';
 import { resetNewBrewCreates } from './newBrewCreates';
@@ -30,20 +34,16 @@ import { memoryStore } from './kvStore';
 import { draftOf } from './testing';
 import type * as UseAutosaveModule from './useAutosave';
 
-// The autosave delay (3 s in the app) and the draft throttle (1 s) for every useAutosave here. The
-// waits below are expressed in them: what matters is the order (draft written, then the delay runs
-// out), not the length.
+// The autosave delay (3 s in the app) and the draft throttle (1 s) for every useAutosave here, read
+// on every render (a test may change them for the pages it mounts next).
 const timing = vi.hoisted(() => ({ delayMs: 500, draftThrottleMs: 150 }));
-const { delayMs: DELAY, draftThrottleMs: DRAFT_THROTTLE } = timing;
+const DELAY = timing.delayMs;
+/** An autosave delay no test reaches: the autosave doesn't run on its own. */
+const NEVER = 3_600_000;
 vi.mock('./useAutosave', async (importOriginal) => {
   const actual = await importOriginal<typeof UseAutosaveModule>();
   return { ...actual, useAutosave: (options: UseAutosaveModule.UseAutosaveOptions) => actual.useAutosave({ ...timing, ...options }) };
 });
-
-// Each test is a multi-page flow through the whole app (router, query client, EditorApp mounted up
-// to three times) on real timers: 0.5–2 s alone, up to 4.5 s in a full parallel run on a busy
-// machine. 10 s instead of the 5 s default.
-vi.setConfig({ testTimeout: 10_000 });
 
 const loader = vi.hoisted(() => ({
   loadThemeChain: vi.fn(),
@@ -60,12 +60,8 @@ async function clearDrafts() {
   await store.delMany((await store.entries()).map(([key]) => key));
 }
 
-// Load the lazy route modules once, up front (hook timeout), so no test's waitFor covers a first import.
-beforeAll(async () => {
-  await Promise.all([import('@/editor/EditorApp/EditorApp'), import('@/pages/edit'), import('@/pages/vault')]);
-});
-
 beforeEach(async () => {
+  timing.delayMs = DELAY;
   uiStore.getState().resetUi();
   localStorage.clear();
   sessionStorage.clear();
@@ -80,14 +76,18 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.clearAllMocks();
   clearToasts();
   resetNewBrewCreates();
 });
 
-const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull(), { timeout: 3000 });
-const wait = (ms: number) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull());
+/** Past every save delay here: the autosave's and the local brew's (LOCAL_SAVE_DELAY_MS). */
+const PAST_SAVE_DELAYS = 2 * Math.max(DELAY, LOCAL_SAVE_DELAY_MS);
+/** The 'new' draft, once written (the draft throttle's leading write). */
+const newDraftWritten = (text: string) => waitFor(async () => expect(docText((await readDraft(defaultDraftStore(), NEW_DRAFT_KEY))?.doc)).toContain(text));
 const conflictDialog = () => screen.queryByRole('alertdialog', { name: 'This brew was changed somewhere else' });
 const leaveDialog = () => screen.findByRole('alertdialog', { name: 'Leave without saving?' });
 
@@ -98,7 +98,7 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     await waitForEditor();
     const editor = appEditor();
     typeInEditor('My secret draft');
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\/[\w-]+$/), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\/[\w-]+$/));
     const localId = router.state.location.pathname.split('/')[2]!;
     expect(appEditor()).toBe(editor); // the editor stayed mounted
     await waitFor(() => expect(screen.getByTestId('save-status')).toHaveAttribute('data-status', 'saved'));
@@ -110,14 +110,19 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(false);
 
-    // Signed in (the sign-in dialog, another tab): nothing is uploaded by itself; the user is asked.
+    // Signed in (the sign-in dialog, another tab): nothing is uploaded by itself, on a fake clock
+    // run past every save delay; the user is asked.
     server.me = ALICE;
+    vi.useFakeTimers();
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), ALICE);
     });
-    const prompt = await screen.findByRole('dialog', { name: 'You have 1 brew on this device' });
-    await wait(DELAY + 300);
+    const promptShown = () => screen.queryByRole('dialog', { name: 'You have 1 brew on this device' });
+    await tickUntil(() => promptShown() !== null);
+    await advance(PAST_SAVE_DELAYS);
+    vi.useRealTimers();
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
+    const prompt = promptShown()!;
     act(() => {
       within(prompt).getByRole('button', { name: 'Upload all' }).click();
     });
@@ -131,21 +136,27 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     const { queryClient, router } = renderApp({ url: '/new', me: null });
     await waitForEditor();
     typeInEditor('First words');
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//));
     await waitFor(() => expect(screen.getByTestId('save-status')).toHaveAttribute('data-status', 'saved'));
-    typeInEditor(' and more'); // not stored yet when the prompt uploads
+    // On a fake clock from the last edit on: its local save is still pending when the prompt
+    // uploads, and the clock runs past it at the end.
+    vi.useFakeTimers();
+    typeInEditor(' and more');
     server.me = ALICE;
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), ALICE);
     });
-    const prompt = await screen.findByRole('dialog', { name: 'You have 1 brew on this device' });
+    const prompt = () => screen.queryByRole('dialog', { name: 'You have 1 brew on this device' });
+    await tickUntil(() => prompt() !== null);
     act(() => {
-      within(prompt).getByRole('button', { name: 'Upload all' }).click();
+      within(prompt()!).getByRole('button', { name: 'Upload all' }).click();
     });
-    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
+    await tickUntil(() => logOf(server, 'POST', '/api/brews').length > 0);
+    expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']);
     expect(docText(server.brews.get('newA')?.doc)).toContain('First words and more');
-    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'));
-    await wait(1300); // past the local save delay: nothing is written back
+    await tickUntil(() => router.state.location.pathname === '/edit/newA');
+    await advance(PAST_SAVE_DELAYS); // nothing is written back
+    vi.useRealTimers();
     expect(await defaultLocalBrews().count()).toBe(0);
   });
 
@@ -158,7 +169,7 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), ALICE);
     });
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/local\//));
     expect(docText(appEditor()!.getJSON())).toContain('Typed just before signing in');
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
   });
@@ -174,7 +185,7 @@ describe('/new while nobody is signed in: a local brew (issue #4, APP-9)', () =>
     await waitFor(() => expect(screen.getByTestId('editor-app')).not.toHaveAttribute('data-local-id'));
     await waitForEditor();
     typeInEditor('Straight to the cloud');
-    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']), { timeout: 3000 });
+    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
     expect(router.state.location.pathname).toBe('/edit/newA');
     expect(await defaultLocalBrews().count()).toBe(0);
   });
@@ -190,7 +201,7 @@ describe('leaving a brew whose changes are not saved (SAVE-2)', () => {
     stored.version = 4;
     stored.doc = pageDoc('Base theirs');
     typeInEditor(' my important paragraph');
-    await waitFor(() => expect(conflictDialog()).not.toBeNull(), { timeout: DELAY + 2000 });
+    await waitFor(() => expect(conflictDialog()).not.toBeNull());
     await app.user.keyboard('{Escape}');
     expect(conflictDialog()).toBeNull();
     return { server, ...app };
@@ -298,13 +309,16 @@ describe("the 'new' draft belongs to its author (SAVE-12)", () => {
     expect(docText(appEditor()!.getJSON())).not.toContain('Leftover words');
     expect(screen.queryByTestId('new-draft-notice')).toBeNull();
 
+    // On a fake clock from the sign-in on, run past every save delay.
     server.me = ALICE;
+    vi.useFakeTimers();
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), ALICE);
     });
-    await waitFor(() => expect(docText(appEditor()?.getJSON())).toContain('Leftover words'), { timeout: 3000 });
-    expect(await screen.findByTestId('new-draft-notice')).toHaveTextContent('saved as a new brew when you edit it');
-    await wait(DELAY + 500);
+    await tickUntil(() => docText(appEditor()?.getJSON()).includes('Leftover words') && screen.queryByTestId('new-draft-notice') !== null);
+    expect(screen.getByTestId('new-draft-notice')).toHaveTextContent('saved as a new brew when you edit it');
+    await advance(PAST_SAVE_DELAYS);
+    vi.useRealTimers();
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]); // an earlier draft waits for an edit
   });
 
@@ -312,15 +326,19 @@ describe("the 'new' draft belongs to its author (SAVE-12)", () => {
     const draft = await storeNewDraft({ ownerId: null });
     const server = createBrewServer({ me: null });
     const { queryClient, router } = renderApp({ url: '/new', me: null });
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/local/draft-${draft.updatedAt.toString(36)}`), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/local/draft-${draft.updatedAt.toString(36)}`));
     await waitForEditor();
     expect(docText(appEditor()!.getJSON())).toContain('Leftover words');
     expect(await readDraft(defaultDraftStore(), NEW_DRAFT_KEY)).toBeNull();
+    // On a fake clock from the sign-in on, run past every save delay.
     server.me = BOB;
+    vi.useFakeTimers();
     act(() => {
       queryClient.setQueryData(queryKeys.account.me(), BOB);
     });
-    expect(await screen.findByRole('dialog', { name: 'You have 1 brew on this device' })).toBeInTheDocument();
+    await tickUntil(() => screen.queryByRole('dialog', { name: 'You have 1 brew on this device' }) !== null);
+    await advance(PAST_SAVE_DELAYS);
+    vi.useRealTimers();
     expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
   });
 });
@@ -328,15 +346,25 @@ describe("the 'new' draft belongs to its author (SAVE-12)", () => {
 describe('"New brew" while the /new page\'s unmount save is creating its brew (SAVE-8)', () => {
   it('the fresh /new waits for that create and starts blank; one brew is created', async () => {
     const server = createBrewServer({ me: ALICE });
-    server.delays['POST /api/brews'] = 1000; // still creating while the fresh /new renders
+    // The first create is held (still creating while the fresh /new renders) until that page says
+    // it waits for it.
+    let releaseCreate!: () => void;
+    const held = new Promise<void>((resolve) => (releaseCreate = resolve));
+    server.override = async (request) => {
+      if (request.method === 'POST' && request.url.pathname === '/api/brews') await held;
+      return undefined;
+    };
+    timing.delayMs = NEVER; // the first page's autosave doesn't run: its unmount save creates
     const { router } = renderApp({ url: '/new', me: ALICE });
     await waitForEditor();
     typeInEditor('Race text');
-    await wait(2 * DRAFT_THROTTLE); // the draft is written; the autosave delay hasn't run out
+    await newDraftWritten('Race text');
+    timing.delayMs = DELAY; // the pages mounted from here on autosave
     await act(() => router.navigate('/new')); // "New brew": a fresh session; the old one's unmount save POSTs
     expect(await screen.findByText('Saving your previous brew…')).toBeInTheDocument();
-    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']), { timeout: 3000 });
-    delete server.delays['POST /api/brews']; // the next create needs no head start
+    expect(logOf(server, 'POST', '/api/brews')).toEqual([]);
+    releaseCreate();
+    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
     // The create signal: the page says where the text went (Recent brews), and starts blank.
     await waitFor(() => expect(toastStore.getState().toasts.map((t) => t.title)).toContain('Your new brew was saved'));
     await waitForEditor();
@@ -344,7 +372,7 @@ describe('"New brew" while the /new page\'s unmount save is creating its brew (S
     expect(screen.queryByTestId('new-draft-notice')).toBeNull();
     expect(docText(server.brews.get('newA')?.doc)).toContain('Race text');
     typeInEditor('Second brew');
-    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201', '201']), { timeout: 3000 });
+    await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201', '201']));
     expect(docText(server.brews.get('newB')?.doc)).not.toContain('Race text');
     expect(server.brews.size).toBe(2);
   });
@@ -352,10 +380,12 @@ describe('"New brew" while the /new page\'s unmount save is creating its brew (S
   it('when that create gets no answer, the fresh /new loads the draft and continues its create chain: still one brew', async () => {
     const server = createBrewServer({ me: ALICE });
     idempotentCreates(server, { lose: 1 }); // stored, but the answer is lost
+    timing.delayMs = NEVER; // the first page's autosave doesn't run: its unmount save creates
     const { router } = renderApp({ url: '/new', me: ALICE });
     await waitForEditor();
     typeInEditor('Race text');
-    await wait(2 * DRAFT_THROTTLE);
+    await newDraftWritten('Race text');
+    timing.delayMs = DELAY; // the pages mounted from here on autosave
     await act(() => router.navigate('/new'));
     await waitForEditor();
     await waitFor(() => expect(docText(appEditor()?.getJSON())).toContain('Race text'));
@@ -365,11 +395,11 @@ describe('"New brew" while the /new page\'s unmount save is creating its brew (S
     expect(draft?.ownerId).toBe(ALICE.id);
 
     typeInEditor(' and more');
-    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'));
     const [lost, replay] = posts(server);
     expect(replay?.headers.get('Idempotency-Key')).toBe(lost?.headers.get('Idempotency-Key'));
     expect(replay?.json).toEqual(lost?.json); // the lost request, again
-    await waitFor(() => expect(docText(server.brews.get('newA')?.doc)).toContain('Race text and more'), { timeout: 3000 });
+    await waitFor(() => expect(docText(server.brews.get('newA')?.doc)).toContain('Race text and more'));
     expect(server.brews.size).toBe(1);
   });
 });
@@ -383,10 +413,10 @@ describe("a reload continues the 'new' draft's create chain (SAVE-8)", () => {
     const { router } = renderApp({ url: '/new', me: ALICE });
     await waitForEditor();
     typeInEditor('!');
-    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'), { timeout: 3000 });
+    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'));
     expect(posts(server)[0]?.headers.get('Idempotency-Key')).toBe('chain-key-1');
-    expect(docText((posts(server)[0]?.json as { doc: unknown }).doc)).toBe('Sent once');
+    expect(docText((posts(server)[0]!.json as { doc: unknown }).doc)).toBe('Sent once');
     expect(keys.get('chain-key-1')).toBe('newA');
-    await waitFor(() => expect(docText(server.brews.get('newA')?.doc)).toBe('Sent once, then more!'), { timeout: 3000 });
+    await waitFor(() => expect(docText(server.brews.get('newA')?.doc)).toBe('Sent once, then more!'));
   });
 });

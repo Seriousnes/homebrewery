@@ -497,10 +497,11 @@ public sealed class DocInspectorTests
     [Fact]
     public void Node_count_is_limited()
     {
-        // doc + page + n × (paragraph + text)
-        var paragraphs = Enumerable.Range(0, (DocInspector.MaxNodes / 2) - 1).Select(_ => (JsonNode)P("x")).ToArray();
-        var atLimit = Inspect(DocWith(paragraphs));
-        var overLimit = Inspect(DocWith([.. paragraphs.Select(p => p.DeepClone()), P("one more")]));
+        // doc + page + n × (paragraph + text). The JSON is written as text: 125,000 JsonNode paragraphs took seconds.
+        var paragraphs = string.Join(",", Enumerable.Repeat(P("x").ToJsonString(), (DocInspector.MaxNodes / 2) - 1));
+        static string OnePage(string blocks) => $$"""{"type":"doc","content":[{"type":"page","content":[{{blocks}}]}]}""";
+        var atLimit = Inspector.Inspect(OnePage(paragraphs));
+        var overLimit = Inspector.Inspect(OnePage(paragraphs + "," + P("one more").ToJsonString()));
 
         Assert.True(atLimit.IsValid);
         Assert.Equal(DocInspector.MaxNodes, atLimit.NodeCount);

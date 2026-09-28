@@ -13,7 +13,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import type { RepaginateEvent } from '@/editor/canvas/useCanvasTheme';
-import { REPAGINATE, failedPulls, measurePage, pageAt, pullTarget, type PaginationFrameProfile, type PaginationStats } from '@/editor/pagination';
+import { PAGINATE, REPAGINATE, failedPulls, measurePage, pageAt, pullTarget, type PaginationFrameProfile, type PaginationStats } from '@/editor/pagination';
 import { afterNextPaint, PerfProbe, summarizeFrames, type PaginationSummary, type TypingReport } from './perfProbe';
 
 export type PerfShell = 'app' | 'canvas';
@@ -72,10 +72,40 @@ export interface EditReport {
 
 export interface CaretReport {
   page: number;
+  /** index of the caret's paragraph among the page's blocks, and the headings the page starts with */
+  block: number;
+  leadingHeadings: number;
+  kind: string;
   pos: number;
   /** text before and after the caret in its paragraph (40 characters each) */
   before: string;
   after: string;
+}
+
+/**
+ * The work done since the last work() call, as counts (they don't depend on how fast the machine
+ * is, unlike the timings): what the perf specs assert.
+ */
+export interface WorkReport {
+  /**
+   * the pagination passes, each its steps in order (the page a step checked and what it did); a
+   * pass ends with the scheduler run that settled
+   */
+  passes: { page: number; action: string }[][];
+  /** transactions with pagination's meta (its dispatches) */
+  transactions: number;
+  /** REPAGINATE transactions (theme, CSS, fonts triggers) */
+  repaginations: number;
+  /**
+   * pages whose content changed in the DOM (text or child nodes; attributes don't count), as
+   * indexes now, sorted; -1 for a page element removed since
+   */
+  mutatedPages: number[];
+  /** page elements added to and removed from the editor's root */
+  pagesAdded: number;
+  pagesRemoved: number;
+  /** pages now */
+  pages: number;
 }
 
 export interface EnvReport {
@@ -104,6 +134,13 @@ export interface HbPerfApi {
   placeCaret(page: number, where?: 'middle' | 'end'): CaretReport;
   startTyping(): void;
   stopTyping(): TypingReport;
+  /**
+   * While typing is recorded: waits until `keys` keystrokes are recorded, the last one has been
+   * painted and pagination has settled (rejects after `timeoutMs`).
+   */
+  afterKeys(keys: number, timeoutMs?: number): Promise<void>;
+  /** The work since the last call (the first call: since the page opened). */
+  work(): WorkReport;
   /** Inserts `text` at the caret in one transaction (paste-like) and waits for the settle. */
   insertText(text: string): Promise<EditReport>;
   /** Canvas shell: switches the theme and waits until the new layout has settled and stayed idle. */
@@ -115,6 +152,8 @@ export interface HbPerfApi {
   json(): JSONContent;
   /** Texts of each page's blocks (fixture checks). */
   pageKinds(): string[];
+  /** Indexes of the pages with a block of type `type` at their top level. */
+  pagesWith(type: string): number[];
   env(): EnvReport;
   /** Debugging: page `index`'s measurement, its pull estimate, and the boxes of its last block and of the next page's first block. */
   inspect(index: number): unknown;
@@ -133,6 +172,13 @@ declare global {
 const now = () => performance.now();
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
+/** Headings at the start of a page's flow. */
+function leadingHeadings(page: { childCount: number; child(i: number): { type: { name: string } } }): number {
+  let n = 0;
+  while (n < page.childCount && page.child(n).type.name === 'heading') n += 1;
+  return n;
+}
+
 
 /** The live editor of the page's canvas (EditorApp or the canvas shell), from TipTap's DOM back-reference. */
 export function liveEditor(root: ParentNode = document): Editor | null {
@@ -150,6 +196,11 @@ export class PerfController {
   private status: { state: string; theme: string; at: number }[] = [];
   private repaginations: { at: number; from: number; reason: string }[] = [];
   private listened: Editor | null = null;
+  /** Counts for work() since its last call (the step log is the probe's). */
+  private counts = { transactions: 0, repaginations: 0, pagesAdded: 0, pagesRemoved: 0 };
+  /** Page elements (children of the editor's root) whose content changed since work(). */
+  private mutated = new Set<Element>();
+  private dom: { root: HTMLElement; observer: MutationObserver } | null = null;
 
   constructor(initial: Window['__hbPerfDoc'] | null) {
     if (initial?.doc) this.current = this.mountOf(initial.doc, initial);
@@ -187,7 +238,43 @@ export class PerfController {
   stop(): void {
     this.listened?.off('transaction', this.onTransaction);
     this.listened = null;
+    this.observeDom(null);
     this.probe.stop();
+  }
+
+  /** Watches the editor's pages for content changes and added or removed pages (work()). */
+  private observeDom(editor: Editor | null): void {
+    this.dom?.observer.disconnect();
+    this.dom = null;
+    if (!editor) return;
+    const root = editor.view.dom;
+    const observer = new MutationObserver((records) => this.onMutations(root, records));
+    observer.observe(root, { childList: true, characterData: true, subtree: true });
+    this.dom = { root, observer };
+  }
+
+  private onMutations(root: HTMLElement, records: MutationRecord[]): void {
+    const isPage = (node: Node) => node instanceof HTMLElement && node.classList.contains('page');
+    for (const r of records) {
+      if (r.target === root) {
+        for (const node of Array.from(r.addedNodes)) if (isPage(node)) this.counts.pagesAdded += 1;
+        for (const node of Array.from(r.removedNodes)) if (isPage(node)) this.counts.pagesRemoved += 1;
+        continue;
+      }
+      let node: Node | null = r.target;
+      while (node && node.parentNode !== root) node = node.parentNode;
+      if (node instanceof Element) this.mutated.add(node);
+    }
+  }
+
+  private takeWork(): WorkReport {
+    if (this.dom) this.onMutations(this.dom.root, this.dom.observer.takeRecords());
+    const children = this.dom ? Array.from(this.dom.root.children) : [];
+    const mutatedPages = [...new Set(Array.from(this.mutated, (el) => children.indexOf(el)))].sort((a, b) => a - b);
+    const report: WorkReport = { passes: this.probe.takePasses(), ...this.counts, mutatedPages, pages: this.probe.pages() };
+    this.counts = { transactions: 0, repaginations: 0, pagesAdded: 0, pagesRemoved: 0 };
+    this.mutated.clear();
+    return report;
   }
 
   private mountOf(doc: JSONContent, opts: MountOptions): PerfMount {
@@ -201,15 +288,18 @@ export class PerfController {
       this.listened?.off('transaction', this.onTransaction);
       this.listened = editor;
       editor?.on('transaction', this.onTransaction);
+      this.observeDom(editor);
     }
     return editor;
   }
 
   private readonly onTransaction = ({ transaction }: { transaction: { getMeta(key: string): unknown } }): void => {
-    // The app shell has no onRepaginate: REPAGINATE metas are the theme, CSS and fonts triggers.
-    if (this.current?.shell !== 'app') return;
+    if (transaction.getMeta(PAGINATE) !== undefined) this.counts.transactions += 1;
     const meta = transaction.getMeta(REPAGINATE);
-    if (meta !== undefined) this.repaginations.push({ at: now(), from: typeof meta === 'number' ? meta : -1, reason: 'meta' });
+    if (meta === undefined) return;
+    this.counts.repaginations += 1;
+    // The app shell has no onRepaginate: REPAGINATE metas are the theme, CSS and fonts triggers.
+    if (this.current?.shell === 'app') this.repaginations.push({ at: now(), from: typeof meta === 'number' ? meta : -1, reason: 'meta' });
   };
 
   private async waitFor<T>(get: () => T | null | false, timeoutMs = 120_000): Promise<T> {
@@ -287,12 +377,12 @@ export class PerfController {
         const page = pageAt(v.state.doc, pageIndex);
         if (!page) throw new Error(`no page ${pageIndex}`);
         // The longest paragraph of the page that is whole (not a fragment of a split one).
-        let best: { pos: number; size: number } | null = null;
+        let best: { pos: number; size: number; index: number } | null = null;
         let pos = page.contentStart;
         for (let i = 0; i < page.node.childCount; i++) {
           const child = page.node.child(i);
           const whole = child.type.name === 'paragraph' && child.attrs.continuation !== true && !(i === page.node.childCount - 1 && pageAt(v.state.doc, pageIndex + 1)?.node.firstChild?.attrs.continuation === true);
-          if (whole && child.textContent.length > (best?.size ?? 80)) best = { pos, size: child.content.size };
+          if (whole && child.textContent.length > (best?.size ?? 80)) best = { pos, size: child.content.size, index: i };
           pos += child.nodeSize;
         }
         if (!best) throw new Error(`no whole paragraph on page ${pageIndex}`);
@@ -311,6 +401,9 @@ export class PerfController {
         v.focus();
         return {
           page: pageIndex,
+          block: best.index,
+          leadingHeadings: leadingHeadings(page.node),
+          kind: String(page.node.attrs.kind),
           pos: caret,
           before: para.textContent.slice(Math.max(0, offset - 40), offset),
           after: para.textContent.slice(offset, offset + 40),
@@ -321,6 +414,16 @@ export class PerfController {
         this.probe.startRecording();
       },
       stopTyping: () => this.probe.stopRecording(),
+      afterKeys: async (keys, timeoutMs = 10_000) => {
+        await this.waitFor(() => {
+          const recorded = this.probe.recordedKeys();
+          return recorded.length >= keys && recorded[keys - 1]!.paint > 0 && this.probe.settled();
+        }, timeoutMs);
+      },
+      work: () => {
+        this.editor();
+        return this.takeWork();
+      },
       insertText: async (text) => {
         const v = view();
         const framesFrom = this.probe.frames.length;
@@ -366,6 +469,15 @@ export class PerfController {
       pageKinds: () => {
         const out: string[] = [];
         view().state.doc.forEach((p) => out.push(String(p.attrs.kind)));
+        return out;
+      },
+      pagesWith: (type) => {
+        const out: number[] = [];
+        view().state.doc.forEach((p, _offset, index) => {
+          let found = false;
+          p.forEach((block) => (found ||= block.type.name === type));
+          if (found) out.push(index);
+        });
         return out;
       },
       failedPulls: () => failedPulls(view()),

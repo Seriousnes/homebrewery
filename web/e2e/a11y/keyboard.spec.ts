@@ -1,6 +1,7 @@
 // P8.2, keyboard access (plan §11). Every test here uses the keyboard only: no clicks, no
-// programmatic focus or selection (page.evaluate only reads state, stubs window.print, or puts a
-// throwaway element at the top of the page to start a Tab walk from there).
+// programmatic focus or selection (page.evaluate only reads state, waits for ProseMirror's focus
+// timer, stubs window.print, or puts a throwaway element at the top of the page to start a Tab walk
+// from there).
 // - The walkthrough: create a brew, format text, insert a snippet, open the inspector and change a
 //   class, set a section to 1 column, add and move a page object, edit the metadata, save and
 //   print, checking where the focus goes and that it is visible at each stop.
@@ -9,7 +10,7 @@
 // - Page structure: skip link, landmarks, headings, toolbars and live regions on every route; the
 //   save and layout announcements.
 // The API is the in-memory fake (fakeApi.ts), so this runs anywhere.
-//   E2E_PORT=5376 npx playwright test e2e/a11y/keyboard.spec.ts
+//   E2E_PORT=5376 pnpm exec playwright test e2e/a11y/keyboard.spec.ts
 import type { Editor } from '@tiptap/core';
 import { expect, type Page, test } from '@playwright/test';
 import { oversizeDoc, richDoc, TEXTS, trapDoc } from './docs';
@@ -53,8 +54,16 @@ async function expectFocusVisible(page: Page, where: string) {
   expect(await focusIsVisible(page), `visible focus on ${where}: ${JSON.stringify(await activeElement(page))}`).toBe(true);
 }
 
+/**
+ * The editor has the focus, and ProseMirror's follow-up to gaining it has run: 20 ms after the
+ * focus event, prosemirror-view puts its selection back into the DOM if the DOM's differs from the
+ * last one it read (handlers.focus), which undid a native caret move made before then (Ctrl+End
+ * right after Escape returned the focus). A longer timer set after that one fires after it (timers
+ * of a page fire in order of their due time).
+ */
 async function expectEditorFocused(page: Page) {
   await expect.poll(async () => (await activeElement(page)).editor, { message: 'the editor has the focus' }).toBe(true);
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 30)));
 }
 
 test('keyboard only: create, format, insert, inspect, lay out, place an object, describe, save and print', async ({ page }) => {

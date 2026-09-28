@@ -11,20 +11,18 @@ import { slotPort } from './scripts/worktree';
 // isolated Vite (no HMR): `node e2e/matrix/run-suite.mjs [playwright args…]`.
 //
 // Projects:
-//   chromium                          every test except those tagged @serial, in parallel
+//   chromium                          every test, in parallel
 //   firefox                           the same, but only the editing and pagination specs
 //                                     (FIREFOX_SPECS; E2E_FIREFOX=all runs every spec in Firefox)
-//   chromium-serial, firefox-serial   the @serial tests (time budgets: S2's 30-page settle, the
-//                                     §4.10 perf budgets): one worker per project, so they never
-//                                     run beside each other.
 // The smoke set (tests tagged @smoke, Chromium, about 50 tests in under 3 minutes) is
-// `npm run e2e:smoke`.
-// In a bare full run (`npx playwright test`, no file, --grep, --project, --shard … filter) the
-// serial projects run after the parallel ones (project dependencies), so no other test competes
-// with their budgets; a failure in the parallel projects then skips them. With a filter there are
-// no dependencies: Playwright runs a dependency project unfiltered, so a filtered run that selects
-// one @serial test would otherwise run the whole suite first. run-suite.mjs runs the suite as short
-// sets one after the other (groups of folders in chromium + firefox, then each serial project).
+// `pnpm run e2e:smoke`. run-suite.mjs runs the suite as short sets one after the other (groups of
+// folders in chromium + firefox).
+//
+// The performance tests (web/e2e/perf: the §4.10 / P8.1 performance work, S2's 30-page section) are
+// local and run by hand only, never in CI or in a suite run: `node e2e/perf/run-perf.mjs` sets
+// E2E_PERF=1, without which Playwright ignores e2e/perf. It adds the projects chromium-serial and
+// firefox-serial for the perf tests tagged @serial (one worker each, so the timings they report are
+// free of other tests' load).
 // There is no long-test tier (CLAUDE.md "Tests fail fast"): large coverage is many short tests, and a
 // big suite runs as several short sets (e2e/matrix/run-suite.mjs), each under globalTimeout.
 const port = Number(process.env.E2E_PORT ?? slotPort(5174));
@@ -32,6 +30,7 @@ const externalBaseURL = process.env.E2E_BASE_URL;
 const preview = process.env.E2E_PREVIEW === '1';
 const isCI = Boolean(process.env.CI);
 const SERIAL = /@serial/;
+const PERF = process.env.E2E_PERF === '1';
 
 // Firefox runs only the specs where the engine changes the result: pagination measures real line
 // boxes and multi-column layout (matrix, pagination, sections, canvas, pagination-work), and caret
@@ -51,28 +50,20 @@ const FIREFOX_SPECS =
         'e2e/perf/pagination-work.spec.ts',
       ];
 
-/** A bare `playwright test` run in the runner process: no test filter of any kind on the command line. */
-function bareFullRun(): boolean {
-  const i = process.argv.indexOf('test');
-  if (i < 0 || !/playwright/.test(process.argv[i - 1] ?? '')) return false; // a worker, `show-report`, the VS Code extension …
-  return process.argv.slice(i + 1).every((arg) => {
-    if (!arg.startsWith('-')) return false; // a file filter (or an option's value: no dependencies then, which is safe)
-    return !/^(-g|--grep|--grep-invert|--project|--shard|--last-failed|--only-changed|--test-list|--test-list-invert|--ui|--list)(=|$)/.test(arg);
-  });
-}
-const serialLast = bareFullRun();
-
 export default defineConfig({
   testDir: './e2e',
-  // Scratch specs (_debug.spec.ts, _explore.spec.ts …) never run in CI or in a suite run.
-  testIgnore: isCI || process.env.E2E_SUITE === '1' ? ['**/_*'] : [],
+  // Scratch specs (_debug.spec.ts, _explore.spec.ts …) never run in CI or in a suite run; the
+  // performance tests only with E2E_PERF=1 (run-perf.mjs).
+  testIgnore: [...(isCI || process.env.E2E_SUITE === '1' ? ['**/_*'] : []), ...(PERF ? [] : ['**/perf/**'])],
   outputDir: `test-results/${port}`,
   fullyParallel: true,
   // Both browsers run at once; on a loaded dev machine the default (half the cores) makes Firefox
   // time out. E2E_WORKERS overrides (also in CI).
   workers: Number(process.env.E2E_WORKERS) || (isCI ? 2 : 6),
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
+  // No retries anywhere: every test is deterministic, so one run is the answer. A test that can't
+  // be made deterministic is removed, not retried.
+  retries: 0,
   // Fail fast (CLAUDE.md "Tests fail fast"): a stalled test or set surfaces in seconds. There are no
   // long tests: an explicit per-test timeout may go up to 60 s at most (scripts/testTimeouts.test.ts),
   // and a test that needs more is split into several short tests.
@@ -86,7 +77,7 @@ export default defineConfig({
   reporter: isCI ? [['github'], ['blob', { outputDir: 'blob-report' }], ['list']] : [['list']],
   use: {
     baseURL: externalBaseURL ?? `http://localhost:${port}`,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     // Without these, a stuck click or page load waits for the whole test timeout.
     actionTimeout: 5_000,
     navigationTimeout: 10_000,
@@ -94,28 +85,20 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, grepInvert: SERIAL },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, grepInvert: SERIAL, ...(FIREFOX_SPECS ? { testMatch: FIREFOX_SPECS } : {}) },
-    {
-      name: 'chromium-serial',
-      use: { ...devices['Desktop Chrome'] },
-      grep: SERIAL,
-      workers: 1,
-      ...(serialLast ? { dependencies: ['chromium', 'firefox'] } : {}),
-    },
-    {
-      name: 'firefox-serial',
-      use: { ...devices['Desktop Firefox'] },
-      grep: SERIAL,
-      workers: 1,
-      ...(serialLast ? { dependencies: ['chromium-serial'] } : {}),
-    },
+    ...(PERF
+      ? [
+          { name: 'chromium-serial', use: { ...devices['Desktop Chrome'] }, grep: SERIAL, workers: 1 },
+          { name: 'firefox-serial', use: { ...devices['Desktop Firefox'] }, grep: SERIAL, workers: 1 },
+        ]
+      : []),
   ],
   ...(externalBaseURL
     ? {}
     : {
         webServer: {
           command: preview
-            ? `npx vite preview --port ${port} --strictPort`
-            : `npx vite --port ${port} --strictPort`,
+            ? `pnpm exec vite preview --port ${port} --strictPort`
+            : `pnpm exec vite --port ${port} --strictPort`,
           url: `http://localhost:${port}/`,
           reuseExistingServer: !isCI && process.env.E2E_PORT === undefined,
           // Vite is up in a few seconds; a minute means it's stuck (port in use, config error).

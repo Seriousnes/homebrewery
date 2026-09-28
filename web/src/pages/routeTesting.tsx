@@ -11,6 +11,14 @@ import { emptyResponse, jsonResponse, mockApi, problemResponse, type RecordedReq
 import { queryKeys } from '@/api';
 import { routes } from '@/app/routes';
 import { testQueryClient } from '@/app/testing';
+// The lazy pages these tests open, imported with this module: a test file loads them while it is
+// collected, which no test or hook timeout covers (a cold import of the editor's ~400 modules takes
+// seconds on a busy machine). The routes' lazy import() calls then resolve at once.
+import '@/editor/EditorApp/EditorApp';
+import '@/pages/edit';
+import '@/pages/share';
+import '@/pages/user';
+import '@/pages/vault';
 
 // jsdom has no layout: ProseMirror measures the selection (scrollToSelection) after typing.
 if (!('getClientRects' in Range.prototype)) {
@@ -65,7 +73,7 @@ export function docText(doc: unknown): string {
   return out.join('');
 }
 
-export type Override = (request: RecordedRequest, server: BrewServer) => Response | Promise<Response> | undefined;
+export type Override = (request: RecordedRequest, server: BrewServer) => Response | undefined | Promise<Response | undefined>;
 
 export interface BrewServer {
   /** The account the session cookie belongs to (null: no session). */
@@ -76,7 +84,7 @@ export interface BrewServer {
   requests: RecordedRequest[];
   /** 'METHOD /path status' per answered request, in order. */
   log: string[];
-  /** Answers first when it returns a response. */
+  /** Answers first when it returns (or resolves to) a response; it may also hold a request back. */
   override: Override | null;
   /** Milliseconds before answering a request (by 'METHOD /path' prefix match). */
   delays: Record<string, number>;
@@ -230,14 +238,6 @@ export function renderApp({ url, me }: { url: string; me?: AccountInfo | null })
     </QueryClientProvider>,
   );
   return { ...view, router, queryClient, user };
-}
-
-/**
- * Loads the lazy editor pages and the EditorApp chunk up front. Call it in beforeAll with a long
- * timeout: in a full, parallel run the first import took longer than a test's waits.
- */
-export async function preloadAppPages(): Promise<void> {
-  await Promise.all([import('@/editor/EditorApp/EditorApp'), import('@/pages/edit'), import('@/pages/share'), import('@/pages/user'), import('@/pages/vault')]);
 }
 
 /** The editor of the page (dev API; null until one is ready). */

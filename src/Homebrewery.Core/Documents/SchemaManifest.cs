@@ -9,7 +9,7 @@ namespace Homebrewery.Core.Documents;
 
 /// <summary>
 /// The editor schema as the client describes it in <c>shared/schema-manifest.json</c> (plan §3.7).
-/// The web build writes the file from the TipTap schema (<c>npm --prefix web run schema</c>), so the
+/// The web build writes the file from the TipTap schema (<c>pnpm -C web run schema</c>), so the
 /// client schema stays the single source of truth; <see cref="DocInspector"/> validates every saved
 /// document against it.
 /// </summary>
@@ -103,7 +103,7 @@ public sealed partial class SchemaManifest
         {
             throw new FileNotFoundException(
                 $"The schema manifest was not found at '{path}'. The API build copies shared/{FileName} next to its " +
-                "binaries; regenerate it with 'npm --prefix web run schema' or set Schema:ManifestPath.", path);
+                "binaries; regenerate it with 'pnpm -C web run schema' or set Schema:ManifestPath.", path);
         }
 
         using var stream = File.OpenRead(path);

@@ -43,7 +43,7 @@ export class HeadingSlugger {
 // and only then are tags removed. Inline atoms (icons, images, spacers, line breaks) therefore
 // keep neighbouring whitespace from being trimmed. A placeholder character reproduces that.
 const ATOM = '\u0000';
-// eslint-disable-next-line no-control-regex -- the placeholder is a control character on purpose
+// oxlint-disable-next-line no-control-regex -- the placeholder is a control character on purpose
 const ATOMS = /\u0000/g;
 
 /** The text upstream would slug for a heading node. */

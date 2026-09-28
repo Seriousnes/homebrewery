@@ -3,10 +3,10 @@ name: CI
 # Fail fast (CLAUDE.md "Tests fail fast"): there are no long tests and no long
 # jobs. Every job has timeout-minutes of 15 at most (setup included); every Playwright run is
 # capped at 5 minutes (playwright.config.ts globalTimeout), so each e2e job is one short run (a
-# shard, a serial project, the fidelity smoke, the CSP walk) and the shard counts keep each well
+# shard, the fidelity smoke, the CSP walk) and the shard counts keep each well
 # under the cap at CI's 2 workers; the runner scripts kill a run that makes no progress for 60 s.
-# The whole e2e suite runs only here; locally the default loop is the unit tests, the specs of the
-# area being changed and `npm --prefix web run e2e:smoke`.
+# The whole e2e suite runs only here. Locally, `pnpm -C web run verify` runs the web, unit and
+# .NET jobs below with the same commands; then the specs the change can reach and e2e:smoke.
 on:
   push:
   pull_request:
@@ -38,25 +38,30 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       # The server validates documents against the committed shared/schema-manifest.json; a stale
-      # one must fail CI (run `npm --prefix web run schema` and commit the file).
+      # one must fail CI (run `pnpm -C web run schema` and commit the file).
       - name: Schema manifest is up to date
-        run: npm run schema -- --check
+        run: pnpm run schema --check
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
   # Vitest: 5 s per test, 10 s per hook; the timeout guard (web/scripts/testTimeouts.test.ts) is
   # part of the run.
@@ -73,14 +78,19 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Unit tests
-        run: npm test
+        run: pnpm test
 
   # End-to-end tests (plan §12): the whole Playwright suite with the API running against the
   # postgres service (migrated on startup), sharded: every spec in Chromium, the editing and
@@ -137,22 +147,27 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build the API
         working-directory: .
         run: dotnet build src/Homebrewery.Api --configuration Debug --artifacts-path "$HB_ARTIFACTS"
 
-      # Tests tagged @serial (time budgets) run in the e2e-serial job instead; the import fidelity
-      # smoke subset in the fidelity job.
+      # The import fidelity smoke subset runs in the fidelity job instead. The performance tests
+      # (web/e2e/perf) never run in CI: local, by hand (node e2e/perf/run-perf.mjs).
       - name: End-to-end tests
         run: node e2e/matrix/run-suite.mjs --project=${{ matrix.project }} --shard=${{ matrix.shard }}/$SHARDS --grep-invert "S3 import fidelity"
 
@@ -170,81 +185,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: e2e-results-${{ matrix.project }}-${{ matrix.shard }}
-          path: web/test-results/
-          if-no-files-found: ignore
-          retention-days: 14
-
-  # The @serial tests (the S2 30-page budget and the §4.10 performance budgets), one at a time on a
-  # quiet runner: about 2 minutes per browser locally (the typing budgets type at a person's pace).
-  e2e-serial:
-    name: E2E serial ${{ matrix.browser }} (time budgets)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
-      options: --ipc=host
-    services:
-      db:
-        image: postgres:18
-        env:
-          POSTGRES_USER: homebrewery
-          POSTGRES_PASSWORD: homebrewery
-          POSTGRES_DB: homebrewery
-        options: >-
-          --health-cmd "pg_isready -U homebrewery -d homebrewery"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium, firefox]
-    env:
-      HOME: /root
-      HB_E2E_DB_HOST: db
-      # dotnet output outside src/ (relative to the repository root, where run-suite.mjs runs dotnet).
-      HB_ARTIFACTS: .artifacts
-      HB_API_NO_BUILD: "1"
-    defaults:
-      run:
-        working-directory: web
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build the API
-        working-directory: .
-        run: dotnet build src/Homebrewery.Api --configuration Debug --artifacts-path "$HB_ARTIFACTS"
-
-      - name: Serial end-to-end tests (time budgets)
-        run: node e2e/matrix/run-suite.mjs --project=${{ matrix.browser }}-serial
-
-      - name: Upload blob report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: blob-report-${{ matrix.browser }}-serial
-          path: web/blob-report/
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload test results (perf results, traces)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: e2e-serial-results-${{ matrix.browser }}
           path: web/test-results/
           if-no-files-found: ignore
           retention-days: 14
@@ -272,11 +212,16 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Playwright starts its own Vite (playwright.config.ts webServer); the runner adds the watchdog.
       - name: Fidelity smoke subset
@@ -285,7 +230,7 @@ jobs:
       - name: Fidelity report
         if: ${{ !cancelled() }}
         run: |
-          npx tsx scripts/fidelity-report.ts --results "test-results/$E2E_PORT/fidelity-results/chromium" --out fidelity-smoke-report.md
+          pnpm exec tsx scripts/fidelity-report.ts --results "test-results/$E2E_PORT/fidelity-results/chromium" --out fidelity-smoke-report.md
           cat fidelity-smoke-report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload blob report
@@ -347,15 +292,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build the API
         working-directory: .
@@ -386,7 +336,7 @@ jobs:
   e2e-report:
     name: E2E report
     if: ${{ !cancelled() }}
-    needs: [e2e, e2e-serial, fidelity, csp]
+    needs: [e2e, fidelity, csp]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -398,11 +348,16 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+
+      # pnpm's version is web/package.json's packageManager.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: web/package.json
+          cache: true
+          cache_dependency_path: web/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download blob reports
         uses: actions/download-artifact@v7
@@ -412,7 +367,7 @@ jobs:
           merge-multiple: true
 
       - name: Merge into an HTML report
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
+        run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload the HTML report
         uses: actions/upload-artifact@v7

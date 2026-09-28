@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using AngleSharp;
 using AngleSharp.Dom;
@@ -86,9 +85,11 @@ public sealed partial class RawHtmlSanitizer
     private readonly HtmlSanitizer _sanitizer;
 
     /// <param name="timeLimit">The time the raw HTML of one document may take to check (<see cref="TimeLimit"/>).</param>
-    public RawHtmlSanitizer(TimeSpan? timeLimit = null)
+    /// <param name="clock">The clock the time limit is measured on (<see cref="Clock"/>). Default: the system clock.</param>
+    public RawHtmlSanitizer(TimeSpan? timeLimit = null, TimeProvider? clock = null)
     {
         TimeLimit = timeLimit ?? DefaultTimeLimit;
+        Clock = clock ?? TimeProvider.System;
 
         var options = new HtmlSanitizerOptions
         {
@@ -146,6 +147,12 @@ public sealed partial class RawHtmlSanitizer
     /// </summary>
     public TimeSpan TimeLimit { get; }
 
+    /// <summary>
+    /// The clock <see cref="TimeLimit"/> is measured on: read once when a parse starts and once per token. Tests pass
+    /// one that moves a fixed step per read, so the limit runs out after a known number of tokens.
+    /// </summary>
+    public TimeProvider Clock { get; }
+
     /// <summary>Sanitizes <paramref name="html"/> within <see cref="TimeLimit"/>.</summary>
     public RawHtmlResult Sanitize(string html) => Sanitize(html, TimeLimit);
 
@@ -182,7 +189,8 @@ public sealed partial class RawHtmlSanitizer
         IBrowsingContext context;
         using (var seed = template.ParseDocument("")) context = seed.Context;
 
-        var deadline = Stopwatch.GetTimestamp() + (long)(Math.Min(timeLimit.TotalSeconds, 86_400) * Stopwatch.Frequency);
+        var clock = Clock;
+        var deadline = clock.GetTimestamp() + (long)(Math.Min(timeLimit.TotalSeconds, 86_400) * clock.TimestampFrequency);
         var tags = 0;
         var attributes = 0;
         var options = template.Options;
@@ -197,7 +205,7 @@ public sealed partial class RawHtmlSanitizer
                 throw new LimitExceeded($"must have at most {MaxTags} tags");
             }
 
-            if (Stopwatch.GetTimestamp() > deadline) throw new LimitExceeded(TooComplex);
+            if (clock.GetTimestamp() > deadline) throw new LimitExceeded(TooComplex);
         };
 
         try

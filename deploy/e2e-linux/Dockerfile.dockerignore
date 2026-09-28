@@ -1,0 +1,7 @@
+# Build context of deploy/e2e-linux/Dockerfile: only what the image installs from.
+*
+!web/package.json
+!web/pnpm-lock.yaml
+!web/pnpm-workspace.yaml
+!web/.pnpmfile.cjs
+!deploy/e2e-linux/entrypoint.sh

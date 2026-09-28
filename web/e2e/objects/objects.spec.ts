@@ -1,7 +1,7 @@
 // P5.3 page objects on /dev/objects: select, drag, resize, nudge, edit text in place, z-order,
 // delete, inline image ⇄ object, and a cover page built from scratch without the inspector.
 // Every change is one undo step; objects never make pagination move content.
-// E2E_PORT=5328 npx playwright test e2e/objects
+// E2E_PORT=5328 pnpm exec playwright test e2e/objects
 import { expect, type Page } from '@playwright/test';
 import {
   test,

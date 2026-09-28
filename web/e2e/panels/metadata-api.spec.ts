@@ -5,7 +5,7 @@
 // Needs a private API (never the humans' :5080/:8080) behind the Vite that Playwright uses:
 //
 //   dotnet run --project src/Homebrewery.Api --artifacts-path <tmp> --urls http://localhost:5424
-//   HB_API_URL=http://localhost:5424 E2E_PORT=5324 npx playwright test e2e/panels/metadata-api.spec.ts
+//   HB_API_URL=http://localhost:5424 E2E_PORT=5324 pnpm exec playwright test e2e/panels/metadata-api.spec.ts
 //
 // Without HB_API_URL the test is skipped; metadata.spec.ts and MetadataDialog.test.tsx cover the
 // dialog with a stubbed API.

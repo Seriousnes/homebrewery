@@ -13,10 +13,10 @@
 //   the canvas documents in every theme and for paginated harness documents. Each case attaches
 //   its geometry (layout-*.json), so runs before and after a canvas.css change can be diffed.
 // - continued list items: no second marker; the empty filler paragraph takes no space.
-import { expect, test, type ElementHandle, type Page, type TestInfo } from '@playwright/test';
+import { expect, type ElementHandle, type Page, type TestInfo } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { liOf, load, openHarness, p as hp, page as hpage, doc as hdoc, filler as hfiller, ul as hul } from '../pagination/harness';
-import { openCanvas, switchDoc } from './helpers';
+import { openCanvas, switchDoc, test } from './helpers';
 
 test.use({ viewport: { width: 1400, height: 1300 } });
 
@@ -28,48 +28,69 @@ const removeStyle = (style: ElementHandle<Node>) => style.evaluate((el) => (el a
 // offscreen (canvas.css, P8.1) and are brought up to date by the layout queries here.
 const UPSTREAM_PAGE = '.hb-canvas .page, .hb-canvas[data-hb-offscreen] .page { display: block !important; content-visibility: visible !important; }';
 
+interface Layouts {
+  /** .page's display with canvas.css as is */
+  display: string;
+  ours: string[];
+  /** with upstream's .page structure */
+  upstream: string[];
+}
+
 /**
- * Every element's client rects and the position of every 23rd character, relative to its page
- * (pages relative to the pages root), rounded to 1/100 px. Runs in the browser.
+ * Runs in the browser, in one task: the layout as it is, then with `upstreamCss` added (and
+ * removed again), so nothing asynchronous (a resize, a re-centring, a font swap) can land between
+ * the two.
  *
- * Left out, because they are invisible: zero-height fragments of an element that has visible
- * ones (Firefox reports an empty fragment at a column end for some lists), and the position of
- * empty absolutely positioned chrome (0 × 0 marker spans such as span.frontCover, which the theme
- * positions without offsets: their static position follows text-align in a block container and
- * is the content box's start in a flex container).
+ * A layout is every element's client rects and the position of every 23rd character, relative to
+ * its page (pages relative to the pages root), rounded to 1/100 px. Left out, because they are
+ * invisible: zero-height fragments of an element that has visible ones (Firefox reports an empty
+ * fragment at a column end for some lists), and the position of empty absolutely positioned chrome
+ * (0 × 0 marker spans such as span.frontCover, which the theme positions without offsets: their
+ * static position follows text-align in a block container and is the content box's start in a
+ * flex container).
  */
-function layoutFingerprint(): string[] {
-  const round = (v: number) => Math.round(v * 100) / 100;
-  const out: string[] = [];
-  const root = document.querySelector('.hb-canvas .pages')!.getBoundingClientRect();
-  document.querySelectorAll<HTMLElement>('.hb-canvas .page').forEach((pg, i) => {
-    const box = pg.getBoundingClientRect();
-    const rel = (r: DOMRect) => [r.left - box.left, r.top - box.top, r.width, r.height].map(round).join(',');
-    out.push(`page ${i} ${[box.left - root.left, box.top - root.top, box.width, box.height].map(round).join(',')}`);
-    for (const el of Array.from(pg.querySelectorAll('*'))) {
-      const name = `${el.tagName.toLowerCase()}${(el.getAttribute('class') ?? '')
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((c) => `.${c}`)
-        .join('')}`;
-      let rects = Array.from(el.getClientRects());
-      if (rects.some((r) => r.height > 0)) rects = rects.filter((r) => r.height > 0);
-      const empty = rects.every((r) => r.width === 0 && r.height === 0);
-      if (empty && getComputedStyle(el).position === 'absolute') out.push(`${i} ${name} (empty, absolute)`);
-      else out.push(`${i} ${name} ${rects.map(rel).join(' ')}`);
-    }
-    const walker = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT);
-    const range = document.createRange();
-    for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
-      for (let k = 0; k < n.data.length; k += 23) {
-        range.setStart(n, k);
-        range.setEnd(n, k + 1);
-        const r = range.getClientRects()[0];
-        out.push(`${i} char ${r ? rel(r) : '-'}`);
+function layoutsInPage(upstreamCss: string): Layouts {
+  const fingerprint = (): string[] => {
+    const round = (v: number) => Math.round(v * 100) / 100;
+    const out: string[] = [];
+    const root = document.querySelector('.hb-canvas .pages')!.getBoundingClientRect();
+    document.querySelectorAll<HTMLElement>('.hb-canvas .page').forEach((pg, i) => {
+      const box = pg.getBoundingClientRect();
+      const rel = (r: DOMRect) => [r.left - box.left, r.top - box.top, r.width, r.height].map(round).join(',');
+      out.push(`page ${i} ${[box.left - root.left, box.top - root.top, box.width, box.height].map(round).join(',')}`);
+      for (const el of Array.from(pg.querySelectorAll('*'))) {
+        const name = `${el.tagName.toLowerCase()}${(el.getAttribute('class') ?? '')
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((c) => `.${c}`)
+          .join('')}`;
+        let rects = Array.from(el.getClientRects());
+        if (rects.some((r) => r.height > 0)) rects = rects.filter((r) => r.height > 0);
+        const empty = rects.every((r) => r.width === 0 && r.height === 0);
+        if (empty && getComputedStyle(el).position === 'absolute') out.push(`${i} ${name} (empty, absolute)`);
+        else out.push(`${i} ${name} ${rects.map(rel).join(' ')}`);
       }
-    }
-  });
-  return out;
+      const walker = document.createTreeWalker(pg, NodeFilter.SHOW_TEXT);
+      const range = document.createRange();
+      for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
+        for (let k = 0; k < n.data.length; k += 23) {
+          range.setStart(n, k);
+          range.setEnd(n, k + 1);
+          const r = range.getClientRects()[0];
+          out.push(`${i} char ${r ? rel(r) : '-'}`);
+        }
+      }
+    });
+    return out;
+  };
+  const display = getComputedStyle(document.querySelector('.hb-canvas .page')!).display;
+  const ours = fingerprint();
+  const style = document.createElement('style');
+  style.textContent = upstreamCss;
+  document.head.append(style);
+  const upstream = fingerprint();
+  style.remove();
+  return { display, ours, upstream };
 }
 
 /** Largest difference between the numbers of two fingerprint lines; Infinity when they differ otherwise. */
@@ -114,21 +135,8 @@ async function saveLayout(testInfo: TestInfo, name: string, data: unknown): Prom
   await testInfo.attach(`layout-${name}.json`, { path, contentType: 'application/json' });
 }
 
-interface Layouts {
-  /** .page's display with canvas.css as is */
-  display: string;
-  ours: string[];
-  /** with upstream's .page structure */
-  upstream: string[];
-}
-
-async function layouts(page: Page): Promise<Layouts> {
-  const display = await page.evaluate(() => getComputedStyle(document.querySelector('.hb-canvas .page')!).display);
-  const ours = await page.evaluate(layoutFingerprint);
-  const style = await page.addStyleTag({ content: UPSTREAM_PAGE });
-  const upstream = await page.evaluate(layoutFingerprint);
-  await removeStyle(style);
-  return { display, ours, upstream };
+function layouts(page: Page): Promise<Layouts> {
+  return page.evaluate(layoutsInPage, UPSTREAM_PAGE);
 }
 
 function expectUpstreamLayout(l: Layouts, testInfo: TestInfo, name: string): void {

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Homebrewery.Api.Brews;
 
@@ -7,54 +6,45 @@ namespace Homebrewery.Api.Tests.Brews;
 /// <summary>BrewRules on inputs the endpoint tests don't cover: huge and malformed lists, unstorable numbers.</summary>
 public sealed class BrewRulesTests
 {
-    private static readonly TimeSpan Quick = TimeSpan.FromSeconds(1);
-
     [Fact]
-    public void A_huge_tag_list_is_rejected_quickly()
+    public void A_huge_tag_list_is_rejected_without_reading_it()
     {
-        var tags = Enumerable.Range(0, 100_000).Select(i => $"t{i}").ToList();
+        var tags = new CountingList<string>([.. Enumerable.Range(0, 100_000).Select(i => $"t{i}")]);
         var errors = new Dictionary<string, string[]>();
 
-        var watch = Stopwatch.StartNew();
         BrewRules.Merge(BrewRules.Defaults, new BrewMetaInput(Tags: tags), errors);
-        watch.Stop();
 
         Assert.Equal([$"a brew has at most {BrewRules.MaxTags} tags"], errors["meta.tags"]);
-        Assert.True(watch.Elapsed < Quick, $"took {watch.Elapsed}");
+        Assert.Equal(0, tags.Reads);
     }
 
     [Fact]
-    public void A_huge_author_list_is_rejected_quickly()
+    public void A_huge_author_list_is_rejected_without_reading_it()
     {
-        var handles = Enumerable.Range(0, 100_000).Select(i => $"user-{i}").ToList();
+        var handles = new CountingList<string>([.. Enumerable.Range(0, 100_000).Select(i => $"user-{i}")]);
         var errors = new Dictionary<string, string[]>();
 
-        var watch = Stopwatch.StartNew();
         var result = BrewRules.NormalizeHandles(handles, errors);
-        watch.Stop();
 
         Assert.Null(result);
         Assert.Equal([$"a brew has at most {BrewRules.MaxAuthors} authors"], errors["meta.authors"]);
-        Assert.True(watch.Elapsed < Quick, $"took {watch.Elapsed}");
+        Assert.Equal(0, handles.Reads);
     }
 
     [Theory]
-    [InlineData(100_000)]
-    [InlineData(150)]
-    public void Invalid_handles_give_one_error_not_one_per_handle(int count)
+    [InlineData(100_000, 0)]                                     // refused by its length
+    [InlineData(150, 1)]                                         // stops at the first invalid handle
+    public void Invalid_handles_give_one_error_not_one_per_handle(int count, int reads)
     {
-        var handles = Enumerable.Range(0, count).Select(i => $"not a handle {i}").ToList();
+        var handles = new CountingList<string>([.. Enumerable.Range(0, count).Select(i => $"not a handle {i}")]);
         var errors = new Dictionary<string, string[]>();
 
-        var watch = Stopwatch.StartNew();
         var result = BrewRules.NormalizeHandles(handles, errors);
-        watch.Stop();
 
         Assert.Null(result);
         Assert.Single(errors["meta.authors"]);
-        Assert.True(watch.Elapsed < Quick, $"took {watch.Elapsed}");
+        Assert.Equal(reads, handles.Reads);
     }
-
     [Fact]
     public void Too_long_tags_give_one_error()
     {
@@ -100,5 +90,33 @@ public sealed class BrewRulesTests
 
         Assert.Empty(errors);
         Assert.Equal("""[{"a":null,"b":0,"c":1.5,"d":12,"e":null}]""", stored);
+    }
+
+    /// <summary>A list that counts how many of its items were read (by index or enumeration).</summary>
+    private sealed class CountingList<T>(IReadOnlyList<T> items) : IReadOnlyList<T>
+    {
+        public int Reads { get; private set; }
+
+        public int Count => items.Count;
+
+        public T this[int index]
+        {
+            get
+            {
+                Reads++;
+                return items[index];
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            foreach (var item in items)
+            {
+                Reads++;
+                yield return item;
+            }
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

@@ -33,11 +33,13 @@ describe('LocalBrewsSignInPrompt', () => {
     expect(api.requests.filter((r) => r.method === 'POST')).toHaveLength(0);
   });
 
-  it('does not open for a page loaded already signed in', async () => {
+  it('does not open for a page loaded already signed in', () => {
     mockApi(() => jsonResponse([]));
-    setDefaultLocalBrews({ ...createLocalBrewLibrary(memoryStore<LocalBrew>(), memoryStore<LocalBrewSummary>()), count: () => Promise.resolve(3) });
+    const count = vi.fn(() => Promise.resolve(3));
+    setDefaultLocalBrews({ ...createLocalBrewLibrary(memoryStore<LocalBrew>(), memoryStore<LocalBrewSummary>()), count });
     renderRoute(<LocalBrewsSignInPrompt />, { me: ALICE });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+    // The prompt opens only on what count() answers, and it never asks (render ran the effects).
+    expect(count).not.toHaveBeenCalled();
     expect(screen.queryByTestId('local-brews-prompt')).toBeNull();
   });
 });

@@ -11,7 +11,7 @@ namespace Homebrewery.Api.Themes;
 /// <list type="number">
 /// <item><c>Themes:CatalogPath</c> when set (relative paths resolve against the content root). Tests point it at a
 /// committed copy.</item>
-/// <item>Otherwise <c>{web root}/themes/themes.json</c>, which the web build (<c>npm run build</c>) writes.</item>
+/// <item>Otherwise <c>{web root}/themes/themes.json</c>, which the web build (<c>pnpm run build</c>) writes.</item>
 /// <item>Outside Production only, when that file does not exist: the theme sources, <c>themes/V3/*/settings.json</c>
 /// (<c>Themes:SourcePath</c>, default: a <c>themes</c> folder in the content root or up to three levels above it). This
 /// keeps <c>docker compose up</c> and <c>dotnet run</c> working without a web build; Vite serves the theme files in
@@ -60,7 +60,7 @@ public static partial class ThemeCatalogSetup
 
         var sources = FindThemeSources(configuration, environment)
                       ?? throw new FileNotFoundException(
-                          $"Theme catalog not found: {path}. Run the web build (npm --prefix web run build), set " +
+                          $"Theme catalog not found: {path}. Run the web build (pnpm -C web run build), set " +
                           $"{CatalogPathKey}, or set {SourcePathKey} to the repository's themes folder.", path);
         var catalog = ThemeCatalog.FromThemeSources(sources);
         LogFallback(logger, path, sources);

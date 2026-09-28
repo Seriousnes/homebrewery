@@ -674,6 +674,12 @@ export class TestRunner {
     return { host: 'localhost', port, container: name };
   }
 
+  /** A container this runner started itself: removed with the runner, like startDatabase's. */
+  trackContainer(name: string): void {
+    this.containers.add(name);
+    this.watchContainerWithReaper(name);
+  }
+
   private watchContainerWithReaper(name: string): void {
     this.watchWithReaper(undefined);
     if (this.reaper?.connected) this.reaper.send({ container: name });
@@ -895,6 +901,8 @@ export interface SuperviseOptions {
   onStall?: (stall: Stall) => void;
   /** Every progress event as it arrives (HB_WATCHDOG_DEBUG=1 prints them). */
   onEvent?: (event: ProgressEvent) => void;
+  /** The watchdog's clock (default Date.now; tests pass their own). */
+  now?: () => number;
 }
 
 /**
@@ -905,14 +913,15 @@ export async function supervise(
   child: ChildProcess,
   options: SuperviseOptions = {},
 ): Promise<{ code: number | null; signal: NodeJS.Signals | null; stall: Stall | null; tests: FinishedTest[] }> {
-  const watchdog = new ProgressWatchdog(Date.now(), options.watchdog);
+  const now = options.now ?? Date.now;
+  const watchdog = new ProgressWatchdog(now(), options.watchdog);
   child.on('message', (message) => {
-    watchdog.event(message as ProgressEvent, Date.now());
+    watchdog.event(message as ProgressEvent, now());
     options.onEvent?.(message as ProgressEvent);
   });
   let stall: Stall | null = null;
   const timer = setInterval(() => {
-    stall = watchdog.check(Date.now());
+    stall = watchdog.check(now());
     if (!stall) return;
     clearInterval(timer);
     options.onStall?.(stall);

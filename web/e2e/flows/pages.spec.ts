@@ -2,7 +2,9 @@
 // the sign-in prompt and error pages on /edit, the /new draft through a reload and the sign-in
 // redirect, the 409 dialog with two tabs, locks, shortcuts and properties. See run-flows.mjs.
 import { readFile } from 'node:fs/promises';
+import { gunzipSync } from 'node:zlib';
 import { type APIRequestContext, type Browser, expect, type Page, test } from '@playwright/test';
+import { pauseClock, runClockUntil } from '../clock';
 import {
   adminEmail,
   appRoot,
@@ -14,7 +16,6 @@ import {
   nav,
   openEditorPage,
   PASSWORD,
-  pdfPageCount,
   printCount,
   privateApi,
   registerOnly,
@@ -32,6 +33,9 @@ import {
 } from './helpers';
 
 test.skip(!privateApi, 'Needs a private API: HB_API_URL=http://localhost:5429 (see e2e/flows/run-flows.mjs)');
+
+/** Whether the editor is ready and pagination has nothing left to do. */
+const paginationSettled = (page: Page) => page.evaluate(() => window.__hbEditorApp?.settled() === true);
 
 /** Leaving a page whose changes can't be saved asks first (beforeunload): say yes. */
 function acceptLeaving(page: Page): void {
@@ -126,7 +130,7 @@ async function ownBrews(request: APIRequestContext): Promise<{ editId: string; t
   return list.items;
 }
 
-test('/new signed out: a brew kept in this browser (issue #4) survives a reload at /local/:localId, is listed on this device and downloads as PDF', async ({ page, browserName }) => {
+test('/new signed out: a brew kept in this browser (issue #4) survives a reload at /local/:localId and is listed on this device', async ({ page }) => {
   acceptLeaving(page);
   const localId = await signedOutLocalBrew(page, 'Kept on this device');
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -137,12 +141,30 @@ test('/new signed out: a brew kept in this browser (issue #4) survives a reload 
   const item = page.locator(`[data-local-id="${localId}"]`);
   await expect(item).toBeVisible(LOAD_TIMEOUT);
   await expect(item.getByRole('link')).toHaveAttribute('href', `/local/${localId}`);
-  // No account needed for the PDF either (the API renders it).
-  if (browserName === 'chromium') {
-    const [download] = await Promise.all([page.waitForEvent('download', SAVE_TIMEOUT), item.getByRole('button', { name: /^Download .* as PDF$/ }).click()]);
-    expect(download.suggestedFilename()).toBe('Untitled brew.pdf');
-    expect(pdfPageCount(await readFile(await download.path()))).toBe(1);
-  }
+});
+
+// No account needed for the PDF either. What the API makes of the HTML (and that it takes it
+// from anyone) is PdfExportEndpointTests' and export/app.spec's: here the page's side, the brew's
+// HTML sent and the answer saved as a download.
+test('signed out, a brew kept in this browser downloads as PDF from the list on this device', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'the download flow is the same in every engine');
+  acceptLeaving(page);
+  const localId = await signedOutLocalBrew(page, 'Printed from this device');
+  const pdf = '%PDF-1.4\n%%EOF\n';
+  const sent: string[] = [];
+  await page.route('**/api/export/pdf', async (route) => {
+    const request = route.request();
+    const body = request.postDataBuffer() ?? Buffer.alloc(0);
+    sent.push((request.headers()['content-encoding'] === 'gzip' ? gunzipSync(body) : body).toString('utf8'));
+    await route.fulfill({ status: 200, contentType: 'application/pdf', body: Buffer.from(pdf, 'latin1') });
+  });
+  await page.goto('/local', { waitUntil: 'domcontentloaded' });
+  const item = page.locator(`[data-local-id="${localId}"]`);
+  const [download] = await Promise.all([page.waitForEvent('download'), item.getByRole('button', { name: /^Download .* as PDF$/ }).click()]);
+  expect(download.suggestedFilename()).toBe('Untitled brew.pdf');
+  expect((await readFile(await download.path())).toString('latin1')).toBe(pdf);
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain('Printed from this device');
 });
 
 test('signed out, brews stay on this device; after signing in, the prompt uploads them only when asked', async ({ page, baseURL }) => {
@@ -283,17 +305,32 @@ test('409: two tabs editing the same brew get the conflict dialog', { tag: '@smo
   await pageB.close();
 });
 
-test('Mod-S saves at once, Mod-P prints the pages; properties save the title', async ({ page, baseURL }) => {
+test('Mod-S saves at once', async ({ page, baseURL }) => {
   await signUpApi(page.request, baseURL!);
   const brew = await createBrewApi(page.request, baseURL!, 'Shortcuts');
+  // The page's clock is paused while the test types and saves (e2e/clock.ts): the 3 s autosave
+  // delay can't run out, so only Mod-S can save, however slow the machine.
+  await page.clock.install();
   await openEditorPage(page, `/edit/${brew.editId}`);
-  await stubPrint(page);
+  await expect.poll(() => paginationSettled(page)).toBe(true);
+  await pauseClock(page);
 
   await typeAt(page, ' now');
+  // Pagination settles (Mod-S waits for it), well before the autosave delay would run out.
+  await runClockUntil(page, () => paginationSettled(page), 1000);
   await page.keyboard.press('ControlOrMeta+s');
-  // Well before the 3 s autosave delay.
-  await expect.poll(async () => JSON.stringify((await storedBrew(page.request, brew.editId)).doc), { timeout: 2500, intervals: [100] }).toContain('Shortcuts now');
+  await expect.poll(async () => JSON.stringify((await storedBrew(page.request, brew.editId)).doc), SAVE_TIMEOUT).toContain('Shortcuts now');
   await expect(saveStatus(page)).toHaveText('Saved');
+  expect((await storedBrew(page.request, brew.editId)).version, 'one save').toBe(brew.version + 1);
+});
+
+test('Mod-P prints the pages; properties save the title', async ({ page, baseURL }) => {
+  await signUpApi(page.request, baseURL!);
+  const brew = await createBrewApi(page.request, baseURL!, 'Shortcuts');
+  await page.clock.install(); // runs with real time until the properties' save (below)
+  await openEditorPage(page, `/edit/${brew.editId}`);
+  await stubPrint(page);
+  await typeAt(page, ''); // the caret in the editor
 
   await page.keyboard.press('ControlOrMeta+p');
   await expect.poll(() => printCount(page)).toBe(1);
@@ -316,9 +353,13 @@ test('Mod-S saves at once, Mod-P prints the pages; properties save the title', a
   await dialog.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByTestId('brew-title')).toHaveText('Renamed by the flow');
   await expect(page.locator('[data-canvas-theme="Blank"][data-canvas-status="ready"]')).toBeVisible(LOAD_TIMEOUT);
+  // The autosave delay needn't be waited out: pausing the clock jumps past it (e2e/clock.ts).
+  await expect.poll(() => paginationSettled(page)).toBe(true);
+  await pauseClock(page);
   await expect
     .poll(async () => (await storedBrew(page.request, brew.editId)).meta, SAVE_TIMEOUT)
     .toMatchObject({ title: 'Renamed by the flow', theme: 'Blank' });
+  await page.clock.resume();
   await expect(page).toHaveTitle('Renamed by the flow - The Homebrewery');
 });
 

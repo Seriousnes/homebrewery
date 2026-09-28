@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Homebrewery.Api.Tests.Infrastructure;
 using Homebrewery.Core.Documents;
 
 namespace Homebrewery.Api.Tests.Documents;
@@ -11,7 +12,8 @@ internal static class TestDocs
     public static SchemaManifest Manifest { get; } =
         SchemaManifest.Load(Path.Combine(AppContext.BaseDirectory, SchemaManifest.FileName));
 
-    public static DocInspector Inspector { get; } = new(Manifest, new RawHtmlSanitizer());
+    /// <summary>The inspector with a clock that stands still: no raw HTML runs out of time on a busy machine.</summary>
+    public static DocInspector Inspector { get; } = new(Manifest, new RawHtmlSanitizer(clock: SteppingClock.Stopped()));
 
     public static InspectResult Inspect(JsonNode doc)
     {

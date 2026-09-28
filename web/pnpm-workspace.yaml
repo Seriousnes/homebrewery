@@ -1,0 +1,9 @@
+# pnpm settings for web/ (a single project, not a workspace).
+
+# Dependencies whose install scripts may run (esbuild checks its platform binary).
+allowBuilds:
+  esbuild: true
+
+# `pnpm run` and `pnpm exec` refuse to start when node_modules doesn't match pnpm-lock.yaml
+# (run `pnpm install`): what lints, builds and tests here is what CI installs.
+verifyDepsBeforeRun: error

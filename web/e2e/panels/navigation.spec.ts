@@ -43,6 +43,26 @@ for (const zoom of [0.5, 1, 2]) {
     await outline.locator('[data-page="7"]').click();
     await expect.poll(async () => (await offsetInViewport(page, 7)).top).toBeCloseTo(MARGIN, 0);
     await expectCurrentPage(page, 7);
+    // Text reflowing inside the page (a late font swap, typing) doesn't move the page: scroll
+    // anchoring holds the page, not the first line in view (canvas.css). The browser applies an
+    // anchoring adjustment in the rendering update that lays the change out, before it delivers
+    // the ResizeObserver notification for it, where scrollTop is read.
+    const scrolled = await page.evaluate(async () => {
+      const viewport = window.__hbPanels!.handle.viewport!;
+      const block = viewport.querySelectorAll('.pages > .page')[6]!.querySelector<HTMLElement>('.columnWrapper > *')!;
+      const before = viewport.scrollTop;
+      block.style.paddingTop = '3px';
+      const after = await new Promise<number>((resolve) => {
+        const observer = new ResizeObserver(() => {
+          observer.disconnect();
+          resolve(viewport.scrollTop);
+        });
+        observer.observe(block, { box: 'border-box' });
+      });
+      block.style.paddingTop = '';
+      return after - before;
+    });
+    expect(scrolled).toBe(0);
 
     // A heading in the middle of page 3: its top lands at the top of the viewport.
     await outline.locator('[data-entry="conventions"]').click();

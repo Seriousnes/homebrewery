@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import {
   applyThemeStyles,
   disposeThemeSlot,
@@ -139,6 +139,71 @@ describe('applyThemeStyles', () => {
     expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css']);
   });
 
+  it('switches atomically: the previous theme stays applied until the new links have loaded', async () => {
+    const first = applyThemeStyles(staticThemeChain(catalog, '5ePHB'), null, { slot: 'x' });
+    // Every theme link loads with media "not all" and keeps it: the switch applies its sheet
+    // through the CSSOM and marks the link (changing the attribute would make Firefox reload it).
+    const applied = () => Array.from(document.head.querySelectorAll('link')).map((l) => [l.getAttribute('media'), l.hasAttribute('data-hb-theme-applied')]);
+    expect(applied()).toEqual([['not all', false], ['not all', false]]); // loading, not applied
+    loadAll();
+    await first;
+    expect(applied()).toEqual([['not all', true], ['not all', true]]);
+
+    const sheet = new CSSStyleSheet();
+    const journal = applyThemeStyles(staticThemeChain(catalog, 'Journal'), '.page{}', { slot: 'x', scopeCss: () => sheet });
+    await Promise.resolve();
+    // 5ePHB still applied; Journal loading inert after the reused Blank; the CSS text not yet adopted.
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/5ePHB/style.scoped.css', '/themes/V3/Journal/style.scoped.css']);
+    expect(applied()).toEqual([['not all', true], ['not all', true], ['not all', false]]);
+    expect(document.adoptedStyleSheets).not.toContain(sheet);
+    document.head.querySelector('link:not([data-hb-theme-applied])')!.dispatchEvent(new Event('load'));
+    await journal;
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/Journal/style.scoped.css']);
+    expect(applied()).toEqual([['not all', true], ['not all', true]]);
+    expect(document.adoptedStyleSheets).toContain(sheet);
+    disposeThemeSlot('x');
+  });
+
+  it('replaces a loaded link that is out of place instead of moving it (a move re-creates its sheet)', async () => {
+    const chain = (...hrefs: string[]) => ({ styles: hrefs.map((href) => ({ kind: 'url' as const, href })) });
+    const first = applyThemeStyles(chain('/a.css', '/b.css'), null, { slot: 'r' });
+    loadAll();
+    const a = await first;
+    const reordered = applyThemeStyles(chain('/b.css', '/a.css'), null, { slot: 'r' });
+    await Promise.resolve();
+    // b stays where it is; a new /a.css loads after it while the old one still applies.
+    expect(themeLinks()).toEqual(['/a.css', '/b.css', '/a.css']);
+    expect(a.links[0]!.hasAttribute('data-hb-theme-applied')).toBe(true);
+    document.head.querySelector('link:not([data-hb-theme-applied])')!.dispatchEvent(new Event('load'));
+    const b = await reordered;
+    expect(themeLinks()).toEqual(['/b.css', '/a.css']);
+    expect(b.links[0]).toBe(a.links[1]);
+    expect(b.links[1]).not.toBe(a.links[0]);
+    expect(a.links[0]!.isConnected).toBe(false);
+    disposeThemeSlot('r');
+  });
+
+  it('only the latest apply of a slot switches it', async () => {
+    const first = applyThemeStyles(staticThemeChain(catalog, 'Blank'), null, { slot: 'y' });
+    loadAll();
+    await first;
+    const stale = applyThemeStyles(staticThemeChain(catalog, 'Journal'), null, { slot: 'y' });
+    const latest = applyThemeStyles(staticThemeChain(catalog, '5ePHB'), null, { slot: 'y' });
+    const journalLink = document.head.querySelector('link[data-hb-theme-href$="Journal/style.scoped.css"]')!;
+    journalLink.dispatchEvent(new Event('load'));
+    await stale; // superseded: switches nothing
+    expect(journalLink.hasAttribute('data-hb-theme-applied')).toBe(false);
+    loadAll();
+    await latest;
+    expect(themeLinks()).toEqual(['/themes/V3/Blank/style.scoped.css', '/themes/V3/5ePHB/style.scoped.css']);
+    expect(document.head.querySelector('link:not([data-hb-theme-applied])')).toBeNull();
+    // A disposed slot is not switched back in by an apply still pending.
+    const pending = applyThemeStyles(staticThemeChain(catalog, 'Journal'), null, { slot: 'y', timeoutMs: 10 });
+    disposeThemeSlot('y');
+    await pending;
+    expect(themeLinks()).toEqual([]);
+  });
+
   it('disposeThemeSlot removes every link and sheet of the slot, and only of that slot', async () => {
     const sheet = new CSSStyleSheet();
     const scopeCss = () => sheet;
@@ -167,6 +232,28 @@ describe('applyThemeStyles', () => {
     expect(scoped).toEqual(['.page{color:red}', '.page{color:blue}']); // theme first, then user CSS
     expect(applied.sheets).toHaveLength(2);
     warn.mockRestore();
+  });
+
+  it("reuses a user theme's sheet while its CSS is unchanged, so only the brew CSS is scoped again", async () => {
+    // jsdom has no adoptedStyleSheets.
+    Object.defineProperty(document, 'adoptedStyleSheets', { value: [], writable: true, configurable: true });
+    onTestFinished(() => void Reflect.deleteProperty(document, 'adoptedStyleSheets'));
+    const scoped: string[] = [];
+    const scopeCss = (css: string) => {
+      scoped.push(css);
+      return new CSSStyleSheet();
+    };
+    const chain = { styles: [{ kind: 'css' as const, css: '.page{color:red}', baseUrl: 'http://localhost/t/' }] };
+    const a = await applyThemeStyles(chain, '.page{color:blue}', { slot: 'u', scopeCss });
+    const b = await applyThemeStyles(chain, '.page{color:green}', { slot: 'u', scopeCss });
+    expect(scoped).toEqual(['.page{color:red}', '.page{color:blue}', '.page{color:green}']);
+    expect(b.sheets[0]).toBe(a.sheets[0]);
+    expect(document.adoptedStyleSheets).toEqual(b.sheets);
+    // A changed theme CSS is a new sheet.
+    const c = await applyThemeStyles({ styles: [{ kind: 'css', css: '.page{color:teal}' }] }, null, { slot: 'u', scopeCss });
+    expect(c.sheets[0]).not.toBe(a.sheets[0]);
+    expect(document.adoptedStyleSheets).toEqual(c.sheets);
+    disposeThemeSlot('u');
   });
 });
 

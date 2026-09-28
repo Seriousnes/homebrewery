@@ -1,6 +1,6 @@
 version: 2
-# WYSIWYG fork: the npm project is web/ (the root package.json moved to legacy/, which is reference
-# only and gets no updates). NuGet versions are central in Directory.Packages.props.
+# WYSIWYG fork: the pnpm project is web/ (the npm ecosystem covers pnpm-lock.yaml; the root
+# package.json moved to legacy/, which is reference only and gets no updates). NuGet versions are central in Directory.Packages.props.
 updates:
 - package-ecosystem: npm
   directory: "/web"
@@ -19,9 +19,6 @@ updates:
   ignore:
   # Exact pin, same version as legacy/package.json, so imported brews parse like upstream (plan §7).
   - dependency-name: marked
-  # typescript-eslint 8 supports TypeScript <6.1 and openapi-typescript 7 supports ^5.
-  - dependency-name: typescript
-    update-types: ["version-update:semver-major"]
 - package-ecosystem: nuget
   directory: "/"
   schedule:

@@ -138,6 +138,15 @@
   content-visibility: visible !important;
 }
 
+/* Scroll anchoring keeps a page, not a line inside it, where it is on screen. Otherwise the
+   browser anchors to the first visible box inside the page and, when text above that box reflows
+   (typing, a late font swap, content moved in by pagination), scrolls by the same amount (times
+   the zoom): the page itself jumps. Pages have a fixed size, so anchoring to them still follows
+   pages added or removed above the viewport. */
+.hb-canvas .page > * {
+  overflow-anchor: none !important;
+}
+
 /* Section column setting (page.attrs.columns): hb-cols-1 / hb-cols-2 on the page. The theme puts
    column-count on .page and .columnWrapper inherits it (Blank: .columnWrapper { columns: inherit }),
    so the override goes on the page too. Same specificity as the theme's `.page` rule, so it wins

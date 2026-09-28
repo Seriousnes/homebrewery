@@ -4,7 +4,7 @@
 
 let div: HTMLDivElement | null = null;
 
-// eslint-disable-next-line no-control-regex -- the characters upstream strips before checking for javascript:
+// oxlint-disable-next-line no-control-regex -- the characters upstream strips before checking for javascript:
 const IGNORED = /[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205f\u3000]/g;
 const BLACKLIST_TAGS = ['script', 'noscript', 'noembed'];
 const BLACKLIST_ATTRS: Array<(attr: Attr) => boolean> = [

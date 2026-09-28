@@ -42,6 +42,11 @@ export const PAGE_READY = { timeout: 10_000 };
 /** A save the autosave makes: its 3 s delay (AUTOSAVE_DELAY_MS), the settle check and the round trip. */
 export const SAVE_TIMEOUT = { timeout: 8_000 };
 
+/** The autosave's delay after the last change (web/src/editor/save/autosave.ts AUTOSAVE_DELAY_MS). */
+export const AUTOSAVE_DELAY_MS = 3000;
+/** The first retry's delay after a failed save (autosave.ts RETRY_DELAYS_MS[0]). */
+export const FIRST_RETRY_MS = 2000;
+
 /** A doc with one page holding one paragraph per text. */
 export function docOf(...texts: string[]): object {
   return {
@@ -64,6 +69,16 @@ export async function waitForSavePage(page: Page): Promise<Locator> {
   await expect(frame).toHaveAttribute('data-theme-status', 'ready', PAGE_READY);
   await page.waitForFunction(() => window.__hbSave !== undefined);
   return frame;
+}
+
+/** Whether pagination has nothing left to do in /dev/save's editor (autosave waits for that). */
+export function paginationSettled(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const { state } = window.__hbSave!.editor;
+    const plugin = state.plugins.find((p) => (p as unknown as { key: string }).key === 'hbPagination$');
+    const s = plugin?.getState(state) as { dirtyFrom: number | null; waiting: number[] } | undefined;
+    return !s || (s.dirtyFrom === null && s.waiting.length === 0);
+  });
 }
 
 /** Puts the caret at the end of text block `index` (focusing the editor synchronously) and types. */

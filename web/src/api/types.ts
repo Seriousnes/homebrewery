@@ -1,5 +1,5 @@
 // Named aliases for the generated OpenAPI schemas (web/src/api/schema.d.ts is generated; never
-// edit it — regenerate with `npm run api:types`).
+// edit it — regenerate with `pnpm run api:types`).
 import type { components, operations } from './schema';
 
 export type Schemas = components['schemas'];

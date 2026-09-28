@@ -4,6 +4,7 @@
 import type { Editor } from '@tiptap/core';
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { advance, tickUntil } from '@/test/fakeClock';
 import { docOf, p, page } from '../schema/testing';
 import { createCanvasGate, isCanvasReady, REPAGINATE_META } from './canvasState';
 import { EditorCanvas, type EditorCanvasHandle } from './EditorCanvas';
@@ -44,6 +45,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
   fontsGate = null;
 });
@@ -181,6 +183,31 @@ describe('EditorCanvas', () => {
     expect(t.editor.storage.hbCanvas.theme).toBe('Blank');
   });
 
+  it('keeps the pages hidden until the theme is first applied, and visible through later theme changes', async () => {
+    const t = setup();
+    const hidden = () => /unstyled/.test(t.container.querySelector('.hb-canvas')!.parentElement!.className);
+    expect(hidden()).toBe(true);
+    await waitFor(() => expect(fontsGate).not.toBeNull());
+    expect(hidden()).toBe(true); // styles applied, fonts still loading
+    await act(async () => {
+      fontsGate!.resolve(true);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(hidden()).toBe(false));
+
+    t.rerender(<EditorCanvas content={content} theme="Blank" userCssDelayMs={0} onReady={() => {}} />);
+    await waitFor(() => expect(loader.waitForFonts).toHaveBeenCalledTimes(2));
+    expect(t.container.querySelector('[data-canvas-status="loading"]')).not.toBeNull();
+    expect(hidden()).toBe(false);
+  });
+
+  it('shows the pages when the theme fails to load', async () => {
+    loader.loadThemeChain.mockImplementationOnce(() => Promise.reject(new Error('Unknown theme "Nope"')));
+    const t = setup({ theme: 'Nope' });
+    await waitFor(() => expect(t.container.querySelector('[data-canvas-status="error"]')).not.toBeNull());
+    expect(t.container.querySelector('.hb-canvas')!.parentElement!.className).not.toMatch(/unstyled/);
+  });
+
   it('reports a theme that fails to load and keeps the canvas usable', async () => {
     loader.loadThemeChain.mockImplementationOnce(() => Promise.reject(new Error('Unknown theme "Nope"')));
     const statuses: string[] = [];
@@ -209,8 +236,11 @@ describe('EditorCanvas', () => {
     await waitFor(() => expect(statuses).toContainEqual({ state: 'error', theme: 'Journal' }));
     expect(loader.applyThemeStyles).toHaveBeenCalledTimes(1);
 
+    // The edit on a fake clock, run well past its userCssDelayMs: nothing re-applies after it.
+    vi.useFakeTimers();
     t.rerender(<EditorCanvas {...props} theme="Journal" userCss=".page { background: lavender }" />);
-    await new Promise((r) => setTimeout(r, 50));
+    await advance(1000);
+    vi.useRealTimers();
     expect(loader.applyThemeStyles).toHaveBeenCalledTimes(1); // 5ePHB's chain is not re-applied
     expect(t.container.querySelector('[data-canvas-status="error"][data-canvas-theme="Journal"]')).not.toBeNull();
     expect(t.editor.storage.hbCanvas.ready).toBe(true);
@@ -271,10 +301,11 @@ describe('EditorCanvas', () => {
 
     await act(async () => {
       releaseFirst!(); // Journal's apply ends after UnearthedArcana's
-      await new Promise((r) => setTimeout(r, 10));
+      // A macrotask: what follows the released promise (microtasks only) has run by then.
+      await new Promise((r) => setTimeout(r, 0));
     });
     t.rerender(<EditorCanvas {...props} theme="UnearthedArcana" userCss=".page { color: red }" />);
-    await waitFor(() => expect(t.repaginations.map((r) => r.reason)).toEqual(['theme', 'css']), { timeout: 2000 });
+    await waitFor(() => expect(t.repaginations.map((r) => r.reason)).toEqual(['theme', 'css']));
     expect(t.editor.storage.hbCanvas.theme).toBe('UnearthedArcana');
 
     const slot = (loader.applyThemeStyles.mock.calls[0]![2] as { slot: string }).slot;
@@ -305,14 +336,25 @@ describe('EditorCanvas', () => {
     expect(t.repaginations).toContainEqual({ from: 1, reason: 'manual' });
   });
 
+  // On a fake clock (timers and performance.now): each delay is exact, and "not yet" is checked
+  // 1 ms before it runs out. The steps are driven by hand (src/test/fakeClock.ts): ticks that let
+  // promises settle (the clock stays put), or advancing it.
   describe('repagination debounce (plan §4.7: theme or user CSS change, debounced 300 ms)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     /** Resolves the fonts wait of the `n`-th style apply. */
     async function fontsReady(n: number) {
-      await waitFor(() => expect(loader.waitForFonts).toHaveBeenCalledTimes(n));
+      await tickUntil(() => loader.waitForFonts.mock.calls.length === n);
       await act(async () => {
         fontsGate!.resolve(true);
         await Promise.resolve();
       });
+      await advance(0);
     }
 
     function timedSetup(props: Partial<Parameters<typeof EditorCanvas>[0]> = {}) {
@@ -321,38 +363,44 @@ describe('EditorCanvas', () => {
       const t = setup({ ...base, ...props }); // setup's onReady records the metas
       const rerender = (next: Partial<Parameters<typeof EditorCanvas>[0]>) => {
         t.rerender(<EditorCanvas {...base} onReady={() => {}} {...props} {...next} />);
-        return performance.now();
       };
-      return { ...t, times, rerender };
+      const reasons = () => times.map((x) => x.reason);
+      return { ...t, times, reasons, rerender };
     }
 
     it('the first load repaginates as soon as styles and fonts are ready', async () => {
       const t = timedSetup();
       const start = performance.now();
       await fontsReady(1);
-      await waitFor(() => expect(t.times.map((x) => x.reason)).toEqual(['theme']));
-      expect(t.times[0]!.at - start).toBeLessThan(250);
+      expect(t.times).toEqual([{ reason: 'theme', at: start }]); // the clock never moved
     });
 
     it('user CSS: styles apply after userCssDelayMs, the repagination once, 300 ms after the last edit', async () => {
       const t = timedSetup();
       await fontsReady(1);
-      await waitFor(() => expect(t.metas).toEqual([0]));
+      expect(t.metas).toEqual([0]);
 
       t.rerender({ userCss: '.page { color: red }' });
-      await waitFor(() => expect(loader.applyThemeStyles).toHaveBeenCalledTimes(2)); // restyled after ~20 ms
+      await advance(19);
+      expect(loader.applyThemeStyles).toHaveBeenCalledTimes(1); // userCssDelayMs (20) not over yet
+      await advance(1);
+      expect(loader.applyThemeStyles).toHaveBeenCalledTimes(2);
       await fontsReady(2);
       expect(isCanvasReady(t.editor)).toBe(true);
       expect(t.metas).toEqual([0]); // … but not repaginated yet
 
-      const last = t.rerender({ userCss: '.page { color: blue }' });
-      await waitFor(() => expect(loader.applyThemeStyles).toHaveBeenCalledTimes(3));
+      await advance(100);
+      t.rerender({ userCss: '.page { color: blue }' }); // the last edit, at 0 ms
+      await advance(20);
+      expect(loader.applyThemeStyles).toHaveBeenCalledTimes(3);
       expect(loader.applyThemeStyles.mock.calls[2]![1]).toBe('.page { color: blue }');
       await fontsReady(3);
-      await waitFor(() => expect(t.metas).toEqual([0, 0]), { timeout: 2000 });
-      expect(t.times.map((x) => x.reason)).toEqual(['theme', 'css']); // one repagination for both edits
-      expect(t.times[1]!.at - last).toBeGreaterThanOrEqual(295);
-      await new Promise((r) => setTimeout(r, 350));
+      await advance(279); // 299 ms
+      expect(t.metas).toEqual([0]);
+      await advance(1); // 300 ms
+      expect(t.metas).toEqual([0, 0]);
+      expect(t.reasons()).toEqual(['theme', 'css']); // one repagination for both edits
+      await advance(1000);
       expect(t.metas).toEqual([0, 0]);
     });
 
@@ -360,31 +408,38 @@ describe('EditorCanvas', () => {
       const t = timedSetup();
       await fontsReady(1);
       t.rerender({ userCss: 'p { color: red }' });
+      await advance(20);
       await fontsReady(2);
       t.rerender({ userCss: 'p { color: green }' });
-      const last = t.rerender({ userCss: 'p { color: red }' }); // within userCssDelayMs: no apply
-      await waitFor(() => expect(t.times.map((x) => x.reason)).toEqual(['theme', 'css']), { timeout: 2000 });
+      await advance(10);
+      t.rerender({ userCss: 'p { color: red }' }); // within userCssDelayMs: no apply. At 0 ms
+      await advance(299);
+      expect(t.reasons()).toEqual(['theme']);
+      await advance(1);
+      expect(t.reasons()).toEqual(['theme', 'css']);
       expect(loader.applyThemeStyles).toHaveBeenCalledTimes(2);
-      expect(t.times[1]!.at - last).toBeGreaterThanOrEqual(295);
     });
 
-    it('a theme change repaginates no sooner than 300 ms after it (repaginateDelayMs)', async () => {
+    it('a theme change repaginates no sooner than repaginateDelayMs after it', async () => {
       const t = timedSetup({ repaginateDelayMs: 400 });
       await fontsReady(1);
-      const changed = t.rerender({ theme: 'Blank' });
+      t.rerender({ theme: 'Blank' }); // at 0 ms
       await fontsReady(2);
-      await waitFor(() => expect(t.times.map((x) => x.reason)).toEqual(['theme', 'theme']), { timeout: 2000 });
-      expect(t.times[1]!.at - changed).toBeGreaterThanOrEqual(395);
+      await advance(399);
+      expect(t.reasons()).toEqual(['theme']);
+      await advance(1);
+      expect(t.reasons()).toEqual(['theme', 'theme']);
     });
 
     it('unmounting cancels a pending repagination', async () => {
       const t = timedSetup();
       await fontsReady(1);
       t.rerender({ userCss: 'p { color: red }' });
+      await advance(20);
       await fontsReady(2);
       t.unmount();
-      await new Promise((r) => setTimeout(r, 400));
-      expect(t.times.map((x) => x.reason)).toEqual(['theme']);
+      await advance(1000); // well past the 300 ms
+      expect(t.reasons()).toEqual(['theme']);
     });
   });
 

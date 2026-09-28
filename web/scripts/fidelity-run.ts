@@ -1,7 +1,7 @@
 // The S3 import fidelity run in one command (plan §7 S3, P6.2). From web/:
 //
-//   npx tsx scripts/fidelity-run.ts                       # Chromium, every fixture, report written
-//   npx tsx scripts/fidelity-run.ts --browsers chromium,firefox --variants keep,trailing-break
+//   pnpm exec tsx scripts/fidelity-run.ts                       # Chromium, every fixture, report written
+//   pnpm exec tsx scripts/fidelity-run.ts --browsers chromium,firefox --variants keep,trailing-break
 //                                                         # what e2e/fixtures/fidelity-report.md was made with
 //
 // Options:

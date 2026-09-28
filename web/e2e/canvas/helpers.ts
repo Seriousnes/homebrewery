@@ -1,7 +1,15 @@
 // Shared helpers for the canvas specs (S1, P3.2, P3.3) against /dev/canvas.
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { type Browser, expect, type Page, type TestInfo } from '@playwright/test';
+import { type Browser, expect, type Page, test as base, type TestInfo } from '@playwright/test';
+
+/**
+ * The specs' `test`: one browser context per worker, reset between tests (Playwright's
+ * reuseContext: cookies, cache, storage, routes, init scripts and the clock cleared, viewport and
+ * colour scheme applied again). /dev/canvas is a harness page that keeps no other state, and a new
+ * context per test cost Firefox seconds of every test (module loading of a cold context).
+ */
+export const test = base.extend({ reuseContext: true });
 
 /**
  * A page for a group of tests that only read one loaded document: the group opens it once, in
@@ -43,8 +51,8 @@ export interface OpenOptions {
 }
 
 /**
- * From the end of the navigation to theme, CSS and fonts applied: a few seconds, the most for a
- * cold Firefox. (A font that never arrives holds the ready state for the fonts gate's 10 s: that
+ * From the DOM (domcontentloaded) to theme, CSS and fonts applied, as long as a navigation: a few
+ * seconds, the most for a cold Firefox. (A font that never arrives holds the ready state for the fonts gate's 10 s: that
  * shows up here as a timeout.)
  */
 export const READY_TIMEOUT = { timeout: 10_000 };
@@ -59,7 +67,10 @@ export async function openCanvas(page: Page, options: OpenOptions = {}): Promise
   );
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(options)) if (value !== undefined) params.set(key, String(value));
-  await page.goto(`/dev/canvas${params.size ? `?${params.toString()}` : ''}`);
+  // The DOM, then the page's own readiness signal: the load event is none (Firefox holds it until
+  // the lazy route's whole module graph is in, Chromium doesn't), and waiting for it put all of
+  // Firefox's loading inside the navigation timeout.
+  await page.goto(`/dev/canvas${params.size ? `?${params.toString()}` : ''}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-theme-status="ready"]')).toBeVisible(READY_TIMEOUT);
   if (options.view !== 'legacy') await page.waitForFunction(() => window.__editor !== undefined);
 }
@@ -131,15 +142,19 @@ export function caret(page: Page): Promise<Caret> {
 
 /**
  * Focuses the editor with the caret at `pos` (scrolled into view), and waits until the DOM
- * selection is there too (ProseMirror syncs it on focus, partly in a timeout).
+ * selection is there too. When the editor gains focus, ProseMirror puts its selection back into
+ * the DOM 20 ms later if the DOM's differs from the last one it read (prosemirror-view
+ * handlers.focus), which would undo a caret move made before then (a key press, a click): the call
+ * returns after that timer, from a longer timer set after it (timers of a page fire in order of
+ * their due time).
  */
 export async function setCaret(page: Page, pos: number): Promise<void> {
-  await page.evaluate((p) => {
+  await page.evaluate(async (p) => {
     const editor = window.__editor!;
     editor.view.focus();
     editor.chain().setTextSelection(p).scrollIntoView().run();
+    await new Promise((resolve) => setTimeout(resolve, 30));
   }, pos);
-  await page.waitForTimeout(30);
   await page.waitForFunction((p) => {
     const view = window.__editor!.view;
     const dom = document.getSelection();
@@ -259,12 +274,21 @@ export async function press(page: Page, key: string): Promise<void> {
   await settle(page);
 }
 
-/** Two frames and a task: selectionchange and ProseMirror's DOM observer have run. */
+/** prosemirror-view internals that settle reads (DOMObserver). */
+interface ObservedView {
+  hasFocus(): boolean;
+  domSelectionRange(): unknown;
+  domObserver: { currentSelection: { eq(selection: unknown): boolean } };
+}
+
+/**
+ * Waits until ProseMirror has read the DOM selection as it is now: after a native caret move (an
+ * arrow key, a click, a drag) it does so on the selectionchange event that follows, and then
+ * records that selection (DOMObserver.currentSelection). Without focus there is nothing to read.
+ */
 export async function settle(page: Page): Promise<void> {
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 20)));
-      }),
-  );
+  await page.waitForFunction(() => {
+    const view = window.__editor!.view as unknown as ObservedView;
+    return !view.hasFocus() || view.domObserver.currentSelection.eq(view.domSelectionRange());
+  });
 }

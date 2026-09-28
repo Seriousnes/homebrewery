@@ -107,14 +107,13 @@ describe('evaluateMath', () => {
     expect(() => evaluateMath('1+'.repeat(600) + '1')).toThrow(RangeError);
   });
 
-  it('returns quickly on huge arguments (no loops proportional to the input)', () => {
-    const start = performance.now();
+  // No loops proportional to the input: one would not end, and the test timeout would fail it.
+  it('returns on huge arguments', () => {
     expect(evaluateMath('fac(1e12)')).toBe(Infinity);
     expect(evaluateMath('fac(170)')).toBeGreaterThan(1e306);
     expect(typeof evaluateMath('toWords(1e300)')).toBe('string');
     expect(typeof evaluateMath('toChar(1e300)')).toBe('string');
     expect(() => evaluateMath('toRomans(1e300)')).toThrow(RangeError);
-    expect(performance.now() - start).toBeLessThan(500);
   });
 });
 

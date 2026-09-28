@@ -100,7 +100,7 @@ export function exportDocument(source: ExportSource): PMNode {
 export function exportFileName(title: string | undefined, extension: 'html' | 'pdf' = 'html'): string {
   const base = (title ?? '')
     .normalize('NFC')
-    // eslint-disable-next-line no-control-regex -- control characters are not allowed in file names
+    // oxlint-disable-next-line no-control-regex -- control characters are not allowed in file names
     .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -168,7 +168,7 @@ function pageInlineUrls(root: Element, baseUrl: string): string[] {
     for (const attr of Array.from(el.attributes)) {
       if (attr.name === 'style') {
         for (const url of cssUrls(attr.value)) {
-          if (/^#/.test(url.trim())) continue;
+          if (url.trim().startsWith('#')) continue;
           const href = absoluteUrl(url, baseUrl);
           if (href) urls.push(href);
         }

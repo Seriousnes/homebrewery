@@ -85,7 +85,7 @@ async function stubOtherSites(context: BrowserContext, request: APIRequestContex
         });
       } else if (/\.(woff2?|ttf|otf)$/.test(url.pathname)) {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'font/woff2' }, body: fontBytes });
-      } else if (/\.css$/.test(url.pathname)) {
+      } else if (url.pathname.endsWith('.css')) {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'text/css' }, body: '' });
       } else {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'image/png' }, body: PNG });
@@ -114,23 +114,53 @@ async function visit(page: Page, path: string): Promise<void> {
 async function waitForCanvas(page: Page): Promise<void> {
   await expect(page.locator('[data-canvas-status="ready"]').first()).toBeVisible(LOAD);
   await expect(page.locator('.hb-canvas .page').first()).toBeVisible(LOAD);
+  await loadsInView(page);
+}
+
+/**
+ * Waits for what the page shows to be loaded: two rendered frames (style and layout have run, so
+ * every stylesheet, font and image they use has been asked for: a request the policy blocks is
+ * reported as it is refused), then the fonts, and the images that load now (loaded or failed): all
+ * but lazy ones out of view, which load when scrolled to.
+ */
+async function loadsInView(page: Page): Promise<void> {
   await page.evaluate(async () => {
+    const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await frame();
+    await frame();
     await document.fonts.ready;
-    const pending = Array.from(document.images).filter((img) => !img.complete);
-    const loaded = (img: HTMLImageElement) =>
-      new Promise((resolve) => {
-        img.addEventListener('load', resolve, { once: true });
-        img.addEventListener('error', resolve, { once: true });
-        setTimeout(resolve, 5000);
+    const inView = (img: HTMLImageElement) =>
+      new Promise<boolean>((resolve) => {
+        const observer = new IntersectionObserver(([entry]) => {
+          observer.disconnect();
+          resolve(entry?.isIntersecting ?? false);
+        });
+        observer.observe(img);
       });
-    await Promise.all(pending.map(loaded));
+    const loading = Array.from(document.images).filter((img) => !img.complete);
+    const pending = await Promise.all(loading.map(async (img) => (img.loading !== 'lazy' || (await inView(img)) ? img : null)));
+    await Promise.all(
+      pending.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (!img || img.complete) return resolve(null);
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+          }),
+      ),
+    );
   });
 }
 
-/** Lets late work (lazy chunks, pagination, fonts, the autosave) finish on the current page. */
+/**
+ * Lets the current page's loads finish, and their violations arrive: the load event, then
+ * loadsInView, then a task after every violation event queued by then (the binding delivers each
+ * before the page's answer to this evaluate).
+ */
 async function settle(page: Page): Promise<void> {
   await page.waitForLoadState('load');
-  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 500)));
+  await loadsInView(page);
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
 }
 
 function uniqueEmail(prefix: string): string {
@@ -232,14 +262,16 @@ test('the policy is enforced and violations are heard (canary)', async ({ contex
       });
     const https = await load(`${images}/allowed.png`);
     const http = await load('http://images.csp-e2e.test/blocked.png');
-    await new Promise((resolve) => setTimeout(resolve, 300));
     return { inline: flags.__hbInlineRan === true, handler: flags.__hbHandlerRan === true, https, http };
   }, IMAGES);
 
   expect(outcome).toEqual({ inline: false, handler: false, https: true, http: false });
-  const events = violations.filter((v) => v.via === 'event');
-  expect(events.map((v) => v.directive).sort()).toEqual(['img-src', 'script-src-attr', 'script-src-elem']);
-  expect(events.find((v) => v.directive === 'img-src')?.blocked).toBe('http://images.csp-e2e.test/blocked.png');
+  // The three violation events (each a task of its own, reported through the binding).
+  const events = () => violations.filter((v) => v.via === 'event');
+  await expect.poll(() => events().map((v) => v.directive).sort()).toEqual(['img-src', 'script-src-attr', 'script-src-elem']);
+  await settle(page);
+  expect(events().map((v) => v.directive).sort()).toEqual(['img-src', 'script-src-attr', 'script-src-elem']); // and no more
+  expect(events().find((v) => v.directive === 'img-src')?.blocked).toBe('http://images.csp-e2e.test/blocked.png');
 });
 
 test('the home page (the welcome brew), a new brew kept on this device, and Brews on this device', async ({ context, page, request }) => {

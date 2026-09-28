@@ -1,6 +1,6 @@
 // Style drawer (P3.6) in jsdom: controlled value, onChange per edit, formatting (keys, button,
-// one undo step, errors), the snippet slot, and the colour scheme. The 300 ms apply-to-canvas
-// budget is measured in web/e2e/inspector/style.spec.ts.
+// one undo step, errors), the snippet slot, and the colour scheme. How edits reach the canvas
+// (after the userCssDelayMs debounce, in one new stylesheet) is web/e2e/inspector/style.spec.ts.
 import { redo, undo } from '@codemirror/commands';
 import { EditorView, runScopeHandlers } from '@codemirror/view';
 import { act, render, screen, waitFor } from '@testing-library/react';

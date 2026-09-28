@@ -40,7 +40,7 @@ export function isAuthPath(pathname: string): boolean {
 export function safeReturnTo(value: string | null | undefined, fallback = '/'): string {
   if (typeof value !== 'string' || value.length > 2000) return fallback;
   if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return fallback;
-  // eslint-disable-next-line no-control-regex
+  // oxlint-disable-next-line no-control-regex
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return fallback;
   let url: URL;
   try {

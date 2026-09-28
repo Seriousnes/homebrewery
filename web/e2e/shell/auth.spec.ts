@@ -4,7 +4,7 @@
 //   Admin__Emails=shell-admin@e2e.test dotnet run --project src/Homebrewery.Api \
 //     --artifacts-path <tmp> --no-launch-profile --urls http://localhost:5421
 //   (env ASPNETCORE_ENVIRONMENT=Development; compose db up)
-//   cd web && HB_API_URL=http://localhost:5421 E2E_PORT=5321 npx playwright test e2e/shell
+//   cd web && HB_API_URL=http://localhost:5421 E2E_PORT=5321 pnpm exec playwright test e2e/shell
 //
 // Without a private API (HB_API_URL, never the humans' :5080/:8080) or with none reachable, these
 // tests are skipped (the stubbed shell.spec.ts still runs). The notices test also needs

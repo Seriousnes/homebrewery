@@ -5,7 +5,7 @@
 //   (web/scripts/schema-manifest.ts writes shared/schema-manifest.json, which the server's
 //   DocInspector validates every save against).
 // - Relative imports only (no '@/…' alias): the manifest script is compiled and run outside Vite.
-// - Changing a node/mark/attribute changes the manifest: run `npm run schema` and commit
+// - Changing a node/mark/attribute changes the manifest: run `pnpm run schema` and commit
 //   shared/schema-manifest.json. Incompatible changes bump DOC_SCHEMA_VERSION + a migration.
 //
 // Editor behaviour (heading ids, page ids, history, cursors, NodeViews, pagination) is added on

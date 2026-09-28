@@ -3,7 +3,7 @@
 //
 //   node e2e/flows/run-flows.mjs          (from web/: starts the API on :5429 and Vite on :5329)
 //
-// or HB_API_URL=http://localhost:5429 E2E_PORT=5329 npx playwright test e2e/flows with an API
+// or HB_API_URL=http://localhost:5429 E2E_PORT=5329 pnpm exec playwright test e2e/flows with an API
 // you started yourself (see run-flows.mjs for its settings). Skipped without HB_API_URL.
 import { expect, test } from '@playwright/test';
 import {

@@ -49,8 +49,11 @@ export interface BrewOptions {
   style?: string;
   theme?: string;
   title?: string;
-  /** How long the canvas may take to become ready (default READY_TIMEOUT). */
-  readyTimeout?: number;
+  /**
+   * Runs after the navigation, before openEditor waits for the canvas: a test that holds the
+   * canvas back (a font it waits for, on a fake clock) lets it go on here.
+   */
+  beforeReady?: () => Promise<void>;
 }
 
 export interface ApiLog {
@@ -121,7 +124,8 @@ export function watchErrors(page: Page): string[] {
 export async function openEditor(page: Page, brew: BrewOptions): Promise<ApiLog> {
   const log = await stubBrewApi(page, brew);
   await page.goto(`/edit/${EDIT_ID}`, { waitUntil: 'domcontentloaded' });
-  await waitForEditor(page, brew.readyTimeout);
+  await brew.beforeReady?.();
+  await waitForEditor(page);
   await attachHarness(page);
   await settled(page);
   return log;

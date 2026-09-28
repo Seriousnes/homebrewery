@@ -1,25 +1,20 @@
-import { configure, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyResponse, jsonResponse, mockApi } from '@/api/testing';
 import { App } from '@/app/App';
-
-// Every test lazy-loads a page module. Load them once up front (hook timeout), so no test's findBy
-// waits for a first import; the lazy routes still resolve through the same import() calls.
-configure({ asyncUtilTimeout: 3000 });
-beforeAll(async () => {
-  await Promise.all([
-    import('@/pages/home'),
-    import('@/pages/edit'),
-    import('@/pages/share'),
-    import('@/pages/user'),
-    import('@/pages/vault'),
-    import('@/pages/import'),
-    import('@/pages/admin'),
-    import('@/pages/account/AccountPage'),
-    import('@/pages/auth/LoginPage'),
-    import('@/pages/auth/RegisterPage'),
-  ]);
-});
+// Every test lazy-loads a page module. They are imported with this file, while it is collected
+// (no test or hook timeout covers a cold import), so no test's findBy waits for a first import;
+// the lazy routes still resolve through the same import() calls.
+import '@/pages/home';
+import '@/pages/edit';
+import '@/pages/share';
+import '@/pages/user';
+import '@/pages/vault';
+import '@/pages/import';
+import '@/pages/admin';
+import '@/pages/account/AccountPage';
+import '@/pages/auth/LoginPage';
+import '@/pages/auth/RegisterPage';
 
 beforeEach(() => {
   mockApi((request) => {

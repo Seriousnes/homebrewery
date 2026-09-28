@@ -2,15 +2,15 @@
 // which session the URL shows, where the page goes after a create or a copy, and what leaving,
 // signing out or deleting does to saving.
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { recentBrewsStore, recordRecentBrew } from '@/app/recentBrews';
 import { ALICE } from '@/app/testing';
 import { uiStore } from '@/app/uiStore';
 import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader';
 import { readDraftsFor } from '@/editor/save/drafts';
 import { defaultDraftStore, defaultSnapshotHistory } from '@/editor/save/stores';
-import { appEditor, createBrewServer, docText, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp, typeInEditor } from '@/pages/routeTesting';
-import { clearToasts } from '@/ui';
+import { appEditor, createBrewServer, docText, fakeBrew, logOf, pressSaveKey, renderApp, typeInEditor } from '@/pages/routeTesting';
+import { clearToasts, toastStore } from '@/ui';
 
 const loader = vi.hoisted(() => ({
   loadThemeChain: vi.fn(),
@@ -21,9 +21,6 @@ const loader = vi.hoisted(() => ({
 vi.mock('@/editor/canvas/themeLoader', () => loader);
 
 const chainOf = (theme: string): ThemeChain => ({ theme, source: 'static', name: theme, author: null, styles: [], snippets: [] });
-
-// The editor pages are lazy chunks: load them once, before the tests' waits start (hook timeout).
-beforeAll(() => preloadAppPages());
 
 async function clearDrafts() {
   const store = defaultDraftStore();
@@ -54,8 +51,7 @@ afterEach(() => {
 });
 
 const appRoot = () => screen.getByTestId('editor-app');
-const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull(), { timeout: 3000 });
-const settle = (ms = 150) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull());
 
 describe('leaving /new before the autosave delay', () => {
   it.each(['/vault', '/new'])('saves the brew and stays on %s', async (target) => {
@@ -68,8 +64,8 @@ describe('leaving /new before the autosave delay', () => {
     // The unmount flush still creates the brew …
     await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
     expect(docText(server.brews.get('newA')?.doc)).toBe('Hello');
-    await settle();
-    // … but the page the user chose stays.
+    // … and the page, told of the create after the user left (the toast), stays where they went.
+    await waitFor(() => expect(toastStore.getState().toasts.map((t) => t.title)).toContain('Your new brew was saved'));
     expect(router.state.location.pathname).toBe(target);
     expect(router.state.historyAction).not.toBe('REPLACE');
   });
@@ -179,7 +175,7 @@ describe('Local history', () => {
     pressSaveKey();
     await waitFor(() => expect(logOf(server, 'PUT', '/api/brews/origA')).toEqual(['200']));
     const put = server.requests.find((r) => r.method === 'PUT');
-    const meta = (put?.json as { meta?: Record<string, unknown> | null }).meta;
+    const meta = (put!.json as { meta?: Record<string, unknown> | null }).meta;
     expect(meta?.title).toBe('Orig');
     expect(meta?.authors ?? null).toBeNull();
   });
@@ -197,18 +193,16 @@ describe('deleting the brew', () => {
     await waitForEditor();
     await waitFor(() => expect(recentBrewsStore.get().edit.map((b) => b.id)).toContain('origA'));
     typeInEditor(' unsaved'); // leaves a draft
-    await settle(300);
     await waitFor(async () => expect(await readDraftsFor(defaultDraftStore(), 'origA')).toHaveLength(1));
     await user.click(screen.getByTestId('open-properties'));
     await user.click(await screen.findByTestId('delete-brew'));
     await user.click(await screen.findByRole('button', { name: 'Delete permanently' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/user/alice'));
     expect(logOf(server, 'DELETE', '/api/brews/origA')).toEqual(['200']);
-    await settle();
-    expect(recentBrewsStore.get().edit.map((b) => b.id)).toEqual(['keepB']);
-    expect(recentBrewsStore.get().view.map((b) => b.id)).toEqual([]);
-    expect(await readDraftsFor(defaultDraftStore(), 'origA')).toEqual([]);
-    expect(await defaultSnapshotHistory().list('origA')).toEqual([]);
+    await waitFor(() => expect(recentBrewsStore.get().edit.map((b) => b.id)).toEqual(['keepB']));
+    await waitFor(() => expect(recentBrewsStore.get().view.map((b) => b.id)).toEqual([]));
+    await waitFor(async () => expect(await readDraftsFor(defaultDraftStore(), 'origA')).toEqual([]));
+    await waitFor(async () => expect(await defaultSnapshotHistory().list('origA')).toEqual([]));
     expect(await defaultSnapshotHistory().list('keepB')).toHaveLength(1);
   });
 });

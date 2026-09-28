@@ -7,7 +7,7 @@
 //   node e2e/run-playwright.mjs [playwright args…]      (from web/)
 //   E2E_PORT=5405 node e2e/run-playwright.mjs e2e/smoke.spec.ts --project=chromium --reporter=line
 //
-// With no file or folder filter and no --project (`npm run e2e`, the whole suite) it runs the
+// With no file or folder filter and no --project (`pnpm run e2e`, the whole suite) it runs the
 // suite as short sets, one Playwright run each (e2e/suiteSets.mjs; --set=<n>[,<n>…] for some of
 // them): every Playwright run is capped at 5 minutes. Otherwise it is one run, as given.
 import { takeSetArg, TestRunner } from '../scripts/testRunner.ts';

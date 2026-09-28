@@ -197,6 +197,11 @@ interface Recording {
  */
 export class PerfProbe {
   readonly frames: PaginationFrameProfile[] = [];
+  /**
+   * Every pagination step since the last takePasses(), in order and by pass (a pass ends with the
+   * scheduler run that settled): the work the perf specs count.
+   */
+  private passLog: { page: number; action: string }[][] = [[]];
   private recording: Recording | null = null;
   private observers: { observer: PerformanceObserver; handle: (entries: PerformanceEntryList) => void }[] = [];
   /** the keystroke whose frame is running (between its rAF and the task after the frame) */
@@ -240,6 +245,10 @@ export class PerfProbe {
   private readonly onFrame = (frame: PaginationFrameProfile): void => {
     this.frames.push(frame);
     if (this.frames.length > 50_000) this.frames.splice(0, 25_000);
+    const pass = this.passLog[this.passLog.length - 1]!;
+    for (const d of frame.detail) pass.push({ page: d.page, action: d.action });
+    if (frame.settled) this.passLog.push([]);
+    if (this.passLog.length > 20_000) this.passLog.splice(0, 10_000);
     // The keystroke whose next frame this is (its rAF runs before pagination's).
     const key = this.frameKey;
     if (key && frame.start >= key.at + key.frame - 0.5) {
@@ -257,6 +266,21 @@ export class PerfProbe {
       }
     }
   };
+
+  /**
+   * The pagination passes since the last call: each pass's steps in order (page and action); the
+   * last one is still running when it doesn't end in a settle.
+   */
+  takePasses(): { page: number; action: string }[][] {
+    const passes = this.passLog.filter((p) => p.length > 0);
+    this.passLog = [[]];
+    return passes;
+  }
+
+  /** The keystrokes recorded so far (startRecording; empty when not recording). */
+  recordedKeys(): readonly KeySample[] {
+    return this.recording?.keys ?? [];
+  }
 
   /** Resolves at the next settle (the end of a scheduler run that settled). Rejects after `timeoutMs`. */
   nextSettle(timeoutMs = 60_000): Promise<SettleWatch> {

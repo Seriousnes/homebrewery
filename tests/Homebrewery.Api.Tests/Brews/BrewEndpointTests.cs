@@ -334,16 +334,17 @@ public sealed class BrewEndpointTests(ApiFixture api, BrewActors actors) : IClas
         }
 
         var afterAuthors = await StoredViewsAsync(brew.ShareId, ct);
+        var before = Stamps.Now();
         var first = await actors.Anonymous.GetFromJsonAsync<BrewForShare>(url, TestJson.Options, ct);
         var second = await actors.Other.Client.GetFromJsonAsync<BrewForShare>(url, TestJson.Options, ct);
+        var after = Stamps.Now();
         var afterReaders = await StoredViewsAsync(brew.ShareId, ct);
 
         Assert.Equal((0, null), afterAuthors);
         Assert.Equal(1, first?.Views);
         Assert.Equal(2, second?.Views);
         Assert.Equal(2, afterReaders.Views);
-        Assert.NotNull(afterReaders.LastViewedAt);
-        Assert.True(DateTimeOffset.UtcNow - afterReaders.LastViewedAt < TimeSpan.FromMinutes(1));
+        Stamps.Between(afterReaders.LastViewedAt, before, after);
     }
 
     [Fact]

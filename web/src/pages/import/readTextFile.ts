@@ -69,7 +69,7 @@ export function decodeImportBytes(bytes: Uint8Array): DecodedText {
   }
   // A byte order mark the decoder kept, and NULs from a mislabelled file, are not text.
   const text = result.text.replace(/^\uFEFF/, '');
-  // eslint-disable-next-line no-control-regex
+  // oxlint-disable-next-line no-control-regex
   if (/\u0000/.test(text)) return { ok: false, message: NOT_TEXT };
   return { ok: true, ...result, text };
 }

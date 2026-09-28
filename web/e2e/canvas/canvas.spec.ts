@@ -3,9 +3,9 @@
 // and CSS switching with the REPAGINATE meta, CSS scoping, zoom, spreads and print styles.
 import { writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
-import { expect, test, type Page } from '@playwright/test';
-import { newSharedPage, openCanvas, READY_TIMEOUT, settle } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { pauseClock } from '../clock';
+import { newSharedPage, openCanvas, READY_TIMEOUT, test } from './helpers';
 
 test.use({ viewport: { width: 1400, height: 1300 } });
 
@@ -22,12 +22,140 @@ async function recordRepaginate(page: Page): Promise<void> {
 }
 const repaginateMeta = (page: Page) => page.evaluate(() => (window as unknown as { __repaginateMeta: unknown[] }).__repaginateMeta);
 
-function diffRatio(a: Buffer, b: Buffer): number {
+/**
+ * Waits until the zoom sizer has the canvas's scaled size: useCanvasZoom resizes it in the frame
+ * after the canvas's size changes (the theme's page height, once applied).
+ */
+async function sizerFollows(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const canvas = document.querySelector<HTMLElement>('.hb-canvas')!.getBoundingClientRect();
+        const sizer = document.querySelector<HTMLElement>('.hb-canvas')!.parentElement!.getBoundingClientRect();
+        const sizes = { sizer: [sizer.width, sizer.height], canvas: [canvas.width, canvas.height] };
+        // (The sizer's size is rounded up to whole pixels, and it is at least as wide as the viewport.)
+        return Math.abs(sizer.width - canvas.width) < 2 && Math.abs(sizer.height - canvas.height) < 2 ? 'follows' : JSON.stringify(sizes);
+      }),
+    )
+    .toBe('follows');
+}
+
+/** Whether two screenshots have the same pixels. */
+function samePixels(a: Buffer, b: Buffer): boolean {
   const pa = PNG.sync.read(a);
   const pb = PNG.sync.read(b);
-  if (pa.width !== pb.width || pa.height !== pb.height) return 1;
-  return pixelmatch(pa.data, pb.data, undefined, pa.width, pa.height, { threshold: 0.1 }) / (pa.width * pa.height);
+  return pa.width === pb.width && pa.height === pb.height && pa.data.equals(pb.data);
 }
+
+/** Requests held back until release(): the page waits for them as for a slow network. */
+interface HeldRequests {
+  /** Resolves when the first request is held. */
+  arrived: Promise<void>;
+  release: () => void;
+}
+
+async function holdRequests(page: Page, url: RegExp): Promise<HeldRequests> {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let arrive!: () => void;
+  const arrived = new Promise<void>((resolve) => (arrive = resolve));
+  await page.route(url, async (route) => {
+    arrive();
+    await released;
+    await route.continue().catch(() => undefined); // the page closed meanwhile
+  });
+  return { arrived, release };
+}
+
+/** The state of the canvas's theme styles at one moment. */
+interface ThemeSnapshot {
+  /** Theme links that apply (not inert), by theme folder. */
+  links: string[];
+  /** A user theme's CSS text is adopted. */
+  userTheme: boolean;
+  /** A face of the new theme's text font is loaded (document.fonts). */
+  font: boolean;
+  /**
+   * Once the new theme applies: the laid-out width of the first words of the first paragraph (the
+   * new theme's text font), compared with the width once everything has loaded; before, null.
+   */
+  textWidth: number | null;
+  /** Once the new theme applies: whether each of its textures has been decoded; before, null. */
+  textures: boolean[] | null;
+}
+
+/**
+ * Records the canvas's theme styles now and at every change of the theme links in <head> (a
+ * MutationObserver: a link switched in, a stale link removed; the switch does both, and adopts
+ * user CSS, in one task). Textures count as decoded once an image of theirs resolved decode()
+ * (how the page loads images ahead; no engine tells synchronously whether an image is cached).
+ */
+async function recordThemeSwitch(page: Page, font: string, textures: string[]): Promise<void> {
+  await page.evaluate(
+    ([family, urls]) => {
+      const w = window as unknown as { __themeSnapshots: ThemeSnapshot[]; __textWidth: () => number; __themeReloads: string[] };
+      // A theme link that loads again once applied: its sheet was dropped and re-created (what
+      // changing a link's media attribute does in Firefox), so for a moment neither theme applied.
+      w.__themeReloads = [];
+      document.head.addEventListener(
+        'load',
+        (e) => {
+          const l = e.target;
+          if (l instanceof HTMLLinkElement && l.hasAttribute('data-hb-theme-applied')) w.__themeReloads.push(l.getAttribute('data-hb-theme-href')!);
+        },
+        true,
+      );
+      const decoded = new Set<string>();
+      const decode = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'decode')!.value as (this: HTMLImageElement) => Promise<void>;
+      HTMLImageElement.prototype.decode = function (this: HTMLImageElement) {
+        const src = this.src;
+        return decode.call(this).then(() => void decoded.add(src));
+      };
+      // Layout reads bring the page up to date: the font a face is chosen from is the one set now.
+      w.__textWidth = () => {
+        const text = document.querySelector('.page p')!.firstChild!;
+        const range = document.createRange();
+        range.setStart(text, 0);
+        range.setEnd(text, Math.min(40, text.textContent!.length));
+        return range.getBoundingClientRect().width;
+      };
+      const snapshot = (): ThemeSnapshot => {
+        const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[data-hb-theme-href]'))
+          .filter((l) => l.sheet && l.hasAttribute('data-hb-theme-applied'))
+          .map((l) => l.getAttribute('data-hb-theme-href')!.split('/')[3]!);
+        const userTheme = document.adoptedStyleSheets.some((s) => Array.from(s.cssRules).some((r) => r.cssText.includes('HB User Theme')));
+        const applied = links.includes('Journal') || userTheme;
+        return {
+          links,
+          userTheme,
+          font: Array.from(document.fonts).some((f) => f.family.replace(/"/g, '') === family && f.status === 'loaded'),
+          textWidth: applied ? w.__textWidth() : null,
+          textures: applied ? urls.map((url) => decoded.has(new URL(url, location.href).href)) : null,
+        };
+      };
+      w.__themeSnapshots = [snapshot()];
+      new MutationObserver(() => w.__themeSnapshots.push(snapshot())).observe(document.head, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['media', 'data-hb-theme-applied'],
+      });
+    },
+    [font, textures] as const,
+  );
+}
+
+const themeReloads = (page: Page) => page.evaluate(() => (window as unknown as { __themeReloads: string[] }).__themeReloads);
+const themeSnapshots = (page: Page) => page.evaluate(() => (window as unknown as { __themeSnapshots: ThemeSnapshot[] }).__themeSnapshots);
+/** The width recordThemeSwitch's snapshots read, now. */
+const textWidth = (page: Page) => page.evaluate(() => (window as unknown as { __textWidth: () => number }).__textWidth());
+
+/** The theme styles that apply, e.g. "Blank+5ePHB" or "Blank+user". */
+const stylesOf = (s: ThemeSnapshot) => [...s.links, ...(s.userTheme ? ['user'] : [])].join('+');
+
+/** The theme styles the snapshots show, each once, in order. */
+const distinct = (snapshots: ThemeSnapshot[]) => [...new Set(snapshots.map(stylesOf))];
+const statesOf = async (page: Page) => distinct(await themeSnapshots(page));
 
 test.describe('P3.2 PageView (chrome doc: cover, counters, even/odd)', () => {
   // One page for the group: the tests read the document (the last one changes a page attribute).
@@ -131,19 +259,17 @@ test.describe('P3.2 PageView (chrome doc: cover, counters, even/odd)', () => {
     expect(styles.slice(1).map((s) => s.footSide)).toEqual(['left', 'right', 'left', 'right']);
 
     // The rendered numbers: pages 2, 3 (skipCounting) and 5 show "2"; page 4 (resetCounting)
-    // shows "1". Same-side numbers with the same value are pixel-identical; one digit that
-    // differs changes ~2-4 % of the small number box (the anti-aliasing and font vary per
-    // browser and host), so a single 1 % cut-off tells "same" from "different".
+    // shows "1". Number boxes on the same side of the same theme are drawn alike to the pixel
+    // unless their digits differ (one browser, one run: nothing here depends on the host).
     const shot = async (n: number) => {
-      const png = await page.locator(`#p${n} > .pageNumber`).screenshot();
+      const png = await page.locator(`#p${n} > .pageNumber`).screenshot({ animations: 'disabled', caret: 'hide' });
       writeFileSync(testInfo.outputPath(`page-number-p${n}.png`), png);
       await testInfo.attach(`page-number-p${n}.png`, { body: png, contentType: 'image/png' });
       return png;
     };
     const [n2, n3, n4, n5] = [await shot(2), await shot(3), await shot(4), await shot(5)];
-    const SAME = 0.01;
-    expect(diffRatio(n3, n5), 'p3 and p5 both show 2').toBeLessThan(SAME);
-    expect(diffRatio(n2, n4), 'p2 shows 2, p4 shows 1').toBeGreaterThan(SAME);
+    expect(samePixels(n3, n5), 'p3 and p5 both show 2').toBe(true);
+    expect(samePixels(n2, n4), 'p2 shows 2, p4 shows 1').toBe(false);
   });
 
   test('oversized pages get the class and the badge', async () => {
@@ -189,6 +315,101 @@ test.describe('P3.3 EditorCanvas', () => {
     // they inherited it from upstream's app CSS.
     expect(after.font).toContain('Open Sans');
     await expect.poll(() => page.evaluate(() => document.fonts.check('16px "Open Sans"'))).toBe(true);
+  });
+
+  // Theme switches (themeLoader.applyThemeStyles). The new theme's fonts and textures are held
+  // back at the network and the page's clock is stopped, so what the switch waits for is decided
+  // by the test alone: while they are held the previous theme stays; once they are released the
+  // new theme applies, in one step, with its font loaded and its textures in the image cache.
+  // Journal's fonts and textures are the ones the page hasn't loaded yet (it opens in 5ePHB).
+  const JOURNAL_FILES = /\/(fonts|assets)\/Journal\//;
+  const JOURNAL_TEXTURES = ['/assets/Journal/Background1.webp', '/assets/Journal/Background2.webp'];
+
+  test('a theme switch is atomic: the previous theme stays until the new one applies with its fonts and textures', async ({ page }) => {
+    await page.clock.install();
+    await openCanvas(page);
+    const held = await holdRequests(page, JOURNAL_FILES);
+    await recordThemeSwitch(page, 'ReenieBeanie', JOURNAL_TEXTURES);
+    await pauseClock(page); // the switch's 3 s fallback can't fire
+    await page.getByTestId('theme-select').selectOption('Journal');
+    await held.arrived; // Journal's stylesheet is in (inert) and its fonts and textures are loading
+    const waiting = await page.evaluate(() => ({
+      applied: Array.from(document.querySelectorAll('link[data-hb-theme-href*="/Journal/"]')).map((l) => l.hasAttribute('data-hb-theme-applied')),
+      font: getComputedStyle(document.querySelector('.page p')!).fontFamily,
+    }));
+    expect(waiting.applied).toEqual([false]); // loaded inert
+    expect(waiting.font).toContain('BookInsanityRemake');
+    expect(await statesOf(page)).toEqual(['Blank+5ePHB']); // unchanged so far
+    await expect(page.locator('[data-canvas-status]')).toHaveAttribute('data-canvas-status', 'loading');
+
+    held.release();
+    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
+    const snapshots = await themeSnapshots(page);
+    expect(distinct(snapshots)).toEqual(['Blank+5ePHB', 'Blank+Journal']); // never neither, never both
+    const flip = snapshots.find((s) => s.links.includes('Journal'))!;
+    expect(flip.font, 'Journal’s font is loaded when Journal applies').toBe(true);
+    expect(flip.textWidth, 'the text is laid out in Journal’s font from the switch on').toBe(await textWidth(page));
+    expect(flip.textures, 'Journal’s page textures are loaded when Journal applies').toEqual([true, true]);
+    expect(await themeReloads(page), 'no applied theme sheet was dropped and loaded again').toEqual([]);
+  });
+
+  test('a switch to a user theme (CSS text) waits for its fonts and textures too', async ({ page }) => {
+    await page.clock.install();
+    await openCanvas(page);
+    // "Journal" answered by the API as a user theme: Blank, then CSS text with its own font and
+    // page texture (a relative font URL, resolved against the theme's baseUrl).
+    const css = [
+      '@font-face { font-family: "HB User Theme"; src: url("../../fonts/Journal/PermanentMarker-Regular.woff2") format("woff2"); }',
+      '.page { background-image: url("/assets/Journal/Background2.webp"); }',
+      '.page p { font-family: "HB User Theme"; }',
+    ].join('\n');
+    const bundle = {
+      name: 'User theme',
+      author: null,
+      styles: [
+        { kind: 'url', href: '/themes/V3/Blank/style.scoped.css' },
+        { kind: 'css', css, baseUrl: `${new URL(page.url()).origin}/themes/user/` },
+      ],
+      snippets: [],
+    };
+    await page.route('**/api/themes/Journal/bundle', (route) => route.fulfill({ json: bundle }));
+    const held = await holdRequests(page, JOURNAL_FILES);
+    await recordThemeSwitch(page, 'HB User Theme', ['/assets/Journal/Background2.webp']);
+    await pauseClock(page);
+    await page.getByTestId('theme-select').selectOption('Journal');
+    await held.arrived;
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector('.page p')!).fontFamily)).toContain('BookInsanityRemake');
+    expect(await statesOf(page)).toEqual(['Blank+5ePHB']);
+    await expect(page.locator('[data-canvas-status]')).toHaveAttribute('data-canvas-status', 'loading');
+
+    held.release();
+    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
+    const snapshots = await themeSnapshots(page);
+    expect(distinct(snapshots)).toEqual(['Blank+5ePHB', 'Blank+user']);
+    const flip = snapshots.find((s) => s.userTheme)!;
+    expect(flip.font, 'the user theme’s font is loaded when it applies').toBe(true);
+    expect(flip.textWidth, 'the text is laid out in its font from the switch on').toBe(await textWidth(page));
+    expect(flip.textures, 'its page texture is loaded when it applies').toEqual([true]);
+  });
+
+  test('a theme switch whose fonts and textures never arrive goes ahead after 3 s', async ({ page }) => {
+    await page.clock.install();
+    await openCanvas(page);
+    const held = await holdRequests(page, JOURNAL_FILES);
+    await recordThemeSwitch(page, 'ReenieBeanie', JOURNAL_TEXTURES);
+    await pauseClock(page);
+    await page.getByTestId('theme-select').selectOption('Journal');
+    // The preload and its 3 s limit start in one task, before the first font or texture request.
+    await held.arrived;
+    await page.clock.runFor(2_999);
+    expect(await statesOf(page)).toEqual(['Blank+5ePHB']);
+    await page.clock.runFor(1);
+    await expect.poll(() => statesOf(page)).toEqual(['Blank+5ePHB', 'Blank+Journal']);
+    const flip = (await themeSnapshots(page)).at(-1)!;
+    expect(flip.font, 'Journal applied without its font').toBe(false);
+    held.release();
+    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
+    expect(flip.textWidth, 'the text was laid out in a fallback font until the font came').not.toBe(await textWidth(page));
   });
 
   test('editing the brew CSS restyles live, stays inside the canvas and dispatches REPAGINATE', async ({ page }) => {
@@ -320,20 +541,27 @@ test.describe('P3.3 EditorCanvas', () => {
 
   // RV-3: a brew @import from a host that never answers withheld the theme and the ready gate.
   test('a hanging brew @import holds back neither the theme nor (for long) the ready state', async ({ page }) => {
-    // The app gives up on the import after 10 s, on top of the page load.
-    test.setTimeout(30_000);
-    await page.route('https://slow.example/**', () => {}); // never answers
+    let requested!: () => void;
+    const importRequested = new Promise<void>((resolve) => (requested = resolve));
+    await page.route('https://slow.example/**', () => requested()); // never answers
     await page.route('**/api/themes/*/bundle', (route) =>
       route.fulfill({ status: 404, contentType: 'application/problem+json', body: '{"status":404}' }),
     );
+    // The page's clock stands still from its start: only runFor() lets the import's 10 s pass.
+    await page.clock.install();
+    await page.clock.pauseAt(Date.now() + 1_000);
     const css = '@import url("https://slow.example/font.css"); .page { background: rgb(230, 230, 250) }';
-    await page.goto(`/dev/canvas?css=${encodeURIComponent(css)}`);
-    await page.waitForFunction(() => window.__editor !== undefined, undefined, READY_TIMEOUT);
+    await page.goto(`/dev/canvas?css=${encodeURIComponent(css)}`, { waitUntil: 'domcontentloaded' });
+    await importRequested; // the app's import timeout starts with the request
+    await expect.poll(() => page.evaluate(() => window.__editor !== undefined)).toBe(true);
     await expect.poll(() => page.evaluate(() => document.querySelectorAll('link[data-hb-theme-slot]').length)).toBe(2);
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.querySelector('.page')!).backgroundColor)).toBe('rgb(230, 230, 250)');
     await expect(page.locator('[data-canvas-status="loading"]')).toBeVisible(); // the import is still pending
-    // Ready once the import times out (10 s after it started): not held until the browser gives up on the host.
-    await expect(page.locator('[data-canvas-status="ready"]')).toBeVisible({ timeout: 15_000 });
+    // Ready once the import times out, 10 s after it started: not held until the browser gives up on the host.
+    await page.clock.runFor(9_999);
+    await expect(page.locator('[data-canvas-status="loading"]')).toBeVisible();
+    await page.clock.runFor(1);
+    await expect(page.locator('[data-canvas-status="ready"]')).toBeVisible();
     const failedImports = await page.evaluate(() => {
       const last = window.__hbCanvas!.statuses.at(-1) as { failedImports?: string[] } | undefined;
       return last?.failedImports;
@@ -346,9 +574,9 @@ test.describe('P3.3 EditorCanvas', () => {
   test('changing the zoom keeps the point at the viewport centre in place', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await openCanvas(page);
+    await sizerFollows(page);
     const centre = () =>
-      page.evaluate(async () => {
-        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      page.evaluate(() => {
         const viewport = document.querySelector<HTMLElement>('[data-canvas-status]')!;
         const p1 = document.querySelector<HTMLElement>('#p1')!;
         const vr = viewport.getBoundingClientRect();
@@ -367,6 +595,7 @@ test.describe('P3.3 EditorCanvas', () => {
     const at1 = await centre();
     await page.getByTestId('zoom-select').selectOption('2');
     await expect(page.locator('.hb-canvas[data-zoom="2"]')).toBeVisible();
+    await sizerFollows(page);
     const at2 = await centre();
     expect(at2.scrollLeft).toBeGreaterThan(0); // not clamped: the check below is meaningful
     expect(at2.scrollLeft).toBeLessThan(at2.maxScrollLeft);
@@ -374,14 +603,16 @@ test.describe('P3.3 EditorCanvas', () => {
     expect(Math.abs(at2.y - at1.y)).toBeLessThanOrEqual(2);
     await page.getByTestId('zoom-select').selectOption('0.75');
     await expect(page.locator('.hb-canvas[data-zoom="0.75"]')).toBeVisible();
+    await sizerFollows(page);
     const at075 = await centre();
     expect(Math.abs(at075.x - at2.x)).toBeLessThanOrEqual(2);
     expect(Math.abs(at075.y - at2.y)).toBeLessThanOrEqual(2);
   });
 
-  test('zoom scales the canvas with a transform and sizes the scroll area', async ({ page }) => {
-    for (const zoom of [0.5, 2]) {
+  for (const zoom of [0.5, 2]) {
+    test(`zoom scales the canvas with a transform and sizes the scroll area (${zoom * 100}%)`, async ({ page }) => {
       await openCanvas(page, { zoom });
+      await sizerFollows(page);
       const m = await page.evaluate(() => {
         const canvas = document.querySelector<HTMLElement>('.hb-canvas')!;
         const viewport = canvas.parentElement!.parentElement!;
@@ -408,8 +639,8 @@ test.describe('P3.3 EditorCanvas', () => {
       expect(Math.abs(m.scrollHeight - Math.max(m.clientHeight, m.sizerHeight))).toBeLessThan(2);
       if (zoom === 2) expect(m.scrollWidth).toBeGreaterThan(m.clientWidth);
       else expect(m.scrollWidth).toBe(m.clientWidth);
-    }
-  });
+    });
+  }
 
   test('spreads: facing puts page 1 on the right and pairs the rest; flow wraps pages', async ({ page }) => {
     await openCanvas(page, { doc: 'chrome', spread: 'facing', zoom: 0.5 });
@@ -420,7 +651,7 @@ test.describe('P3.3 EditorCanvas', () => {
     expect(facing[3]!.top).toBeGreaterThan(facing[1]!.bottom);
 
     await page.getByTestId('spread-select').selectOption('flow');
-    await settle(page);
+    await expect(page.locator('.hb-canvas[data-spread="flow"]')).toBeAttached();
     const flow = await page.evaluate(() => Array.from(document.querySelectorAll('.pages > .page')).map((p) => p.getBoundingClientRect()));
     // 1165px viewport / (408px pages + 5px gaps at 50%): two pages per row.
     expect(flow[0]!.top).toBeCloseTo(flow[1]!.top, 0);

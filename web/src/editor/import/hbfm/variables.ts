@@ -83,7 +83,7 @@ export class BrewVariables {
 
   /** The marked extension (a preprocess hook), registered where upstream registers its own. */
   extension(): MarkedExtension {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias -- marked calls hooks with its own `this`
+    // oxlint-disable-next-line typescript/no-this-alias -- marked calls hooks with its own `this`
     const self = this;
     return {
       hooks: {

@@ -28,6 +28,24 @@ async function openHome(page: Page): Promise<string[]> {
 }
 
 test('the welcome brew is editable and never saved', { tag: '@smoke' }, async ({ page }) => {
+  // Playwright's fake clock (web/e2e/clock.ts), for the autosave's delay below.
+  await page.clock.install();
+  // Brew requests as the page makes them (the route above sees them a moment later).
+  await page.addInitScript(() => {
+    const calls: string[] = [];
+    (window as unknown as { __hbBrewCalls: string[] }).__hbBrewCalls = calls;
+    const fetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/api/brews')) calls.push(`fetch ${url}`);
+      return fetch(input, init);
+    };
+    const beacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = (url, data) => {
+      if (String(url).includes('/api/brews')) calls.push(`beacon ${String(url)}`);
+      return beacon(url, data);
+    };
+  });
   const brewRequests = await openHome(page);
   await expect(page.getByRole('heading', { level: 1, name: 'The Homebrewery', exact: true })).toBeAttached();
   await expect(page).toHaveTitle('The Homebrewery');
@@ -45,7 +63,9 @@ test('the welcome brew is editable and never saved', { tag: '@smoke' }, async ({
   await expect(page.getByText('This page is never saved', { exact: true })).toBeVisible();
   await page.keyboard.press('ControlOrMeta+z');
   await expect.poll(async () => (await editorTexts(page))?.[1]).not.toContain('Edited here.');
-  await page.waitForTimeout(3500); // past the autosave delay
+  // Every timer of the autosave's delay (3 s) and more: no brew request.
+  await page.clock.runFor(3500);
+  expect(await page.evaluate(() => (window as unknown as { __hbBrewCalls: string[] }).__hbBrewCalls)).toEqual([]);
   expect(brewRequests).toEqual([]);
   const drafts = await page.evaluate(
     () =>

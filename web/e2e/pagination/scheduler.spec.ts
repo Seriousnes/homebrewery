@@ -89,17 +89,39 @@ test('an unsized image far down the document: its page waits (not settled) until
   release();
   const r = await page.evaluate(async (stepsBefore) => {
     const api = window.__hbPagination;
+    const editor = api.editor as unknown as {
+      state: { doc: { descendants(fn: (node: { type: { name: string }; attrs: Record<string, unknown> }) => boolean | void): void } };
+      on(event: 'transaction', fn: () => void): void;
+      off(event: 'transaction', fn: () => void): void;
+    };
     const image = () => document.querySelector<HTMLImageElement>('.ProseMirror img:not(.ProseMirror-separator)')!;
     const pageOf = (el: Element) => Array.from(document.querySelectorAll('.ProseMirror > .page')).indexOf(el.closest('.page')!);
-    // Wait (without scrolling) until the image has loaded and pagination has been settled for a
-    // while: a boundary move re-renders the image's paragraph, and the new img loads again.
-    const t0 = performance.now();
-    for (let stable = 0; stable < 5 && performance.now() - t0 < 10_000; ) {
-      await new Promise((resolve) => setTimeout(resolve, 40));
-      const img = image();
-      const ready = (img.complete && img.naturalHeight > 0) || (img.hasAttribute('width') && img.hasAttribute('height'));
-      stable = ready && api.isSettled() ? stable + 1 : 0;
-    }
+    // The image loads (without scrolling): the objects lane records its natural size in the
+    // document (a transaction), which re-checks its page. Wait for that record, then for the
+    // settle after it: from then on the image's paragraph has its size, re-rendered or not.
+    const sized = () => {
+      let found = false;
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'image' && node.attrs.width != null && node.attrs.height != null) found = true;
+        return !found;
+      });
+      return found;
+    };
+    await new Promise<void>((resolve, reject) => {
+      if (sized()) return resolve();
+      const timer = setTimeout(() => {
+        editor.off('transaction', check);
+        reject(new Error('the image size was not recorded within 10 s'));
+      }, 10_000);
+      const check = () => {
+        if (!sized()) return;
+        clearTimeout(timer);
+        editor.off('transaction', check);
+        resolve();
+      };
+      editor.on('transaction', check);
+    });
+    await api.settled(10_000);
     const img = image();
     return {
       // Loaded, or sized from its stored natural size (the objects lane records it on the first load;

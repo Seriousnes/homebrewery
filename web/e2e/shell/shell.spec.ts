@@ -1,6 +1,7 @@
 // The app shell (plan §9): navbar, notices banner, error pages and the sign-in prompt, with the
 // API stubbed (page.route), so this spec needs no API server. auth.spec.ts covers the real API.
 import { expect, type Page, test } from '@playwright/test';
+import { nextTask } from '../clock';
 import { allViolations, PAGE_READY, seriousViolations, STUB_ALICE, stubApi, stubNotice } from './helpers';
 
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
@@ -180,11 +181,16 @@ test.describe('error pages and prompts', () => {
   });
 
   test('/account while signed out shows the sign-in form in place, no dialog', async ({ page }) => {
+    // Playwright's fake clock (web/e2e/clock.ts): the sign-in dialog opens 150 ms after it is asked
+    // for (SIGN_IN_PROMPT_DELAY_MS).
+    await page.clock.install();
     await stubApi(page);
     await page.goto('/account');
     await expect(page.getByRole('heading', { level: 1, name: 'Sign in required' })).toBeVisible();
     await expect(page.getByRole('form', { name: 'Sign in' })).toBeVisible();
-    await page.waitForTimeout(400);
+    // Every timer of the next second, then the renders they scheduled: no dialog.
+    await page.clock.runFor(1000);
+    await nextTask(page);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Create one' })).toHaveAttribute('href', '/register?returnTo=%2Faccount');
   });

@@ -2,7 +2,7 @@
 // (2.3.3) and forced colours (a visible focus in Windows contrast themes, 2.4.7). The pages
 // themselves are a two-dimensional layout (fixed-size sheets): they may scroll sideways inside the
 // canvas at any width, which 1.4.10 allows; the app chrome may not. The API is the in-memory fake.
-//   E2E_PORT=5376 npx playwright test e2e/a11y/layout.spec.ts
+//   E2E_PORT=5376 pnpm exec playwright test e2e/a11y/layout.spec.ts
 import { expect, type Page, test } from '@playwright/test';
 import { richDoc } from './docs';
 import { ALICE, installFakeApi } from './fakeApi';

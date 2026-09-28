@@ -1,8 +1,12 @@
 // P3.7 in real browsers: the metadata dialog on /dev/panels with a stubbed API (theme list,
 // delete, lock review). The payload of the last change is shown in data-testid=meta-payload.
 // The real API: metadata-api.spec.ts.
+import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { axeViolations, openPanels, test, transitionsDone } from './helpers';
+
+/** A real PNG (the default thumbnail) for the thumbnail preview to load. */
+const THUMBNAIL_PNG = readFileSync(new URL('../../src/ported/metadata/thumbnail.png', import.meta.url));
 
 async function openDialog(page: Page) {
   await page.getByTestId('open-properties').click();
@@ -42,6 +46,9 @@ test('every field reports its save payload', async ({ page }) => {
   await dialog.getByRole('textbox', { name: 'Description' }).fill('Rooms, rumours and a cellar.');
   await expectPayload(page, 'description', { description: 'Rooms, rumours and a cellar.' });
 
+  // The preview loads the image, and one that fails to load becomes a "Couldn't load" message: the
+  // test serves it, so the preview never depends on the network.
+  await page.route('https://example.com/inn.png', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: THUMBNAIL_PNG }));
   await dialog.getByRole('textbox', { name: 'Thumbnail' }).fill('https://example.com/inn.png');
   await expectPayload(page, 'thumbnailUrl', { thumbnailUrl: 'https://example.com/inn.png' });
   await expect(dialog.getByRole('img', { name: 'Thumbnail preview' })).toHaveAttribute('src', 'https://example.com/inn.png');
