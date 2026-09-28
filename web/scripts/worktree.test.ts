@@ -1,7 +1,8 @@
-import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dockerSlug, readWorktreeInfo, registerSlot, slotPort, slotTmp, stackHost, stackName, stackUrl } from './worktree';
 
@@ -58,30 +59,88 @@ describe('registerSlot', () => {
 });
 
 describe('readWorktreeInfo', () => {
-  const git = (cwd: string, ...args: string[]) =>
-    execFileSync('git', ['-C', cwd, '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...args], { stdio: 'ignore' });
   // git prints real paths (macOS /private/var, Windows drive letter case).
   const real = (dir: string) => {
     const p = fs.realpathSync.native(dir).replace(/\\/g, '/');
     return process.platform === 'win32' ? p.toLowerCase() : p;
   };
   const lower = (p: string | null) => (p && process.platform === 'win32' ? p.toLowerCase() : p);
+  const fwd = (p: string) => path.resolve(p).replace(/\\/g, '/');
+  const summary = (info: ReturnType<typeof readWorktreeInfo>) => [lower(info.root), lower(info.commonDir), info.main, info.branch, info.slot];
 
-  it('finds the main checkout and a linked worktree from a subfolder', () => {
-    vi.stubEnv('HB_SLOT', '');
+  /**
+   * A repository with one empty commit on master and a linked worktree on feature/x, written in
+   * git's on-disk format instead of by git init, commit and worktree add: the only git processes
+   * are the rev-parse calls under test.
+   */
+  function fixtureRepo(): { main: string; linked: string } {
     const main = path.join(tempDir(), 'repo');
-    fs.mkdirSync(path.join(main, 'web', 'scripts'), { recursive: true });
-    git(main, 'init', '-q', '-b', 'master');
-    git(main, 'commit', '-q', '--allow-empty', '-m', 'init');
     const linked = path.join(path.dirname(main), 'linked');
-    git(main, 'worktree', 'add', '-q', '-b', 'feature/x', linked);
+    const gitDir = path.join(main, '.git');
+    const write = (file: string, text: string | Buffer) => {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, text);
+    };
+    const object = (type: string, body: string): string => {
+      const data = Buffer.concat([Buffer.from(`${type} ${Buffer.byteLength(body)}\0`), Buffer.from(body)]);
+      const id = createHash('sha1').update(data).digest('hex');
+      write(path.join(gitDir, 'objects', id.slice(0, 2), id.slice(2)), zlib.deflateSync(data));
+      return id;
+    };
+    const commit = object('commit', `tree ${object('tree', '')}\nauthor t <t@t> 0 +0000\ncommitter t <t@t> 0 +0000\n\ninit\n`);
+    write(path.join(gitDir, 'config'), '[core]\n\trepositoryformatversion = 0\n\tbare = false\n');
+    write(path.join(gitDir, 'HEAD'), 'ref: refs/heads/master\n');
+    write(path.join(gitDir, 'refs', 'heads', 'master'), `${commit}\n`);
+    write(path.join(gitDir, 'refs', 'heads', 'feature', 'x'), `${commit}\n`);
+    fs.mkdirSync(path.join(gitDir, 'refs', 'tags'), { recursive: true });
+    const admin = path.join(gitDir, 'worktrees', 'linked');
+    write(path.join(admin, 'HEAD'), 'ref: refs/heads/feature/x\n');
+    write(path.join(admin, 'commondir'), '../..\n');
+    write(path.join(admin, 'gitdir'), `${fwd(linked)}/.git\n`);
+    write(path.join(linked, '.git'), `gitdir: ${fwd(admin)}\n`);
+    fs.mkdirSync(path.join(main, 'web', 'scripts'), { recursive: true });
     fs.mkdirSync(path.join(linked, 'web', 'scripts'), { recursive: true });
+    return { main, linked };
+  }
 
+  it('finds the main checkout and a linked worktree from a subfolder, with real git', () => {
+    vi.stubEnv('HB_SLOT', '');
+    const { main, linked } = fixtureRepo();
     // From a subfolder of the main checkout git prints a relative --git-common-dir (../../.git): relative to the cwd.
-    const fromMain = readWorktreeInfo(path.join(main, 'web', 'scripts'));
-    expect([lower(fromMain.root), lower(fromMain.commonDir), fromMain.main, fromMain.branch, fromMain.slot]).toEqual([real(main), `${real(main)}/.git`, true, 'master', 0]);
-    const fromLinked = readWorktreeInfo(path.join(linked, 'web', 'scripts'));
-    expect([lower(fromLinked.root), lower(fromLinked.commonDir), fromLinked.main, fromLinked.branch, fromLinked.slot]).toEqual([real(linked), `${real(main)}/.git`, false, 'feature/x', 1]);
+    expect(summary(readWorktreeInfo(path.join(main, 'web', 'scripts')))).toEqual([real(main), `${real(main)}/.git`, true, 'master', 0]);
+    expect(summary(readWorktreeInfo(path.join(linked, 'web', 'scripts')))).toEqual([real(linked), `${real(main)}/.git`, false, 'feature/x', 1]);
+  });
+
+  // What git prints, recorded: the rules on top of it without running git.
+  it('reads a relative common dir against the cwd, and gives the main checkout slot 0', () => {
+    vi.stubEnv('HB_SLOT', '');
+    const top = fwd(tempDir());
+    const info = readWorktreeInfo(`${top}/web/scripts`, () => [top, '../../.git', 'master']);
+    expect(summary(info)).toEqual([lower(top), lower(`${top}/.git`), true, 'master', 0]);
+  });
+
+  it('registers a linked worktree for a slot, and reads a detached HEAD as no branch', () => {
+    vi.stubEnv('HB_SLOT', '');
+    const common = fwd(tempDir());
+    const linked = fwd(tempDir());
+    expect(summary(readWorktreeInfo(linked, () => [linked, common, 'HEAD']))).toEqual([lower(linked), lower(common), false, null, 1]);
+    expect(readWorktreeInfo(linked, () => [linked, common, 'feature/x']).slot).toBe(1); // kept
+  });
+
+  it('without git, is the main checkout of this repository', () => {
+    vi.stubEnv('HB_SLOT', '');
+    const info = readWorktreeInfo(tempDir(), () => null);
+    expect([info.commonDir, info.main, info.branch, info.slot]).toEqual([null, true, null, 0]);
+    expect(lower(info.root)).toBe(lower(fwd(path.join(import.meta.dirname, '..', '..'))));
+  });
+
+  it('takes HB_SLOT over the registry, and refuses one out of range', () => {
+    const linked = fwd(tempDir());
+    const rev = () => [linked, fwd(tempDir()), 'x'];
+    vi.stubEnv('HB_SLOT', '3');
+    expect(readWorktreeInfo(linked, rev).slot).toBe(3);
+    vi.stubEnv('HB_SLOT', '41');
+    expect(() => readWorktreeInfo(linked, rev)).toThrow(/HB_SLOT must be a whole number from 0 to 40/);
   });
 });
 

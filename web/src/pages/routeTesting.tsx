@@ -11,6 +11,14 @@ import { emptyResponse, jsonResponse, mockApi, problemResponse, type RecordedReq
 import { queryKeys } from '@/api';
 import { routes } from '@/app/routes';
 import { testQueryClient } from '@/app/testing';
+// The lazy pages these tests open, imported with this module: a test file loads them while it is
+// collected, which no test or hook timeout covers (a cold import of the editor's ~400 modules takes
+// seconds on a busy machine). The routes' lazy import() calls then resolve at once.
+import '@/editor/EditorApp/EditorApp';
+import '@/pages/edit';
+import '@/pages/share';
+import '@/pages/user';
+import '@/pages/vault';
 
 // jsdom has no layout: ProseMirror measures the selection (scrollToSelection) after typing.
 if (!('getClientRects' in Range.prototype)) {
@@ -230,14 +238,6 @@ export function renderApp({ url, me }: { url: string; me?: AccountInfo | null })
     </QueryClientProvider>,
   );
   return { ...view, router, queryClient, user };
-}
-
-/**
- * Loads the lazy editor pages and the EditorApp chunk up front. Call it in beforeAll with a long
- * timeout: in a full, parallel run the first import took longer than a test's waits.
- */
-export async function preloadAppPages(): Promise<void> {
-  await Promise.all([import('@/editor/EditorApp/EditorApp'), import('@/pages/edit'), import('@/pages/share'), import('@/pages/user'), import('@/pages/vault')]);
 }
 
 /** The editor of the page (dev API; null until one is ready). */

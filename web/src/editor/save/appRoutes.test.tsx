@@ -5,7 +5,7 @@
 // must not happen is checked on a fake clock (src/test/fakeClock.ts), run past the delay that would
 // make it happen; where the autosave must not run on its own, its delay is out of reach (NEVER).
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { queryKeys, type AccountInfo } from '@/api';
 import { jsonResponse } from '@/api/testing';
 import { ALICE } from '@/app/testing';
@@ -59,11 +59,6 @@ async function clearDrafts() {
   const store = defaultDraftStore();
   await store.delMany((await store.entries()).map(([key]) => key));
 }
-
-// Load the lazy route modules once, up front (hook timeout), so no test's waitFor covers a first import.
-beforeAll(async () => {
-  await Promise.all([import('@/editor/EditorApp/EditorApp'), import('@/pages/edit'), import('@/pages/vault')]);
-});
 
 beforeEach(async () => {
   timing.delayMs = DELAY;

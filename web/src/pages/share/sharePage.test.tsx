@@ -2,12 +2,12 @@
 // view count, Edit or Clone) as the reader signs in and out, and that a visit after an edit shows
 // the saved version.
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { requestSignIn } from '@/api';
 import { ALICE } from '@/app/testing';
 import { uiStore } from '@/app/uiStore';
 import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader';
-import { appEditor, createBrewServer, docText, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp } from '@/pages/routeTesting';
+import { appEditor, createBrewServer, docText, fakeBrew, logOf, pressSaveKey, renderApp } from '@/pages/routeTesting';
 import { clearToasts } from '@/ui';
 
 const loader = vi.hoisted(() => ({
@@ -19,9 +19,6 @@ const loader = vi.hoisted(() => ({
 vi.mock('@/editor/canvas/themeLoader', () => loader);
 
 const chainOf = (theme: string): ThemeChain => ({ theme, source: 'static', name: theme, author: null, styles: [], snippets: [] });
-
-// The editor pages are lazy chunks: load them once, before the tests' waits start (hook timeout).
-beforeAll(() => preloadAppPages());
 
 beforeEach(() => {
   uiStore.getState().resetUi();

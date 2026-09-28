@@ -2,14 +2,14 @@
 // which session the URL shows, where the page goes after a create or a copy, and what leaving,
 // signing out or deleting does to saving.
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { recentBrewsStore, recordRecentBrew } from '@/app/recentBrews';
 import { ALICE } from '@/app/testing';
 import { uiStore } from '@/app/uiStore';
 import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader';
 import { readDraftsFor } from '@/editor/save/drafts';
 import { defaultDraftStore, defaultSnapshotHistory } from '@/editor/save/stores';
-import { appEditor, createBrewServer, docText, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp, typeInEditor } from '@/pages/routeTesting';
+import { appEditor, createBrewServer, docText, fakeBrew, logOf, pressSaveKey, renderApp, typeInEditor } from '@/pages/routeTesting';
 import { clearToasts, toastStore } from '@/ui';
 
 const loader = vi.hoisted(() => ({
@@ -21,9 +21,6 @@ const loader = vi.hoisted(() => ({
 vi.mock('@/editor/canvas/themeLoader', () => loader);
 
 const chainOf = (theme: string): ThemeChain => ({ theme, source: 'static', name: theme, author: null, styles: [], snippets: [] });
-
-// The editor pages are lazy chunks: load them once, before the tests' waits start (hook timeout).
-beforeAll(() => preloadAppPages());
 
 async function clearDrafts() {
   const store = defaultDraftStore();

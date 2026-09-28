@@ -106,13 +106,16 @@ export function worktreeInfo(cwd = here): WorktreeInfo {
   return cached;
 }
 
-/** The worktree, branch and slot of the checkout that contains `cwd` (not cached). */
-export function readWorktreeInfo(cwd: string): WorktreeInfo {
+/** `git rev-parse --show-toplevel --git-common-dir --abbrev-ref HEAD` in `cwd`: its lines, or null when git fails. */
+const revParse = (cwd: string): string[] | null => git(cwd, ['rev-parse', '--show-toplevel', '--git-common-dir', '--abbrev-ref', 'HEAD']);
+
+/** The worktree, branch and slot of the checkout that contains `cwd` (not cached). `rev` runs git (tests pass its output). */
+export function readWorktreeInfo(cwd: string, rev: (cwd: string) => string[] | null = revParse): WorktreeInfo {
   const forced = process.env.HB_SLOT !== undefined && process.env.HB_SLOT !== '' ? Number(process.env.HB_SLOT) : null;
   if (forced !== null && !(Number.isInteger(forced) && forced >= 0 && forced <= MAX_SLOT)) {
     throw new Error(`HB_SLOT must be a whole number from 0 to ${MAX_SLOT}`);
   }
-  const out = git(cwd, ['rev-parse', '--show-toplevel', '--git-common-dir', '--abbrev-ref', 'HEAD']);
+  const out = rev(cwd);
   const [top, common, head] = out ?? [];
   if (!top || !common) {
     // No git (or a checkout git refuses): the main checkout, in the repository this file is in.

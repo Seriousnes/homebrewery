@@ -8,7 +8,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { ALICE } from '@/app/testing';
 import { uiStore } from '@/app/uiStore';
 import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader';
-import { createBrewServer, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp } from '@/pages/routeTesting';
+import { createBrewServer, fakeBrew, logOf, pressSaveKey, renderApp } from '@/pages/routeTesting';
 import { clearToasts } from '@/ui';
 import { snippetsPanelStore } from './snippetsPanelState';
 import { SNIPPETS_REPORT_MS } from './useSnippetsEditor';
@@ -34,8 +34,6 @@ const chainOf = (theme: string): ThemeChain => ({
 beforeAll(() => {
   // jsdom has no layout: the Insert menu scrolls its active option into view.
   if (!('scrollIntoView' in Element.prototype)) Object.assign(Element.prototype, { scrollIntoView: () => undefined });
-  // The lazy route modules, once (hook timeout): the test's waitFor never covers a first import.
-  return preloadAppPages();
 });
 
 beforeEach(() => {
