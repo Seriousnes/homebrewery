@@ -118,7 +118,7 @@ public sealed class SpaIndexTests : IDisposable
             .AddJsonFile(Path.Combine(Documents.SchemaManifestTests.RepositoryRoot(), "src", "Homebrewery.Api", "appsettings.Development.json"))
             .Build();
 
-        Assert.Equal(["http://localhost:5173", "http://web:5173"], ConfigurationLists.Read(settings, SpaIndex.DevServerUrlsKey));
+        Assert.Equal(["http://localhost:5173", "http://web:8080"], ConfigurationLists.Read(settings, SpaIndex.DevServerUrlsKey));
     }
 
     public void Dispose()

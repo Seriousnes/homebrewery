@@ -10,7 +10,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// <item>When <c>Spa:DevServerUrls</c> is set, the page comes from the Vite dev server instead, on every request, so
 /// /share pages get Vite's module scripts and HMR client like every other page. The setting lists candidates, tried in
 /// order starting with the last one that answered; appsettings.Development.json has <c>http://localhost:5173</c> (host
-/// runs) and <c>http://web:5173</c> (docker compose). When none answers, the web root file is used.</item>
+/// runs) and <c>http://web:8080</c> (docker compose). When none answers, the web root file is used.</item>
 /// </list>
 /// </summary>
 public sealed partial class SpaIndex(

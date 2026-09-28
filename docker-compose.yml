@@ -104,7 +104,8 @@ services:
       start_interval: 3s
 
   # Vite dev server, the stack's one origin. It listens on 8080, the port the router (deploy/stack/shared.yml)
-  # expects of every stack. node_modules is a named volume holding Linux binaries; `pnpm install` runs only when
+  # expects of every stack and the api's Spa:DevServerUrls (appsettings.Development.json) fetches /share pages'
+  # index.html from. node_modules is a named volume holding Linux binaries; `pnpm install` runs only when
   # pnpm-lock.yaml (or the Node version) differs from the last install into that volume. pnpm comes
   # through corepack, at web/package.json's packageManager version.
   web:
