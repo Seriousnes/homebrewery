@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -477,9 +476,10 @@ public sealed class DocInspector
                 case AttributeKind.Html:
                     if (value.ValueKind != JsonValueKind.String) break;
                     // The document's rawHtml nodes share one time limit (RawHtmlSanitizer.TimeLimit).
-                    var started = Stopwatch.GetTimestamp();
+                    var clock = owner._rawHtml.Clock;
+                    var started = clock.GetTimestamp();
                     var sanitized = owner._rawHtml.Sanitize(StoredText.GetString(value), owner._rawHtml.TimeLimit - _rawHtmlTime);
-                    _rawHtmlTime += Stopwatch.GetElapsedTime(started);
+                    _rawHtmlTime += clock.GetElapsedTime(started);
                     if (sanitized.Error is { } htmlError)
                     {
                         Error(path, htmlError);

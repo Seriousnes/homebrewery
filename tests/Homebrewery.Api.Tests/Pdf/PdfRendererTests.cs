@@ -5,6 +5,7 @@ using Homebrewery.Api.Pdf;
 using Homebrewery.Api.Tests.Documents;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Homebrewery.Api.Tests.Pdf;
 
@@ -141,36 +142,30 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
         fetcher.Reset(async (_, token) =>
         {
             entered.TrySetResult();
-            await Task.Delay(Timeout.Infinite, token);             // never answers: the render times out
+            await Task.Delay(Timeout.Infinite, token);             // never answers: only the timeout ends the render
             return null;
         });
+        // The render timeout runs on a fake clock: it passes when the test advances the clock, never on its own. Real
+        // time (Playwright's own timeouts, also RenderTimeout) is far longer than any test run.
+        var clock = new FakeTimeProvider();
+        var renderTimeout = TimeSpan.FromMinutes(10);
         await using var renderer = fixture.Create(fetcher, new PdfOptions
         {
             MaxConcurrentRenders = 1,
-            QueueTimeout = TimeSpan.Zero,
-            RenderTimeout = TimeSpan.FromSeconds(3),
-        });
-
-        // Start this renderer's Chromium first. On a busy CI runner the driver and browser launch can take longer
-        // than the 3 s render timeout; the launch isn't cancelled, so the browser is running afterwards either way.
-        try
-        {
-            await renderer.RenderAsync(Html("<div class=\"page\">warm-up</div>"), ct);
-        }
-        catch (PdfRenderFailedException)
-        {
-            // The launch used up the warm-up's render timeout.
-        }
+            QueueTimeout = TimeSpan.Zero,                          // a full renderer answers busy at once
+            RenderTimeout = renderTimeout,
+        }, clock);
 
         var slow = renderer.RenderAsync(Html("<div class=\"page\"><img src=\"https://images.example/slow.png\"></div>"), ct);
-        await Task.WhenAny(entered.Task, slow).WaitAsync(TimeSpan.FromSeconds(10), ct);
+        await Task.WhenAny(entered.Task, slow).WaitAsync(ct);      // the render holds its slot, waiting for the image
         Assert.False(slow.IsCompleted, $"The render ended before it fetched the image: {slow.Exception}");
 
         await Assert.ThrowsAsync<PdfRendererBusyException>(() => renderer.RenderAsync(Html("<div class=\"page\">x</div>"), ct));
+        clock.Advance(renderTimeout);
         var failure = await Assert.ThrowsAsync<PdfRenderFailedException>(() => slow);
-        Assert.Contains("longer than 3 seconds", failure.Message, StringComparison.Ordinal);
+        Assert.Equal("The PDF took longer than 600 seconds to make.", failure.Message);
 
-        // The slot is free again, and the browser still works.
+        // The slot is free again, and the browser still works (the clock stands still: this render can't time out).
         fetcher.Reset();
         var result = await renderer.RenderAsync(Html("<div class=\"page\">x</div>"), ct);
         Assert.Equal(1, new PdfFile(result.Pdf).PageCount);
@@ -185,8 +180,8 @@ public sealed class PdfRendererTests(PdfRendererTests.RendererFixture fixture) :
 
         public PdfRenderer Renderer { get; }
 
-        public PdfRenderer Create(IRemoteFileFetcher fetcher, PdfOptions options) =>
-            new(fetcher, Options.Create(options), NullLogger<PdfRenderer>.Instance);
+        public PdfRenderer Create(IRemoteFileFetcher fetcher, PdfOptions options, TimeProvider? clock = null) =>
+            new(fetcher, Options.Create(options), clock ?? TimeProvider.System, NullLogger<PdfRenderer>.Instance);
 
         public ValueTask DisposeAsync() => Renderer.DisposeAsync();
     }

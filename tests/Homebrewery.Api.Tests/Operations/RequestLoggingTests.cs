@@ -41,33 +41,24 @@ public sealed class CapturedLogHost(ApiFixture api) : IAsyncDisposable
 /// (never the raw path or query), the status and the duration, and no cookies, bodies or other request data anywhere
 /// in the log (the hosting diagnostics' RequestPath scope is off).
 /// </summary>
+/// <remarks>One host for the class: every test creates its client (which starts the host) before it clears the log.</remarks>
 [Collection(ApiCollection.Name)]
-public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
+public sealed class RequestLoggingTests(CapturedLogHost host) : IClassFixture<CapturedLogHost>
 {
-    private readonly CapturedLogHost _host = new(api);
-
-    public ValueTask InitializeAsync()
-    {
-        _ = _host.Factory.Services;                 // start the host before the tests clear the log
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask DisposeAsync() => _host.DisposeAsync();
-
     [Fact]
     public async Task A_request_is_logged_once_with_its_route_template_and_no_request_data()
     {
         var ct = TestContext.Current.CancellationToken;
-        using var client = _host.Factory.CreateClient();
+        using var client = host.Factory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/brews/edit/SECRETEDITID42?token=secret-query-value");
         request.Headers.Add("Cookie", "hb-session=secret-cookie-value");
         request.Headers.Add("User-Agent", "secret-agent/1.0");
-        _host.Logs.Clear();
+        host.Logs.Clear();
 
         using var response = await client.SendAsync(request, ct);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var entry = Assert.Single(_host.Requests());
+        var entry = Assert.Single(host.Requests());
         Assert.Equal(LogLevel.Information, entry.Level);
         Assert.Equal(1, entry.EventId.Id);
         Assert.Equal("GET", entry.State["Method"]);
@@ -77,7 +68,7 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
         Assert.InRange(elapsed, 0, 60_000);
         Assert.StartsWith("GET /api/brews/edit/{editId} responded 401 in ", entry.Message, StringComparison.Ordinal);
 
-        foreach (var log in _host.Logs.Entries)
+        foreach (var log in host.Logs.Entries)
         {
             var text = log.AllText();
             Assert.DoesNotContain("SECRETEDITID42", text, StringComparison.Ordinal);
@@ -90,8 +81,8 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
     public async Task Entries_carry_the_RequestId_that_problem_responses_return_as_traceId()
     {
         var ct = TestContext.Current.CancellationToken;
-        using var client = _host.Factory.CreateClient();
-        _host.Logs.Clear();
+        using var client = host.Factory.CreateClient();
+        host.Logs.Clear();
 
         using var response = await client.GetAsync("/api/no-such-endpoint/abc", ct);
 
@@ -99,7 +90,7 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
         var problem = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>(ct);
         var traceId = problem?["traceId"]?.ToString();
         Assert.False(string.IsNullOrEmpty(traceId));
-        var entry = Assert.Single(_host.Requests());
+        var entry = Assert.Single(host.Requests());
         Assert.Equal("/api/{**path}", entry.State["Route"]);
         Assert.Equal(404, entry.State["StatusCode"]);
         Assert.Contains(entry.Scopes, s => s.TryGetValue("RequestId", out var id) && Equals(id, traceId));
@@ -109,14 +100,14 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
     public async Task Successful_health_probes_are_Debug_entries()
     {
         var ct = TestContext.Current.CancellationToken;
-        using var client = _host.Factory.CreateClient();
-        _host.Logs.Clear();
+        using var client = host.Factory.CreateClient();
+        host.Logs.Clear();
 
         (await client.GetAsync(HealthEndpoints.Path, ct)).Dispose();
         (await client.GetAsync(HealthEndpoints.LivePath, ct)).Dispose();
         (await client.GetAsync(HealthEndpoints.ReadyPath, ct)).Dispose();
 
-        var entries = _host.Requests();
+        var entries = host.Requests();
         Assert.Equal([HealthEndpoints.Path, HealthEndpoints.LivePath, HealthEndpoints.ReadyPath], entries.Select(e => e.State["Route"]));
         Assert.All(entries, e => Assert.Equal(LogLevel.Debug, e.Level));
         Assert.All(entries, e => Assert.Equal(200, e.State["StatusCode"]));
@@ -126,13 +117,13 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
     public async Task Requests_without_an_endpoint_log_their_path_without_the_query()
     {
         var ct = TestContext.Current.CancellationToken;
-        using var client = _host.Factory.CreateClient();
-        _host.Logs.Clear();
+        using var client = host.Factory.CreateClient();
+        host.Logs.Clear();
 
         using var response = await client.GetAsync("/assets/missing-file.js?v=secret-query-value", ct);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        var entry = Assert.Single(_host.Requests());
+        var entry = Assert.Single(host.Requests());
         Assert.Equal("/assets/missing-file.js", entry.State["Route"]);
         Assert.Equal(LogLevel.Information, entry.Level);         // a miss is not a Debug-level static file
         Assert.DoesNotContain("secret", entry.AllText(), StringComparison.Ordinal);
@@ -142,12 +133,12 @@ public sealed class RequestLoggingTests(ApiFixture api) : IAsyncLifetime
     public async Task Client_side_routes_log_the_SPA_fallback_template()
     {
         var ct = TestContext.Current.CancellationToken;
-        using var client = _host.Factory.CreateClient();
-        _host.Logs.Clear();
+        using var client = host.Factory.CreateClient();
+        host.Logs.Clear();
 
         (await client.GetAsync("/user/some-private-handle", ct)).Dispose();
 
-        var entry = Assert.Single(_host.Requests());
+        var entry = Assert.Single(host.Requests());
         Assert.DoesNotContain("some-private-handle", entry.AllText(), StringComparison.Ordinal);
         Assert.StartsWith("/{*", (string)entry.State["Route"]!, StringComparison.Ordinal);
     }

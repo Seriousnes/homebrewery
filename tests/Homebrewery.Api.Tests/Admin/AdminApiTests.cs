@@ -212,7 +212,9 @@ public sealed class AdminApiTests(ApiFixture api, AdminApiTests.Accounts account
         var brew = await TestBrews.CreateAsync(owner.Client, ct);
         using var anonymous = api.Factory.CreateClient();
 
+        var before = Stamps.Now();
         using var lockResponse = await admin.Client.PutAsync($"/api/admin/brews/{brew.ShareId}/lock", Json(LockBody), ct);
+        var after = Stamps.Now();
         await BrewApi.EnsureStatusAsync(lockResponse, HttpStatusCode.OK, ct);
         var locked = await TestJson.ReadAsync<AdminBrewInfo>(lockResponse, ct);
         using var share = await anonymous.GetAsync($"/api/brews/share/{brew.ShareId}", ct);
@@ -223,8 +225,8 @@ public sealed class AdminApiTests(ApiFixture api, AdminApiTests.Accounts account
         Assert.Equal(455, locked.Lock?.Code);
         Assert.Equal("Fix the art credits.", locked.Lock?.EditMessage);
         Assert.Equal("Under review.", locked.Lock?.ShareMessage);
-        Assert.InRange(locked.Lock!.Applied, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(1));
-        Assert.Null(locked.Lock.ReviewRequested);
+        Stamps.Between(locked.Lock?.Applied, before, after);
+        Assert.Null(locked.Lock!.ReviewRequested);
 
         Assert.Equal(HttpStatusCode.Locked, share.StatusCode);
         var problem = await share.Content.ReadFromJsonAsync<JsonElement>(ct);

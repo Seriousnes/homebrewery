@@ -12,10 +12,23 @@ namespace Homebrewery.Api.Tests.Operations;
 /// <c>Homebrewery.Api migrate</c> (plan P8.4), run as a real process in
 /// the Production environment: it migrates, seeds the Admin role and exits 0, or logs a Critical entry and exits 1.
 /// Its stdout also shows the production log format: one JSON object per line with a UTC timestamp.
+/// <para>Not in <see cref="ApiCollection"/>: the processes only use scratch databases (<see cref="ScratchDatabase"/>) in a
+/// container of this class's own, so these slow tests (each starts .NET processes) run in parallel with that collection.</para>
 /// </summary>
-[Collection(ApiCollection.Name)]
-public sealed class MigrateCommandTests(ApiFixture api)
+public sealed class MigrateCommandTests(MigrateCommandTests.Server api) : IClassFixture<MigrateCommandTests.Server>
 {
+    /// <summary>A PostgreSQL container for the scratch databases (<see cref="ApiFixture.CreateContainer"/>).</summary>
+    public sealed class Server : IAsyncLifetime
+    {
+        private readonly Testcontainers.PostgreSql.PostgreSqlContainer _postgres = ApiFixture.CreateContainer();
+
+        public string ConnectionString => _postgres.GetConnectionString();
+
+        public async ValueTask InitializeAsync() => await _postgres.StartAsync();
+
+        public ValueTask DisposeAsync() => _postgres.DisposeAsync();
+    }
+
     private static readonly TimeSpan ProcessTimeout = TimeSpan.FromMinutes(2);
 
     [Theory]

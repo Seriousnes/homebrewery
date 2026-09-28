@@ -188,11 +188,8 @@ public sealed class UpstreamImportTests(UpstreamImportTests.ImportHost host) : I
                 content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
             },
-            _ => async (_, token) =>
-            {
-                await Task.Delay(TimeSpan.FromSeconds(30), token);
-                return new HttpResponseMessage(HttpStatusCode.OK);
-            },
+            // What HttpClient throws when its Timeout (UpstreamImportSetup.Timeout) passes, without waiting for it.
+            _ => (_, _) => throw new TaskCanceledException("timeout", new TimeoutException()),
         });
         var user = await host.UserAsync(ct);
 
@@ -203,6 +200,17 @@ public sealed class UpstreamImportTests(UpstreamImportTests.ImportHost host) : I
         var expectedStatus = failure switch { "500" => 500, "302" => 302, _ => (int?)null };
         Assert.Equal(expectedStatus, problem.TryGetProperty("upstreamStatus", out var status) ? status.GetInt32() : null);
         Assert.DoesNotContain("connection refused", problem.ToString(), StringComparison.Ordinal);   // no internals
+    }
+
+    [Fact]
+    public void The_upstream_timeout_is_20_seconds()
+    {
+        var clients = host.Plain.Services.GetRequiredService<IHttpClientFactory>();
+
+        using var client = clients.CreateClient(nameof(UpstreamImportClient));  // the typed client's configuration
+
+        Assert.Equal(TimeSpan.FromSeconds(20), UpstreamImportSetup.Timeout);
+        Assert.Equal(UpstreamImportSetup.Timeout, client.Timeout);
     }
 
     [Fact]
@@ -307,7 +315,7 @@ public sealed class UpstreamImportTests(UpstreamImportTests.ImportHost host) : I
     }
 
     /// <summary>
-    /// One host for the class whose upstream is <see cref="Upstream"/> (with a 1 s timeout), plus
+    /// One host for the class whose upstream is <see cref="Upstream"/>, plus
     /// <see cref="Plain"/>, the shared host with the real handler.
     /// </summary>
     public sealed class ImportHost : IAsyncDisposable
@@ -319,7 +327,7 @@ public sealed class UpstreamImportTests(UpstreamImportTests.ImportHost host) : I
         {
             _api = api;
             Factory = api.Factory.WithWebHostBuilder(b => b.ConfigureTestServices(s => s
-                .AddHttpClient<UpstreamImportClient>(c => c.Timeout = TimeSpan.FromSeconds(1))
+                .AddHttpClient<UpstreamImportClient>()
                 .ConfigurePrimaryHttpMessageHandler(() => Upstream)));
         }
 

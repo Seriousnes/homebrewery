@@ -1,5 +1,10 @@
+using Homebrewery.Core.Documents;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Homebrewery.Api.Tests.Infrastructure;
 
@@ -12,6 +17,7 @@ namespace Homebrewery.Api.Tests.Infrastructure;
 /// <item><c>Database:MigrateOnStartup=true</c>, so starting the host applies the migrations;</item>
 /// <item><c>Themes:CatalogPath</c> = <see cref="ThemeCatalogFixture"/>, a committed copy of the web build's
 /// <c>themes.json</c> (the web root is empty).</item>
+/// <item>cheap password hashes (1 PBKDF2 iteration) and a raw HTML time limit that never runs out.</item>
 /// </list>
 /// Customize per test class with <c>Factory.WithWebHostBuilder(b =&gt; b.UseSetting(key, value))</c>;
 /// the derived factory keeps these settings, starts its own host on the same database, and must be
@@ -37,6 +43,12 @@ public sealed class HomebreweryApiFactory(string connectionString) : WebApplicat
     /// </summary>
     public const int GenerousPermitLimit = 1_000_000;
 
+    /// <summary>
+    /// The rate limit window of the test hosts: a day, so a limit a test lowers never replenishes while the test runs,
+    /// however slow the machine is.
+    /// </summary>
+    public static readonly TimeSpan RateLimitWindow = TimeSpan.FromDays(1);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder) => builder
         .UseEnvironment(EnvironmentName)
         .UseWebRoot(_webRoot.FullName)
@@ -47,7 +59,19 @@ public sealed class HomebreweryApiFactory(string connectionString) : WebApplicat
         .UseSetting("RateLimits:Import:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .UseSetting("RateLimits:Pdf:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .UseSetting("RateLimits:Writes:PermitLimit", GenerousPermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture))
-        .UseSetting("Logging:LogLevel:Microsoft.EntityFrameworkCore", "Warning");
+        .UseSetting("RateLimits:Auth:Window", RateLimitWindow.ToString("c", System.Globalization.CultureInfo.InvariantCulture))
+        .UseSetting("RateLimits:Import:Window", RateLimitWindow.ToString("c", System.Globalization.CultureInfo.InvariantCulture))
+        .UseSetting("RateLimits:Pdf:Window", RateLimitWindow.ToString("c", System.Globalization.CultureInfo.InvariantCulture))
+        .UseSetting("RateLimits:Writes:Window", RateLimitWindow.ToString("c", System.Globalization.CultureInfo.InvariantCulture))
+        .UseSetting("Logging:LogLevel:Microsoft.EntityFrameworkCore", "Warning")
+        .ConfigureTestServices(s =>
+        {
+            // Every test registers and signs in its own accounts, one test at a time (ApiCollection): with the default
+            // 100,000 PBKDF2 iterations the hashing alone took ~15 s of the run, and far more on a busy machine.
+            s.Configure<PasswordHasherOptions>(o => o.IterationCount = 1);
+            // Raw HTML never runs out of its time limit because the machine is busy (RawHtmlSanitizerTests test the limit).
+            s.Replace(ServiceDescriptor.Singleton(new RawHtmlSanitizer(clock: SteppingClock.Stopped())));
+        });
 
     protected override void ConfigureClient(HttpClient client)
     {

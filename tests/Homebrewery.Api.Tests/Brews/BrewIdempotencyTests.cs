@@ -246,7 +246,9 @@ public sealed class BrewIdempotencyTests(ApiFixture api, BrewActors actors) : IC
             "UPDATE brew_create_keys SET created_at = now() - interval '24 hours 1 minute' WHERE (user_id = @owner AND key = @key) OR (user_id = @other AND key = @otherKey)",
             ct, ("owner", actors.Owner.Id), ("key", key), ("other", actors.Other.Id), ("otherKey", otherKey));
 
+        var before = Stamps.Now();
         using var retry = await PostAsync(actors.Owner.Client, Body(title), key, ct);
+        var after = Stamps.Now();
 
         await BrewApi.EnsureStatusAsync(retry, HttpStatusCode.Created, ct);
         var recreated = await TestJson.ReadAsync<BrewForEdit>(retry, ct);
@@ -259,7 +261,7 @@ public sealed class BrewIdempotencyTests(ApiFixture api, BrewActors actors) : IC
         Assert.Equal(
             await api.Factory.WithDbAsync(db => db.Brews.Where(b => b.EditId == recreated.EditId).Select(b => b.Id).SingleAsync(ct)),
             keys.Single(k => k.Key == key).BrewId);
-        Assert.True(keys.Single(k => k.Key == key).CreatedAt > DateTimeOffset.UtcNow.AddMinutes(-5));
+        Stamps.Between(keys.Single(k => k.Key == key).CreatedAt, before, after);      // made again by the retry
     }
 
     [Fact]

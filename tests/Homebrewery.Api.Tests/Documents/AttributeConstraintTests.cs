@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Homebrewery.Api.Tests.Infrastructure;
 using Homebrewery.Core.Documents;
 using static Homebrewery.Api.Tests.Documents.TestDocs;
 
@@ -214,7 +215,7 @@ public sealed class AttributeConstraintTests
         var start = json["nodes"]!["orderedList"]!["attrs"]!["start"]!.AsObject();
         start["min"] = -10;
         start["max"] = 100;
-        var inspector = new DocInspector(SchemaManifest.Parse(json), new RawHtmlSanitizer());
+        var inspector = new DocInspector(SchemaManifest.Parse(json), new RawHtmlSanitizer(clock: SteppingClock.Stopped()));
 
         InspectResult Run(int value)
         {
@@ -234,7 +235,7 @@ public sealed class AttributeConstraintTests
     {
         var json = ManifestJson();
         json["nodes"]!["paragraph"]!["attrs"]!["align"]!["enum"] = new JsonArray("left", "right");
-        var inspector = new DocInspector(SchemaManifest.Parse(json), new RawHtmlSanitizer());
+        var inspector = new DocInspector(SchemaManifest.Parse(json), new RawHtmlSanitizer(clock: SteppingClock.Stopped()));
         using var parsed = JsonDocument.Parse(DocWith(P(Attrs(("align", null)), Text("x"))).ToJsonString());
 
         var result = inspector.Inspect(parsed.RootElement);

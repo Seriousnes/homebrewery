@@ -1,3 +1,4 @@
+using Homebrewery.Api.Tests.Infrastructure;
 using Homebrewery.Core.Documents;
 
 namespace Homebrewery.Api.Tests.Security;
@@ -9,7 +10,7 @@ namespace Homebrewery.Api.Tests.Security;
 /// </summary>
 public sealed class ContentPolicyAlignmentTests
 {
-    private static readonly RawHtmlSanitizer Sanitizer = new();
+    private static readonly RawHtmlSanitizer Sanitizer = new(clock: SteppingClock.Stopped());   // never runs out of time
 
     [Theory]
     [InlineData("<script src=\"https://cdn.example/x.js\"></script>", "<script")]
