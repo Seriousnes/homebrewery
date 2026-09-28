@@ -55,7 +55,9 @@ function withLock<T>(dir: string, fn: () => T, now: () => number = Date.now): T 
       fs.mkdirSync(lock);
       break;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      // Windows answers EPERM while a lock another process just released is still being deleted.
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'EEXIST' && !(code === 'EPERM' && process.platform === 'win32')) throw error;
       try {
         if (now() - fs.statSync(lock).mtimeMs > 10_000) fs.rmSync(lock, { recursive: true, force: true });
       } catch {

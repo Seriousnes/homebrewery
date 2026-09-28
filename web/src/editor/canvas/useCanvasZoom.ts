@@ -33,9 +33,18 @@ export function spreadMinWidth(spread: CanvasSpread, pageWidth: number, gap = SP
   return pages * pageWidth + (pages - 1) * gap + 2 * SIDE_GUTTER;
 }
 
+/**
+ * The page width the theme sets. Until a theme applies, a page is an ordinary block that stretches
+ * across the pages root: that width follows the canvas's (reading it grew the canvas by the gutters
+ * every frame until the theme arrived), so the default stands in.
+ */
 function measurePageWidth(canvas: HTMLElement): number {
   const page = canvas.querySelector<HTMLElement>('.page');
-  return page?.offsetWidth || DEFAULT_PAGE_WIDTH;
+  const root = page?.parentElement;
+  if (!page || !root || page.offsetWidth === 0) return DEFAULT_PAGE_WIDTH;
+  const cs = getComputedStyle(root);
+  const stretched = root.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  return Math.abs(page.offsetWidth - stretched) < 1 ? DEFAULT_PAGE_WIDTH : page.offsetWidth;
 }
 
 export interface CanvasZoomRefs {

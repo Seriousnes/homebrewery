@@ -6,8 +6,8 @@
 // EditorView.pasteHTML.
 import { readFileSync } from 'node:fs';
 import type { JSONContent } from '@tiptap/core';
-import { expect, test, type Page } from '@playwright/test';
-import { openCanvas, setCaret, settle } from './helpers';
+import { expect, type Page } from '@playwright/test';
+import { openCanvas, setCaret, settle, test } from './helpers';
 
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');

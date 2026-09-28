@@ -2,8 +2,8 @@
 // through the DevTools protocol (Input.imeSetComposition / Input.insertText), which fires the
 // same compositionstart/update/end and input events an OS IME does. Firefox has no CDP; its
 // IME path needs a manual check (see the S1 report).
-import { expect, test, type CDPSession, type Page } from '@playwright/test';
-import { caret, openCanvas, paragraphRange, setCaret, settle } from './helpers';
+import { expect, type CDPSession, type Page } from '@playwright/test';
+import { caret, openCanvas, paragraphRange, setCaret, settle, test } from './helpers';
 
 test.use({ viewport: { width: 1400, height: 1300 } });
 
@@ -12,6 +12,17 @@ async function compose(cdp: CDPSession, steps: string[], commit: string): Promis
     await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
   }
   await cdp.send('Input.insertText', { text: commit });
+}
+
+/**
+ * Waits until the committed composition is read: prosemirror-view ends a composition in a 20 ms
+ * timer set on compositionend (endComposition, which can still correct the selection), so a longer
+ * timer set after it fires after it (timers of a page fire in order of their due time); then
+ * ProseMirror has read the DOM selection (settle).
+ */
+async function composed(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 30)));
+  await settle(page);
 }
 
 function paragraphText(page: Page, testId: string): Promise<string> {
@@ -45,7 +56,7 @@ test.describe('S1 (c) IME input', () => {
     const before = await paragraphText(page, 'page1-last');
     await setCaret(page, last.to);
     await compose(cdp, ['に', 'にほ', 'にほん', '日本'], '日本');
-    await settle(page);
+    await composed(page);
     const composing = await page.evaluate(() => window.__editor!.view.composing);
     expect(composing).toBe(false);
     expect(await paragraphText(page, 'page1-last')).toBe(`${before}日本`);
@@ -58,7 +69,7 @@ test.describe('S1 (c) IME input', () => {
     await setCaret(page, split.from + 7);
     await compose(cdp, ['ㅎ', '하', '한'], '한');
     await compose(cdp, ['ㄱ', '구', '국'], '국');
-    await settle(page);
+    await composed(page);
     expect(await paragraphText(page, 'split-para')).toBe(`${splitBefore.slice(0, 7)}한국${splitBefore.slice(7)}`);
     expect((await caret(page)).head).toBe(split.from + 9);
 

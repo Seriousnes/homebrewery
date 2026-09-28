@@ -2,7 +2,7 @@
 // pages, click-to-caret under transform zoom. /dev/canvas, 5ePHB, the hand-built s1 document:
 // page 1's split-para runs from the bottom of column 1 to the top of column 2; page1-last is the
 // last paragraph of page 1 (column 2), page2-first the first of page 2.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import {
   caret,
   centerInViewport,
@@ -14,6 +14,7 @@ import {
   press,
   setCaret,
   settle,
+  test,
   wordBox,
 } from './helpers';
 
@@ -188,20 +189,16 @@ test.describe('S1 (b) drag selection across pages', () => {
       const b = await wordBox(page, 'page2-first', 'corridors');
       // An editor that already has focus, as when an author selects text while writing.
       // (ProseMirror re-syncs the DOM selection 20 ms after the editor gains focus; a synthetic
-      // drag that starts sooner than that can lose its anchor. See the S1 report.)
+      // drag that starts sooner than that can lose its anchor. setCaret returns after that. See
+      // the S1 report.)
       await setCaret(page, a.from);
-      await page.waitForTimeout(100);
       // Start just inside the word's left edge. (Chromium drops a synthetic drag that starts within
       // about a pixel of a glyph's midpoint, on any contenteditable; see the S1 report.)
       const [ax, ay] = [a.left + 0.3, (a.top + a.bottom) / 2];
       const [bx, by] = [b.right - 1, (b.top + b.bottom) / 2];
       await page.mouse.move(ax, ay);
       await page.mouse.down();
-      // 60 Hz pointer: ~16 ms between moves.
-      for (let i = 1; i <= 20; i++) {
-        await page.mouse.move(ax + ((bx - ax) * i) / 20, ay + ((by - ay) * i) / 20);
-        await page.waitForTimeout(16);
-      }
+      await page.mouse.move(bx, by, { steps: 20 });
       await page.mouse.up();
       await settle(page);
       const sel = await caret(page);

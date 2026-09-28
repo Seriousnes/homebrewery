@@ -145,12 +145,16 @@ export async function clickObject(page: Page, pageIndex: number, id: string, mod
 }
 
 /**
- * Clicks into the text. ProseMirror re-syncs the DOM selection 20 ms after it gets focus (canvas
- * notes), which undoes a click that arrives right after focus came from a menu: focus it first.
+ * Clicks into the text. ProseMirror re-syncs the DOM selection 20 ms after it gets focus
+ * (prosemirror-view handlers.focus), which undoes a click that arrives right after focus came from
+ * a menu: focus it first, then wait until that timer has run (a longer timer set after it fires
+ * after it: timers of a page fire in order of their due time).
  */
 export async function clickInText(page: Page, target: Locator, options: { modifiers?: ('Shift' | 'Alt')[] } = {}): Promise<void> {
-  await page.evaluate(() => window.__hbObjects!.editor.view.focus());
-  await page.waitForTimeout(60);
+  await page.evaluate(async () => {
+    window.__hbObjects!.editor.view.focus();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  });
   await target.click(options);
 }
 

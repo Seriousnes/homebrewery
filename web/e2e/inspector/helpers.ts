@@ -98,15 +98,30 @@ export function block(page: Page, testId: string): Locator {
   return page.locator(`.hb-canvas [data-testid="${testId}"]`).first();
 }
 
-/** Puts the caret inside the block with `testId` (a click near its start). */
+/** Puts the caret inside the block with `testId` (a click near the start of its first fragment). */
 export async function clickIn(page: Page, testId: string): Promise<void> {
   const target = block(page, testId);
   await target.scrollIntoViewIfNeeded();
   // Chromium skips offscreen pages (content-visibility: auto, P8.1 offscreen.ts): a page just scrolled into view
-  // is hit-tested as an empty box until the next frame, so a click right away would land on the page itself.
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  const box = (await target.boundingBox())!;
-  await page.mouse.click(box.x + Math.min(24, box.width / 2), box.y + Math.min(8, box.height / 2));
+  // is hit-tested as an empty box until it has rendered, and a click then lands on the page itself. So the
+  // click waits until the point hits the block. (The first fragment: a block that continues in the next
+  // column has a bounding box across both, whose corner can be another block's.)
+  const handle = await target.elementHandle();
+  const point = await page.waitForFunction((el) => {
+    const r = el.getClientRects()[0] ?? el.getBoundingClientRect();
+    const p = { x: r.left + Math.min(24, r.width / 2), y: r.top + Math.min(8, r.height / 2) };
+    const hit = document.elementFromPoint(p.x, p.y);
+    return hit !== null && el.contains(hit) ? p : null;
+  }, handle);
+  const { x, y } = (await point.jsonValue())!;
+  await point.dispose();
+  await page.mouse.click(x, y);
+  // The caret is in the block (ProseMirror read the click).
+  await page.waitForFunction((el) => {
+    const view = window.__hbInspector!.editor.view;
+    return el.contains(view.domAtPos(view.state.selection.from).node);
+  }, handle);
+  await handle.dispose();
   await expect(page.getByTestId('inspector-target')).toBeVisible();
 }
 
