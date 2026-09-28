@@ -3,6 +3,7 @@
 // hand-offs, the per-tab session, and the error messages. The real conversion and preview run in
 // e2e/import-ui.
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSONContent } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ import type { ImportReportData } from '@/editor/import/importReport';
 import { defaultLocalBrews, setDefaultLocalBrews } from '@/editor/local/localBrews';
 import { DOC_SCHEMA_VERSION } from '@/editor/schema/version';
 import type { ImportPreviewProps } from '@/editor/ui/importReport';
+import { advance, tickUntil, useFakeClockForUser } from '@/test/fakeClock';
 import { clearToasts } from '@/ui';
 import type { ImportConversion } from './convert';
 import { type ConvertFn, ImportPage } from './ImportPage';
@@ -124,6 +126,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   clearToasts();
   // The prompt's store is module state: an open dialog would trap the next test's focus.
@@ -175,12 +178,17 @@ describe('ImportPage', () => {
   });
 
   it('a session write still pending when the brew is created does not bring the session back', async () => {
+    // On a fake clock: the brew is created within the page's delayed session write (300 ms after
+    // the conversion changed the session; no time passes before the click), then the clock runs
+    // well past it.
+    useFakeClockForUser();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     let openEditor!: () => void;
     const editorLoaded = new Promise<void>((resolve) => (openEditor = resolve));
     const server = mockApi((request) =>
       request.method === 'POST' && request.url.pathname === '/api/brews' ? jsonResponse({ editId: 'newEdit1', shareId: 'newShare1', version: 1 }, 201) : jsonResponse([]),
     );
-    const { user, router } = renderRoute(<ImportPage convert={(t) => Promise.resolve(fakeConversion(t))} Preview={StubPreview} prefetch={vi.fn()} />, {
+    const { router } = renderRoute(<ImportPage convert={(t) => Promise.resolve(fakeConversion(t))} Preview={StubPreview} prefetch={vi.fn()} />, {
       url: '/import',
       path: 'import',
       me: ALICE,
@@ -197,14 +205,14 @@ describe('ImportPage', () => {
     });
     await user.type(brewText(), '# Hello');
     await user.click(screen.getByRole('button', { name: 'Preview the import' }));
-    await waitFor(() => expect(screen.getByTestId('import-report')).toHaveAttribute('data-layout', 'done'));
-    // Create right away, within the page's delayed session write (300 ms after the conversion changed it).
+    await tickUntil(() => screen.queryByTestId('import-report')?.getAttribute('data-layout') === 'done');
+    expect(sessionStorage.getItem(IMPORT_SESSION_KEY)).toBeNull(); // the write is still pending
     await user.click(screen.getByRole('button', { name: 'Create brew' }));
-    await waitFor(() => expect(server.requests.some((r) => r.method === 'POST')).toBe(true));
-    await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
+    await tickUntil(() => server.requests.some((r) => r.method === 'POST'));
+    await advance(1000);
     expect(sessionStorage.getItem(IMPORT_SESSION_KEY)).toBeNull();
     openEditor();
-    await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newEdit1'));
+    await tickUntil(() => router.state.location.pathname === '/edit/newEdit1');
     expect(sessionStorage.getItem(IMPORT_SESSION_KEY)).toBeNull();
   });
 

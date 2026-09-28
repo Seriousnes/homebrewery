@@ -5,7 +5,7 @@ import { Editor } from '@tiptap/core';
 import { closeHistory } from '@tiptap/pm/history';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { EditorState, type Transaction } from '@tiptap/pm/state';
-import { canJoin } from '@tiptap/pm/transform';
+import { canJoin, StepMap } from '@tiptap/pm/transform';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildEditorExtensions } from '../editorExtensions';
 import { LAYOUT_NEUTRAL_META } from '../schema/plugins';
@@ -472,7 +472,7 @@ describe('changedPages is linear (PG-11)', () => {
     }
   });
 
-  it('takes linear time: a replace-all of 5,000 matches in one transaction', () => {
+  it('does linear work: a replace-all of 5,000 matches in one transaction', () => {
     const pages = Array.from({ length: 40 }, (_, i) =>
       (i === 0 ? PAGE : AUTO)(null, ...Array.from({ length: 5 }, () => P('foo bar '.repeat(25).trim()))),
     );
@@ -486,11 +486,18 @@ describe('changedPages is linear (PG-11)', () => {
       }
     });
     expect(tr.steps.length).toBe(5000);
-    const t0 = performance.now();
-    const result = changedPages(tr);
-    const ms = performance.now() - t0;
-    expect(result).toEqual([0, 39]);
-    expect(ms).toBeLessThan(100);
+    // The work is position mapping: count it (a clock would measure the machine). Linear = a
+    // bounded number of step-map calls per step; mapping through the rest of the transaction
+    // per step (the quadratic way) makes ~12.5 million.
+    const calls = (['map', 'mapResult', 'forEach'] as const).map((method) => vi.spyOn(StepMap.prototype, method));
+    try {
+      expect(changedPages(tr)).toEqual([0, 39]);
+      const total = calls.reduce((sum, spy) => sum + spy.mock.calls.length, 0);
+      expect(total).toBeGreaterThan(0);
+      expect(total).toBeLessThanOrEqual(5 * tr.steps.length);
+    } finally {
+      calls.forEach((spy) => spy.mockRestore());
+    }
   });
 });
 

@@ -65,7 +65,7 @@ export function docText(doc: unknown): string {
   return out.join('');
 }
 
-export type Override = (request: RecordedRequest, server: BrewServer) => Response | Promise<Response> | undefined;
+export type Override = (request: RecordedRequest, server: BrewServer) => Response | undefined | Promise<Response | undefined>;
 
 export interface BrewServer {
   /** The account the session cookie belongs to (null: no session). */
@@ -76,7 +76,7 @@ export interface BrewServer {
   requests: RecordedRequest[];
   /** 'METHOD /path status' per answered request, in order. */
   log: string[];
-  /** Answers first when it returns a response. */
+  /** Answers first when it returns (or resolves to) a response; it may also hold a request back. */
   override: Override | null;
   /** Milliseconds before answering a request (by 'METHOD /path' prefix match). */
   delays: Record<string, number>;

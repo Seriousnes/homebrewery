@@ -1,12 +1,15 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AccountInfo } from '@/api';
 import { emptyResponse, jsonResponse, mockApi, problemResponse } from '@/api/testing';
+import { SIGN_IN_PROMPT_DELAY_MS } from '@/app/signInPromptStore';
 import { ADMIN, ALICE, renderRoute } from '@/app/testing';
+import { advance, tickUntil } from '@/test/fakeClock';
 import { clearToasts } from '@/ui';
 import AccountPage from './AccountPage';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   clearToasts();
 });
@@ -108,12 +111,15 @@ describe('AccountPage', () => {
 
   it('signs out: the page turns into the sign-in prompt', async () => {
     fakeAccountApi();
-    const { user } = renderRoute(<AccountPage />, { url: '/account', me: ALICE });
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Sign in required' })).toBeInTheDocument();
+    renderRoute(<AccountPage />, { url: '/account', me: ALICE });
+    // On a fake clock from the click on, so that the sign-in dialog's delay is on it too.
+    vi.useFakeTimers();
+    act(() => screen.getByRole('button', { name: 'Sign out' }).click());
+    const heading = () => screen.queryByRole('heading', { level: 1, name: 'Sign in required' });
+    await tickUntil(() => heading() !== null);
     expect(within(screen.getByTestId('sign-in-required')).getByRole('form', { name: 'Sign in' })).toBeInTheDocument();
-    // No dialog on top of the inline form.
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    // No dialog on top of the inline form, well past the dialog's delay.
+    await advance(10 * SIGN_IN_PROMPT_DELAY_MS);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

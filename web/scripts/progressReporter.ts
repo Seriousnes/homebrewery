@@ -10,7 +10,7 @@ import type { ProgressEvent } from './testRunner.ts';
 // The runners start Playwright in web/: locations relative to it, as the guard and the notes write them.
 const webDir = process.cwd();
 
-function send(event: ProgressEvent): void {
+function sendToRunner(event: ProgressEvent): void {
   if (!process.send || !process.connected) return;
   try {
     process.send(event);
@@ -25,8 +25,12 @@ const key = (test: TestCase, result: TestResult) => `${test.id}#${result.retry}`
 const STEP_CATEGORIES = new Set(['test.step', 'pw:api', 'expect', 'hook', 'fixture', 'test.attach']);
 
 export default class ProgressReporter implements Reporter {
-  constructor() {
-    send({ type: 'hello' });
+  private readonly send: (event: ProgressEvent) => void;
+
+  /** Playwright passes its reporter options (unused); tests pass `send` to see the events. */
+  constructor(_options?: unknown, send: (event: ProgressEvent) => void = sendToRunner) {
+    this.send = send;
+    this.send({ type: 'hello' });
   }
 
   printsToStdio(): boolean {
@@ -34,11 +38,11 @@ export default class ProgressReporter implements Reporter {
   }
 
   onBegin(_config: unknown, suite: Suite): void {
-    send({ type: 'begin', total: suite.allTests().length });
+    this.send({ type: 'begin', total: suite.allTests().length });
   }
 
   onTestBegin(test: TestCase, result: TestResult): void {
-    send({
+    this.send({
       type: 'testBegin',
       id: key(test, result),
       title: test.titlePath().slice(3).join(' › ') || test.title,
@@ -51,18 +55,18 @@ export default class ProgressReporter implements Reporter {
   }
 
   onStepBegin(test: TestCase, result: TestResult, step: TestStep): void {
-    if (STEP_CATEGORIES.has(step.category)) send({ type: 'step', id: key(test, result), title: step.title, open: true });
+    if (STEP_CATEGORIES.has(step.category)) this.send({ type: 'step', id: key(test, result), title: step.title, open: true });
   }
 
   onStepEnd(test: TestCase, result: TestResult, step: TestStep): void {
-    if (STEP_CATEGORIES.has(step.category)) send({ type: 'step', id: key(test, result), title: step.title, open: false });
+    if (STEP_CATEGORIES.has(step.category)) this.send({ type: 'step', id: key(test, result), title: step.title, open: false });
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
-    send({ type: 'testEnd', id: key(test, result), status: result.status, duration: result.duration });
+    this.send({ type: 'testEnd', id: key(test, result), status: result.status, duration: result.duration });
   }
 
   onEnd(result: FullResult): void {
-    send({ type: 'end', status: result.status });
+    this.send({ type: 'end', status: result.status });
   }
 }

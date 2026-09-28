@@ -1,12 +1,14 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useFakeClockForUser } from '@/test/fakeClock';
 import { Toaster } from './Toaster';
 import { clearToasts, dismissToast, MAX_TOASTS, toast, toastStore } from './toastStore';
 
 afterEach(() => {
   act(() => clearToasts());
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe('toast store', () => {
@@ -94,7 +96,10 @@ describe('Toaster', () => {
   });
 
   it('keeps focus in place when a focused toast closes, and timers run again afterwards', async () => {
-    const user = userEvent.setup();
+    // A fake clock: the 300 ms toast can't time out while the user moves around (only this test
+    // moves the clock), and the last one's 50 ms are exact.
+    useFakeClockForUser();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(
       <>
         <button type="button">Editor</button>
@@ -124,7 +129,13 @@ describe('Toaster', () => {
     act(() => {
       toast({ title: 'Later', duration: 50 });
     });
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    act(() => {
+      vi.advanceTimersByTime(49);
+    });
+    expect(screen.getByRole('region')).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
   });
 

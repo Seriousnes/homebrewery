@@ -51,9 +51,9 @@ describe('registerSlot', () => {
     const common = tempDir();
     const lock = path.join(common, 'hb-worktree-slots.json.lock');
     fs.mkdirSync(lock);
-    const old = new Date(Date.now() - 60_000);
+    const old = new Date('2026-09-28T12:00:00Z');
     fs.utimesSync(lock, old, old);
-    expect(registerSlot(common, tempDir())).toBe(1);
+    expect(registerSlot(common, tempDir(), () => old.getTime() + 60_000)).toBe(1); // a minute later
   });
 });
 

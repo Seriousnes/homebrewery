@@ -10,7 +10,7 @@ import type { AppliedThemeStyles, ThemeChain } from '@/editor/canvas/themeLoader
 import { readDraftsFor } from '@/editor/save/drafts';
 import { defaultDraftStore, defaultSnapshotHistory } from '@/editor/save/stores';
 import { appEditor, createBrewServer, docText, fakeBrew, logOf, preloadAppPages, pressSaveKey, renderApp, typeInEditor } from '@/pages/routeTesting';
-import { clearToasts } from '@/ui';
+import { clearToasts, toastStore } from '@/ui';
 
 const loader = vi.hoisted(() => ({
   loadThemeChain: vi.fn(),
@@ -54,8 +54,7 @@ afterEach(() => {
 });
 
 const appRoot = () => screen.getByTestId('editor-app');
-const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull(), { timeout: 3000 });
-const settle = (ms = 150) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull());
 
 describe('leaving /new before the autosave delay', () => {
   it.each(['/vault', '/new'])('saves the brew and stays on %s', async (target) => {
@@ -68,8 +67,8 @@ describe('leaving /new before the autosave delay', () => {
     // The unmount flush still creates the brew …
     await waitFor(() => expect(logOf(server, 'POST', '/api/brews')).toEqual(['201']));
     expect(docText(server.brews.get('newA')?.doc)).toBe('Hello');
-    await settle();
-    // … but the page the user chose stays.
+    // … and the page, told of the create after the user left (the toast), stays where they went.
+    await waitFor(() => expect(toastStore.getState().toasts.map((t) => t.title)).toContain('Your new brew was saved'));
     expect(router.state.location.pathname).toBe(target);
     expect(router.state.historyAction).not.toBe('REPLACE');
   });
@@ -197,18 +196,16 @@ describe('deleting the brew', () => {
     await waitForEditor();
     await waitFor(() => expect(recentBrewsStore.get().edit.map((b) => b.id)).toContain('origA'));
     typeInEditor(' unsaved'); // leaves a draft
-    await settle(300);
     await waitFor(async () => expect(await readDraftsFor(defaultDraftStore(), 'origA')).toHaveLength(1));
     await user.click(screen.getByTestId('open-properties'));
     await user.click(await screen.findByTestId('delete-brew'));
     await user.click(await screen.findByRole('button', { name: 'Delete permanently' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/user/alice'));
     expect(logOf(server, 'DELETE', '/api/brews/origA')).toEqual(['200']);
-    await settle();
-    expect(recentBrewsStore.get().edit.map((b) => b.id)).toEqual(['keepB']);
-    expect(recentBrewsStore.get().view.map((b) => b.id)).toEqual([]);
-    expect(await readDraftsFor(defaultDraftStore(), 'origA')).toEqual([]);
-    expect(await defaultSnapshotHistory().list('origA')).toEqual([]);
+    await waitFor(() => expect(recentBrewsStore.get().edit.map((b) => b.id)).toEqual(['keepB']));
+    await waitFor(() => expect(recentBrewsStore.get().view.map((b) => b.id)).toEqual([]));
+    await waitFor(async () => expect(await readDraftsFor(defaultDraftStore(), 'origA')).toEqual([]));
+    await waitFor(async () => expect(await defaultSnapshotHistory().list('origA')).toEqual([]));
     expect(await defaultSnapshotHistory().list('keepB')).toHaveLength(1);
   });
 });

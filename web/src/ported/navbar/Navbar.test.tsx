@@ -7,6 +7,7 @@ import { clearToasts, toastStore } from '@/ui';
 import { Navbar } from './Navbar';
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   clearRecentBrews();
   clearToasts();
@@ -165,6 +166,9 @@ describe('Navbar', () => {
     });
 
     it('lists edited and viewed brews, newest first, and removes entries', async () => {
+      // A fixed clock (Date only: timers stay real): "5 minutes ago" can't turn into 6.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-09-28T12:00:00Z'));
       const now = Date.now();
       recordRecentBrew('edit', { id: 'edit1', title: 'Older' }, now - 3 * 3600_000);
       recordRecentBrew('edit', { id: 'edit2', title: 'Newer' }, now - 60_000 * 5);

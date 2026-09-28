@@ -46,8 +46,8 @@ function git(cwd: string, args: string[]): string[] | null {
   }
 }
 
-/** Takes <dir>.lock (mkdir is atomic), runs `fn`, releases it. A lock older than 10 s is stale. */
-function withLock<T>(dir: string, fn: () => T): T {
+/** Takes <dir>.lock (mkdir is atomic), runs `fn`, releases it. A lock older than 10 s (by `now`) is stale. */
+function withLock<T>(dir: string, fn: () => T, now: () => number = Date.now): T {
   const lock = path.join(dir, `${REGISTRY}.lock`);
   const deadline = Date.now() + 5000;
   for (;;) {
@@ -57,7 +57,7 @@ function withLock<T>(dir: string, fn: () => T): T {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
       try {
-        if (Date.now() - fs.statSync(lock).mtimeMs > 10_000) fs.rmSync(lock, { recursive: true, force: true });
+        if (now() - fs.statSync(lock).mtimeMs > 10_000) fs.rmSync(lock, { recursive: true, force: true });
       } catch {
         // released meanwhile
       }
@@ -73,7 +73,7 @@ function withLock<T>(dir: string, fn: () => T): T {
 }
 
 /** The slot of `root` in the registry under `commonDir`: its entry, or the lowest free slot (then stored). */
-export function registerSlot(commonDir: string, root: string): number {
+export function registerSlot(commonDir: string, root: string, now: () => number = Date.now): number {
   return withLock(commonDir, () => {
     const file = path.join(commonDir, REGISTRY);
     let slots: Record<string, number> = {};
@@ -95,7 +95,7 @@ export function registerSlot(commonDir: string, root: string): number {
     }
     fs.writeFileSync(file, `${JSON.stringify(slots, null, 2)}\n`);
     return slot;
-  });
+  }, now);
 }
 
 let cached: WorktreeInfo | undefined;

@@ -1,23 +1,15 @@
 // The runner scripts' fail-fast machinery (scripts/testRunner.ts): the no-progress watchdog's rules
-// with a fake clock, and supervise() killing a real stalled child with its whole process tree.
+// with a fake clock, supervise() killing a real stalled child with its whole process tree, and the
+// progress reporter.
 import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import os from 'node:os';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import net from 'node:net';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import {
-  describeSets,
-  isInteractive,
-  killTreeSync,
-  playwrightCli,
-  progressReporter,
-  ProgressWatchdog,
-  type ProgressEvent,
-  sleep,
-  summarize,
-  supervise,
-  webDir,
-} from './testRunner.ts';
+import type { FullResult, Suite, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
+import { describe, expect, it } from 'vitest';
+import ProgressReporter from './progressReporter.ts';
+import { describeSets, isInteractive, killTreeSync, playwrightCli, ProgressWatchdog, type ProgressEvent, summarize, supervise } from './testRunner.ts';
 
 const OPTIONS = { stallMs: 60_000, graceMs: 30_000, startupMs: 90_000 };
 
@@ -149,81 +141,134 @@ describe('summarize', () => {
   });
 });
 
+// supervise() on real child processes, with the watchdog on a clock of the test's own: the clock
+// moves only when the test moves it (on the child's events), so whether a run stalls never
+// depends on how fast this machine runs the children.
 describe('supervise', () => {
-  const dir = mkdtempSync(path.join(os.tmpdir(), 'hb-supervise-'));
-  afterAll(() => rmSync(dir, { recursive: true, force: true }));
-
-  const alive = (pid: number) => {
-    try {
-      process.kill(pid, 0);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   it('kills a stalled run with its whole process tree and says which test was running', async () => {
-    const pidFile = path.join(dir, 'grandchild.pid');
-    // A fake Playwright: starts a child of its own (a "browser"), reports one test, then hangs.
-    const script = `
-      const { spawn } = require('node:child_process');
-      const fs = require('node:fs');
-      const browser = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
-      fs.writeFileSync(${JSON.stringify(pidFile)}, String(browser.pid));
-      process.send({ type: 'begin', total: 1 });
-      process.send({ type: 'testBegin', id: 't1', title: 'awaits forever', location: 'e2e/stall.spec.ts:3', project: 'chromium', timeout: 0, retry: 0, tags: [] });
-      setInterval(() => {}, 1000);
-    `;
-    const child = spawn(process.execPath, ['-e', script], { stdio: ['ignore', 'ignore', 'inherit', 'ipc'] });
-    const messages: string[] = [];
-    const started = Date.now();
-    const result = await supervise(child, {
-      watchdog: { stallMs: 400, graceMs: 100, startupMs: 3000 },
-      checkEveryMs: 50,
-      onStall: (stall) => messages.push(stall.message),
+    // The "browser" holds a connection to this server: the OS closes it when the browser dies (on
+    // every platform, zombie or not), so its end is an event, not something to poll for. A kill
+    // that missed the browser leaves it open, and the test timeout fails the test.
+    const server = net.createServer();
+    const browserGone = new Promise((resolve) => {
+      server.once('connection', (socket) => {
+        socket.on('error', () => {}); // a reset, on Windows
+        socket.once('close', resolve);
+        socket.resume();
+      });
     });
-    expect(Date.now() - started).toBeLessThan(4000);
-    expect(result.stall).not.toBeNull();
-    expect(messages[0]).toContain('[chromium] e2e/stall.spec.ts:3 › awaits forever');
-    const browser = Number(readFileSync(pidFile, 'utf8'));
-    for (let i = 0; i < 40 && alive(browser); i++) await sleep(50);
-    expect(alive(browser)).toBe(false);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as net.AddressInfo;
+    try {
+      const browser = `require('node:net').connect(${port}, '127.0.0.1', () => process.stdout.write('up')); setInterval(() => {}, 1000);`;
+      // A fake Playwright: starts a child of its own (a "browser"; detached: its own process group,
+      // as browsers are, and on Windows outside the job that would end it with its parent, so only
+      // a kill of the whole tree ends it), and once that is connected reports one test,
+      // then hangs.
+      const script = `
+        const { spawn } = require('node:child_process');
+        const browser = spawn(process.execPath, ['-e', ${JSON.stringify(browser)}], { stdio: ['ignore', 'pipe', 'ignore'], detached: true });
+        browser.stdout.once('data', () => {
+          process.send({ type: 'begin', total: 1 });
+          process.send({ type: 'testBegin', id: 't1', title: 'awaits forever', location: 'e2e/stall.spec.ts:3', project: 'chromium', timeout: 0, retry: 0, tags: [] });
+        });
+        setInterval(() => {}, 1000);
+      `;
+      const child = spawn(process.execPath, ['-e', script], { stdio: ['ignore', 'ignore', 'inherit', 'ipc'] });
+      let clock = 0;
+      const messages: string[] = [];
+      const result = await supervise(child, {
+        now: () => clock,
+        watchdog: OPTIONS,
+        checkEveryMs: 10,
+        // Once the test began, nothing happens for the whole stall window.
+        onEvent: (event) => {
+          if (event.type === 'testBegin') clock += OPTIONS.stallMs;
+        },
+        onStall: (stall) => messages.push(stall.message),
+      });
+      expect(result.stall).not.toBeNull();
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain('[chromium] e2e/stall.spec.ts:3 › awaits forever');
+      await browserGone;
+    } finally {
+      server.close();
+    }
   });
 
   it('leaves a run that makes progress alone and returns its exit code', async () => {
+    // Five tests, then it exits when told to (so every event is in before the exit).
     const script = `
-      let n = 0;
       process.send({ type: 'begin', total: 5 });
-      const timer = setInterval(() => {
-        n += 1;
+      for (let n = 1; n <= 5; n++) {
         process.send({ type: 'testBegin', id: 't' + n, title: 't', location: 'e2e/a.spec.ts:1', project: 'firefox', timeout: 15000, retry: 0, tags: [] });
         process.send({ type: 'testEnd', id: 't' + n, status: 'passed', duration: 1 });
-        if (n === 5) { clearInterval(timer); process.exit(3); }
-      }, 100);
+      }
+      process.on('message', () => process.exit(3));
     `;
     const child = spawn(process.execPath, ['-e', script], { stdio: ['ignore', 'ignore', 'inherit', 'ipc'] });
-    const result = await supervise(child, { watchdog: { stallMs: 400, graceMs: 100, startupMs: 3000 }, checkEveryMs: 50 });
+    let clock = 0;
+    let ended = 0;
+    const result = await supervise(child, {
+      now: () => clock,
+      watchdog: OPTIONS,
+      checkEveryMs: 10,
+      onEvent: (event) => {
+        // Each event comes just inside the stall window after the one before: in all, the run
+        // takes ten times that window.
+        clock += OPTIONS.stallMs - 1;
+        if (event.type === 'testEnd' && ++ended === 5) child.send('exit');
+      },
+    });
+    expect(clock).toBeGreaterThan(10 * OPTIONS.stallMs);
     expect(result.stall).toBeNull();
     expect(result.code).toBe(3);
     expect(result.tests.map((t) => t.status)).toEqual(['passed', 'passed', 'passed', 'passed', 'passed']);
   });
 });
 
+// The reporter in-process, fed what Playwright passes it. (Spawning the Playwright CLI to see it
+// load the reporter took 2 s of start-up alone, more on a busy machine: every runner run shows
+// that, and names a reporter that never said hello when a run stalls.)
 describe('progressReporter', () => {
-  it('reaches the runner over IPC when attached with PW_TEST_REPORTER (this Playwright still supports it)', async () => {
-    const child = spawn(process.execPath, [playwrightCli, 'test', '--list', 'e2e/smoke.spec.ts', '--project=chromium'], {
-      cwd: webDir,
-      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-      // A base URL: no web server; --list starts no browser either.
-      env: { ...process.env, E2E_BASE_URL: 'http://localhost:9', PW_TEST_REPORTER: progressReporter },
-    });
+  const location = { file: path.join(process.cwd(), 'e2e', 'x.spec.ts'), line: 7, column: 1 };
+  const testCase = {
+    id: 'abc',
+    title: 'opens',
+    titlePath: () => ['', 'chromium', 'e2e/x.spec.ts', 'suite', 'opens'],
+    location,
+    parent: { project: () => ({ name: 'chromium' }) },
+    timeout: 15_000,
+    tags: ['@smoke'],
+  } as unknown as TestCase;
+  const result = { retry: 1, status: 'passed', duration: 1234 } as unknown as TestResult;
+  const step = (title: string, category: string) => ({ title, category }) as unknown as TestStep;
+
+  it('sends hello, the test count, each test and its steps (Playwright’s own ones too), and the end', () => {
     const events: ProgressEvent[] = [];
-    child.on('message', (m) => events.push(m as ProgressEvent));
-    const code = await new Promise((resolve) => child.once('exit', resolve));
-    expect(code).toBe(0);
-    expect(events[0]).toEqual({ type: 'hello' });
-    const begin = events.find((e) => e.type === 'begin');
-    expect(begin && begin.type === 'begin' && begin.total).toBeGreaterThan(0);
+    const reporter = new ProgressReporter(undefined, (e) => events.push(e));
+    reporter.onBegin({}, { allTests: () => [testCase, testCase] } as unknown as Suite);
+    reporter.onTestBegin(testCase, result);
+    reporter.onStepBegin(testCase, result, step('page.goto(/edit/x)', 'pw:api'));
+    reporter.onStepBegin(testCase, result, step('internal', 'test.attach.internal'));
+    reporter.onStepEnd(testCase, result, step('page.goto(/edit/x)', 'pw:api'));
+    reporter.onTestEnd(testCase, result);
+    reporter.onEnd({ status: 'passed' } as FullResult);
+    expect(reporter.printsToStdio()).toBe(false);
+    expect(events).toEqual([
+      { type: 'hello' },
+      { type: 'begin', total: 2 },
+      { type: 'testBegin', id: 'abc#1', title: 'suite › opens', location: 'e2e/x.spec.ts:7', project: 'chromium', timeout: 15_000, retry: 1, tags: ['@smoke'] },
+      { type: 'step', id: 'abc#1', title: 'page.goto(/edit/x)', open: true },
+      { type: 'step', id: 'abc#1', title: 'page.goto(/edit/x)', open: false },
+      { type: 'testEnd', id: 'abc#1', status: 'passed', duration: 1234 },
+      { type: 'end', status: 'passed' },
+    ]);
+  });
+
+  it('is attached by this Playwright through PW_TEST_REPORTER (the runner adds it that way)', () => {
+    const runner = createRequire(playwrightCli).resolve('playwright/lib/runner');
+    expect(readFileSync(runner, 'utf8')).toContain('process.env.PW_TEST_REPORTER');
   });
 });
 

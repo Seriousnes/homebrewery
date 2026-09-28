@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
-const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull(), { timeout: 3000 });
+const waitForEditor = () => waitFor(() => expect(appEditor()).not.toBeNull());
 const shareGets = (server: ReturnType<typeof createBrewServer>, shareId = 'shareorigA') => logOf(server, 'GET', `/api/brews/share/${shareId}`);
 
 async function signInThroughDialog(user: ReturnType<typeof renderApp>['user']) {
@@ -110,13 +110,14 @@ describe('share page', () => {
 
   it('an author who signs out loses the Edit link, and no view is counted', async () => {
     const server = createBrewServer({ me: ALICE, brews: [fakeBrew('origA')] });
-    const { user } = renderApp({ url: '/share/shareorigA', me: ALICE });
+    const { user, queryClient } = renderApp({ url: '/share/shareorigA', me: ALICE });
     await waitForEditor();
     expect(await within(nav()).findByTestId('nav-edit')).toBeInTheDocument();
     await user.click(within(nav()).getByRole('button', { name: 'Account: alice' }));
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await within(nav()).findByRole('link', { name: 'Sign in' });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    // The sign-out is over, with what it refetched: the logout mutation ends after that refresh.
+    await waitFor(() => expect(queryClient.isMutating() + queryClient.isFetching()).toBe(0));
     expect(within(nav()).queryByTestId('nav-edit')).toBeNull();
     expect(within(nav()).queryByTestId('nav-clone')).toBeNull();
     expect(shareGets(server)).toEqual(['200']);

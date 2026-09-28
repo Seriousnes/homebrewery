@@ -56,8 +56,11 @@ afterEach(() => {
 });
 
 const appRoot = () => screen.getByTestId('editor-app');
-/** Past the panel's report window (edits reach the page at most every SNIPPETS_REPORT_MS). */
-const reported = () => act(() => new Promise((resolve) => setTimeout(resolve, SNIPPETS_REPORT_MS + 50)));
+/**
+ * Past the panel's report of the last edit (edits reach the page at most every SNIPPETS_REPORT_MS):
+ * the edit set that timer, so this later, longer one runs after it (timers run by due time).
+ */
+const reported = () => act(() => new Promise((resolve) => setTimeout(resolve, SNIPPETS_REPORT_MS + 1)));
 
 async function insertMenuPaths(user: ReturnType<typeof renderApp>['user']): Promise<string[]> {
   await user.click(screen.getByTestId('insert-menu'));
@@ -70,18 +73,45 @@ async function insertMenuPaths(user: ReturnType<typeof renderApp>['user']): Prom
   return paths;
 }
 
+const TAVERN = { name: 'Tavern note', gen: '{{note\nHi\n}}' };
+const GOBLIN = { group: 'Monsters', name: 'Goblin', gen: '{{monster\n## Goblin\n}}' };
+const MENU_BEFORE = ['Brew Snippets › Shared theme › Banner', 'Brew Snippets › Orig › Tavern note'];
+
+/** /edit/b1 with these snippets, ready (the panel open with `panel`). */
+async function openBrew(snippets: unknown[], { panel = false } = {}) {
+  if (panel) snippetsPanelStore.setOpen(true);
+  const server = createBrewServer({ me: ALICE, brews: [fakeBrew('b1', { snippets })] });
+  const view = renderApp({ url: '/edit/b1', me: ALICE });
+  await waitFor(() => expect(appRoot()).toHaveAttribute('data-canvas-status', 'ready'));
+  await waitFor(() => expect(screen.getByTestId('insert-menu')).toBeEnabled());
+  const snippetsPanel = () => screen.getByRole('complementary', { name: 'Snippets' });
+  return { ...view, server, snippetsPanel };
+}
+
+/** A new snippet named Goblin in the group Monsters, without a body yet. */
+async function addGoblin(user: ReturnType<typeof renderApp>['user'], panel: HTMLElement) {
+  await user.click(within(panel).getByRole('button', { name: 'New snippet' }));
+  const name = within(panel).getByRole('textbox', { name: /^Name/ });
+  // Pasted, not typed key by key: every keystroke re-renders the whole editor page in jsdom
+  // (typing in the panel is SnippetsEditor.test.tsx's subject).
+  await user.clear(name);
+  await user.paste('Goblin');
+  await user.click(within(panel).getByRole('combobox', { name: /^Group/ }));
+  await user.paste('Monsters');
+}
+
+/** Gives the selected snippet its body (the code editor's own change). */
+function writeBody(panel: HTMLElement, text: string) {
+  const body = EditorView.findFromDOM(within(panel).getByTestId('snippet-body').querySelector<HTMLElement>('.cm-editor')!)!;
+  act(() => body.dispatch({ changes: { from: 0, insert: text } }));
+}
+
+// Short flows from prepared states: each through the whole editor page in jsdom, where every user
+// step re-renders it.
 describe('brew snippets in the editor page', () => {
-  // One flow through the whole editor page: about 20 user steps at 200–450 ms each in jsdom (4.5 s
-  // alone on a busy machine, up to 10 s in a full parallel run), so 15 s instead of the 5 s default.
-  it('edits reach the Insert menu at once, mark the brew dirty and are saved', { timeout: 15_000 }, async () => {
-    const server = createBrewServer({
-      me: ALICE,
-      brews: [fakeBrew('b1', { snippets: [{ name: 'Tavern note', gen: '{{note\nHi\n}}' }] })],
-    });
-    const { user } = renderApp({ url: '/edit/b1', me: ALICE });
-    await waitFor(() => expect(appRoot()).toHaveAttribute('data-canvas-status', 'ready'), { timeout: 3000 });
-    await waitFor(() => expect(screen.getByTestId('insert-menu')).toBeEnabled());
-    expect(await insertMenuPaths(user)).toEqual(['Brew Snippets › Shared theme › Banner', 'Brew Snippets › Orig › Tavern note']);
+  it('lists the brew’s and the user theme’s snippets in the Insert menu, and in the panel the app bar opens', async () => {
+    const { user } = await openBrew([TAVERN]);
+    expect(await insertMenuPaths(user)).toEqual(MENU_BEFORE);
 
     const toggle = screen.getByTestId('toggle-snippets');
     expect(within(screen.getByRole('group', { name: 'Panels' })).getByTestId('toggle-snippets')).toBe(toggle);
@@ -91,41 +121,39 @@ describe('brew snippets in the editor page', () => {
     // The user theme's snippets are shown, read-only.
     expect(within(within(panel).getByTestId('theme-snippets')).getByText('Banner')).toBeInTheDocument();
     expect(appRoot()).toHaveAttribute('data-save-status', 'saved');
+  });
 
-    await user.click(within(panel).getByRole('button', { name: 'New snippet' }));
-    const name = within(panel).getByRole('textbox', { name: /^Name/ });
-    // Pasted, not typed key by key: every keystroke re-renders the whole editor page in jsdom
-    // (typing in the panel is SnippetsEditor.test.tsx's subject).
-    await user.clear(name);
-    await user.paste('Goblin');
-    await user.click(within(panel).getByRole('combobox', { name: /^Group/ }));
-    await user.paste('Monsters');
+  it('a new snippet marks the brew dirty, and reaches the Insert menu once it has a body', async () => {
+    const { user, snippetsPanel } = await openBrew([TAVERN], { panel: true });
+    await addGoblin(user, snippetsPanel());
     await waitFor(() => expect(appRoot()).toHaveAttribute('data-save-status', 'dirty'));
     // An empty snippet isn't listed (as upstream) …
-    expect(await insertMenuPaths(user)).toEqual(['Brew Snippets › Shared theme › Banner', 'Brew Snippets › Orig › Tavern note']);
+    expect(await insertMenuPaths(user)).toEqual(MENU_BEFORE);
     // … a body makes it an entry.
-    const body = EditorView.findFromDOM(within(panel).getByTestId('snippet-body').querySelector<HTMLElement>('.cm-editor')!)!;
-    act(() => body.dispatch({ changes: { from: 0, insert: '{{monster\n## Goblin\n}}' } }));
+    writeBody(snippetsPanel(), GOBLIN.gen);
     await reported();
-    expect(await insertMenuPaths(user)).toEqual([
-      'Brew Snippets › Shared theme › Banner',
-      'Brew Snippets › Orig › Tavern note',
-      'Brew Snippets › Monsters › Goblin',
-    ]);
+    expect(await insertMenuPaths(user)).toEqual([...MENU_BEFORE, 'Brew Snippets › Monsters › Goblin']);
+  });
 
+  it('saves the snippets in their stored form', async () => {
+    const { user, server, snippetsPanel } = await openBrew([TAVERN], { panel: true });
+    await addGoblin(user, snippetsPanel());
+    writeBody(snippetsPanel(), GOBLIN.gen);
+    await reported();
     pressSaveKey();
     await waitFor(() => expect(logOf(server, 'PUT', '/api/brews/b1')).toEqual(['200']));
     const put = server.requests.find((r) => r.method === 'PUT')!;
-    expect((JSON.parse(put.body!) as { snippets: unknown }).snippets).toEqual([
-      { name: 'Tavern note', gen: '{{note\nHi\n}}' },
-      { group: 'Monsters', name: 'Goblin', gen: '{{monster\n## Goblin\n}}' },
-    ]);
+    expect((JSON.parse(put.body!) as { snippets: unknown }).snippets).toEqual([TAVERN, GOBLIN]);
     await waitFor(() => expect(appRoot()).toHaveAttribute('data-save-status', 'saved'));
+  });
 
-    // Deleting it: gone from the menu at once.
-    await user.click(within(panel).getByRole('button', { name: 'Delete' }));
+  it('a deleted snippet is gone from the Insert menu at once, and the brew is dirty', async () => {
+    const { user, snippetsPanel } = await openBrew([TAVERN, GOBLIN], { panel: true });
+    expect(await insertMenuPaths(user)).toEqual([...MENU_BEFORE, 'Brew Snippets › Monsters › Goblin']);
+    await user.click(within(snippetsPanel()).getByRole('option', { name: 'Goblin' }));
+    await user.click(within(snippetsPanel()).getByRole('button', { name: 'Delete' }));
     await reported();
-    expect(await insertMenuPaths(user)).toEqual(['Brew Snippets › Shared theme › Banner', 'Brew Snippets › Orig › Tavern note']);
+    expect(await insertMenuPaths(user)).toEqual(MENU_BEFORE);
     await waitFor(() => expect(appRoot()).toHaveAttribute('data-save-status', 'dirty'));
   });
 });
