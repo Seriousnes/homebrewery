@@ -226,6 +226,8 @@ const INERT_MEDIA = 'not all';
 const adoptedBySlot = new WeakMap<Document, Map<string, CSSStyleSheet[]>>();
 /** The latest applyThemeStyles call per slot: only it switches the slot's styles. */
 const latestBySlot = new WeakMap<Document, Map<string, object>>();
+/** A user theme's scoped sheet → its source (base URL and CSS), to reuse it while unchanged. */
+const themeSheetKeys = new WeakMap<CSSStyleSheet, string>();
 
 function slotMap<T>(maps: WeakMap<Document, Map<string, T>>, doc: Document): Map<string, T> {
   let map = maps.get(doc);
@@ -286,8 +288,30 @@ const FACE_DESCRIPTORS: [string, string][] = [
   ['lineGapOverride', 'line-gap-override'],
 ];
 
-/** Faces loaded ahead for a theme link (preloadLinkFonts), in document.fonts while it applies. */
-const preloadedFaces = new WeakMap<HTMLLinkElement, { faces: FontFace[]; settled: Promise<unknown> }>();
+/**
+ * A stylesheet an applyThemeStyles call switches in: a theme link, or a user theme's scoped CSS
+ * text. `owner` (the link, or the sheet itself) keys the fonts preloaded for it.
+ */
+interface IncomingSheet {
+  owner: object;
+  sheet: CSSStyleSheet;
+  /** Resolves the sheet's relative url()s. */
+  base: string;
+}
+
+/** Faces loaded ahead for a theme link or sheet (preloadFonts), in document.fonts while it applies. */
+const preloadedFaces = new WeakMap<object, { faces: FontFace[]; settled: Promise<unknown> }>();
+
+/** The rules of `sheet`, or none for a cross-origin sheet. */
+function rulesOf(sheet: CSSStyleSheet): CSSRule[] {
+  try {
+    return Array.from(sheet.cssRules); // throws for a cross-origin sheet
+  } catch {
+    return [];
+  }
+}
+
+const URL_TOKEN = /url\(\s*(["']?)(.*?)\1\s*\)/g;
 
 /** A copy of an @font-face rule as a FontFace (src resolved against its sheet), or null. */
 function faceOf(rule: CSSFontFaceRule, base: string, Face: typeof FontFace): FontFace | null {
@@ -295,7 +319,7 @@ function faceOf(rule: CSSFontFaceRule, base: string, Face: typeof FontFace): Fon
   // url()s as written are relative to the sheet.
   const src = rule.style
     .getPropertyValue('src')
-    .replace(/url\(\s*(["']?)(.*?)\1\s*\)/g, (_, _q: string, url: string) => `url(${JSON.stringify(new URL(url, base).href)})`);
+    .replace(URL_TOKEN, (_, _q: string, url: string) => `url(${JSON.stringify(new URL(url, base).href)})`);
   if (!family || !src) return null;
   const descriptors: Record<string, string> = {};
   for (const [key, property] of FACE_DESCRIPTORS) {
@@ -310,77 +334,74 @@ function faceOf(rule: CSSFontFaceRule, base: string, Face: typeof FontFace): Fon
 }
 
 /**
- * Starts loading, as FontFace objects outside document.fonts, the @font-face rules of inert theme
- * links (whose faces the document doesn't know yet), and resolves when all have settled.
- * addPreloadedFonts adds them to document.fonts when the links apply, so the new theme's text
+ * Starts loading, as FontFace objects outside document.fonts, the @font-face rules of incoming
+ * sheets (whose faces the document doesn't know yet), and resolves when all have settled.
+ * addPreloadedFonts adds them to document.fonts when the sheets apply, so the new theme's text
  * shows at once instead of going invisible while its fonts load.
  */
-async function preloadLinkFonts(links: HTMLLinkElement[], doc: Document): Promise<void> {
-  const Face = doc.defaultView?.FontFace;
-  if (!Face || !doc.fonts) return;
+async function preloadFonts(incoming: IncomingSheet[], doc: Document): Promise<void> {
+  const win = doc.defaultView;
+  if (!win?.FontFace || !win.CSSFontFaceRule || !doc.fonts) return;
   const pending: Promise<unknown>[] = [];
-  for (const link of links) {
-    let entry = preloadedFaces.get(link);
+  for (const { owner, sheet, base } of incoming) {
+    let entry = preloadedFaces.get(owner);
     if (!entry) {
-      let rules: CSSRule[];
-      try {
-        rules = Array.from(link.sheet?.cssRules ?? []);
-      } catch {
-        continue; // cross-origin sheet
-      }
-      const base = link.sheet?.href ?? link.href;
-      const faces = rules.flatMap((rule) => (rule instanceof CSSFontFaceRule ? [faceOf(rule, base, Face)] : [])).filter((f) => f !== null);
+      const faces = rulesOf(sheet)
+        .flatMap((rule) => (rule instanceof win.CSSFontFaceRule ? [faceOf(rule, base, win.FontFace)] : []))
+        .filter((f) => f !== null);
       entry = { faces, settled: Promise.allSettled(faces.map((face) => face.load())) };
-      preloadedFaces.set(link, entry);
+      preloadedFaces.set(owner, entry);
     }
     pending.push(entry.settled);
   }
   await Promise.all(pending);
 }
 
-/** Properties whose url()s are images the canvas paints. */
-const IMAGE_PROPERTIES = ['background-image', 'border-image-source', 'list-style-image', 'mask-image', 'content'];
 const PSEUDO_ELEMENT = /::?(?:before|after|first-line|first-letter|marker|placeholder|selection|backdrop|file-selector-button)\b/g;
 
-/** The image urls of `sheet`'s style rules that match an element in `doc`, resolved. */
-function usedImageUrls(sheet: CSSStyleSheet, doc: Document): Set<string> {
+/**
+ * The url()s of `sheet`'s style rules that match an element in `doc`, resolved. Every declaration
+ * counts, custom properties and shorthands included (Blank's `--wc: url(…)`, used by a mask).
+ */
+function usedImageUrls({ sheet, base }: IncomingSheet, doc: Document): Set<string> {
   const urls = new Set<string>();
-  const base = sheet.href ?? doc.baseURI;
-  const visit = (rules: CSSRuleList) => {
-    for (const rule of Array.from(rules)) {
-      if (rule instanceof CSSStyleRule) {
-        const values = IMAGE_PROPERTIES.map((p) => rule.style.getPropertyValue(p)).filter((v) => v.includes('url('));
-        if (values.length) {
-          let used = false;
+  const win = doc.defaultView;
+  if (!win?.CSSStyleRule) return urls;
+  const visit = (rules: CSSRule[]) => {
+    for (const rule of rules) {
+      if (rule instanceof win.CSSStyleRule) {
+        const found = Array.from(rule.style.cssText.matchAll(URL_TOKEN)).flatMap(([, , url]) => (url ? [url] : []));
+        let used = false;
+        if (found.length) {
           try {
             used = doc.querySelector(rule.selectorText.replace(PSEUDO_ELEMENT, '')) !== null;
           } catch {
             // a selector querySelector can't take
           }
-          if (used) {
-            for (const value of values) {
-              for (const [, , url] of value.matchAll(/url\(\s*(["']?)(.*?)\1\s*\)/g)) if (url) urls.add(new URL(url, base).href);
+        }
+        if (used) {
+          for (const url of found) {
+            try {
+              urls.add(new URL(url, base).href);
+            } catch {
+              // not a URL
             }
           }
         }
       }
-      if ('cssRules' in rule) visit((rule as CSSGroupingRule).cssRules); // @media, @layer, nesting
+      if ('cssRules' in rule) visit(Array.from((rule as CSSGroupingRule).cssRules)); // @media, @layer, nesting
     }
   };
-  try {
-    visit(sheet.cssRules);
-  } catch {
-    // cross-origin sheet
-  }
+  visit(rulesOf(sheet));
   return urls;
 }
 
 /**
- * Loads (and decodes) the images the incoming links' rules put on elements already in the
+ * Loads (and decodes) the images the incoming sheets' rules put on elements already in the
  * document, so the new theme's page textures and borders paint from the cache at the switch.
  */
-function preloadLinkImages(links: HTMLLinkElement[], doc: Document): Promise<unknown> {
-  const urls = new Set(links.flatMap((link) => (link.sheet ? [...usedImageUrls(link.sheet, doc)] : [])));
+function preloadImages(incoming: IncomingSheet[], doc: Document): Promise<unknown> {
+  const urls = new Set(incoming.flatMap((s) => [...usedImageUrls(s, doc)]));
   return Promise.allSettled(
     Array.from(urls, (url) => {
       const img = doc.createElement('img');
@@ -390,16 +411,20 @@ function preloadLinkImages(links: HTMLLinkElement[], doc: Document): Promise<unk
   );
 }
 
-/** Puts the preloaded faces of `links` in document.fonts (a face added last wins over the sheet's own). */
-function addPreloadedFonts(links: HTMLLinkElement[], doc: Document): void {
-  for (const link of links) for (const face of preloadedFaces.get(link)?.faces ?? []) doc.fonts?.add(face);
+/** Puts the preloaded faces of `owners` in document.fonts (a face added last wins over the sheet's own). */
+function addPreloadedFonts(owners: object[], doc: Document): void {
+  for (const owner of owners) for (const face of preloadedFaces.get(owner)?.faces ?? []) doc.fonts?.add(face);
+}
+
+/** Removes the faces preloaded for a link or sheet that no longer applies. */
+function removePreloadedFonts(owner: object, doc: Document): void {
+  for (const face of preloadedFaces.get(owner)?.faces ?? []) doc.fonts?.delete(face);
+  preloadedFaces.delete(owner);
 }
 
 /** Removes a theme link and the faces preloaded for it. */
 function removeLink(link: HTMLLinkElement): void {
-  const doc = link.ownerDocument;
-  for (const face of preloadedFaces.get(link)?.faces ?? []) doc.fonts?.delete(face);
-  preloadedFaces.delete(link);
+  removePreloadedFonts(link, link.ownerDocument);
   link.remove();
 }
 
@@ -409,6 +434,7 @@ function setAdoptedSheets(doc: Document, slot: string, sheets: CSSStyleSheet[]):
   if (previous.size === 0 && sheets.length === 0) return;
   const others = doc.adoptedStyleSheets.filter((s) => !previous.has(s));
   doc.adoptedStyleSheets = [...others, ...sheets];
+  for (const sheet of previous) if (!sheets.includes(sheet)) removePreloadedFonts(sheet, doc);
   if (sheets.length) bySlot.set(slot, sheets);
   else bySlot.delete(slot);
 }
@@ -486,31 +512,51 @@ export async function applyThemeStyles(
     cursor = link;
   }
 
-  // CSS text (user themes, then the brew's own CSS), scoped at runtime.
-  const texts = chain.styles.flatMap((s) => (s.kind === 'css' ? [{ css: s.css, baseUrl: s.baseUrl ?? doc.baseURI }] : []));
-  if (userCss) texts.push({ css: userCss, baseUrl: doc.baseURI });
+  // CSS text (user themes, then the brew's own CSS), scoped at runtime. A user theme's sheet that
+  // the slot already shows is reused, so only a theme that changed preloads (not every CSS edit).
+  const current = slotMap(adoptedBySlot, doc).get(slot) ?? [];
+  const shownThemeSheets = new Map<string, CSSStyleSheet>();
+  for (const sheet of current) {
+    const key = themeSheetKeys.get(sheet);
+    if (key !== undefined) shownThemeSheets.set(key, sheet);
+  }
+  const themeTexts = chain.styles.flatMap((s) => (s.kind === 'css' ? [{ css: s.css, baseUrl: s.baseUrl ?? doc.baseURI }] : []));
   let skippedCss = 0;
   const sheets: CSSStyleSheet[] = [];
+  const incomingSheets: IncomingSheet[] = [];
   if (options.scopeCss) {
-    for (const t of texts) sheets.push(options.scopeCss(t.css, t.baseUrl));
-  } else if (texts.length) {
-    skippedCss = texts.length;
-    console.warn(`[themeLoader] ${skippedCss} CSS text(s) not applied: pass scopeCss (cssScope.ts) to applyThemeStyles.`);
+    for (const t of themeTexts) {
+      const key = `${t.baseUrl}\n${t.css}`;
+      let sheet = shownThemeSheets.get(key);
+      if (!sheet) {
+        sheet = options.scopeCss(t.css, t.baseUrl);
+        themeSheetKeys.set(sheet, key);
+        incomingSheets.push({ owner: sheet, sheet, base: t.baseUrl });
+      }
+      sheets.push(sheet);
+    }
+    if (userCss) sheets.push(options.scopeCss(userCss, doc.baseURI));
+  } else {
+    skippedCss = themeTexts.length + (userCss ? 1 : 0);
+    if (skippedCss) console.warn(`[themeLoader] ${skippedCss} CSS text(s) not applied: pass scopeCss (cssScope.ts) to applyThemeStyles.`);
   }
 
   const timeoutMs = options.timeoutMs ?? 15_000;
   const results = await Promise.all(links.map((link) => waitForLink(link, timeoutMs)));
   const failed = links.filter((_, i) => !results[i]).map((link) => link.getAttribute(HREF_ATTR) ?? link.href);
 
-  // A switch from styles on screen: the incoming sheets' fonts and images first, so the new
-  // theme's text doesn't go invisible and its textures don't paint in late. (A first load has
-  // nothing on screen to keep.)
-  const incoming = links.filter((link) => link.getAttribute('media') === INERT_MEDIA && link.sheet);
+  // A switch from styles on screen: the incoming sheets' fonts and images first (theme links and
+  // user themes' CSS), so the new theme's text doesn't go invisible and its textures don't paint
+  // in late. (A first load has nothing on screen to keep.)
+  const incoming: IncomingSheet[] = [...incomingSheets];
+  for (const link of links) {
+    if (link.getAttribute('media') === INERT_MEDIA && link.sheet) incoming.push({ owner: link, sheet: link.sheet, base: link.sheet.href ?? link.href });
+  }
   const preloadMs = Math.min(timeoutMs, PRELOAD_TIMEOUT_MS);
-  if (showing && incoming.length && preloadMs > 0) {
+  if ((showing || current.length > 0) && incoming.length && preloadMs > 0) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     await Promise.race([
-      Promise.all([preloadLinkFonts(incoming, doc), preloadLinkImages(incoming, doc)]),
+      Promise.all([preloadFonts(incoming, doc), preloadImages(incoming, doc)]),
       new Promise<void>((resolve) => (timer = setTimeout(resolve, preloadMs))),
     ]);
     clearTimeout(timer);
@@ -518,7 +564,7 @@ export async function applyThemeStyles(
 
   // The switch, unless a newer call (or disposeThemeSlot) owns the slot now.
   if (slotMap(latestBySlot, doc).get(slot) === token) {
-    addPreloadedFonts(incoming, doc);
+    addPreloadedFonts(incoming.map((s) => s.owner), doc);
     for (const link of links) {
       if (link.getAttribute('media') === INERT_MEDIA) link.removeAttribute('media');
     }

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import {
   applyThemeStyles,
   disposeThemeSlot,
@@ -211,6 +211,28 @@ describe('applyThemeStyles', () => {
     expect(scoped).toEqual(['.page{color:red}', '.page{color:blue}']); // theme first, then user CSS
     expect(applied.sheets).toHaveLength(2);
     warn.mockRestore();
+  });
+
+  it("reuses a user theme's sheet while its CSS is unchanged, so only the brew CSS is scoped again", async () => {
+    // jsdom has no adoptedStyleSheets.
+    Object.defineProperty(document, 'adoptedStyleSheets', { value: [], writable: true, configurable: true });
+    onTestFinished(() => void Reflect.deleteProperty(document, 'adoptedStyleSheets'));
+    const scoped: string[] = [];
+    const scopeCss = (css: string) => {
+      scoped.push(css);
+      return new CSSStyleSheet();
+    };
+    const chain = { styles: [{ kind: 'css' as const, css: '.page{color:red}', baseUrl: 'http://localhost/t/' }] };
+    const a = await applyThemeStyles(chain, '.page{color:blue}', { slot: 'u', scopeCss });
+    const b = await applyThemeStyles(chain, '.page{color:green}', { slot: 'u', scopeCss });
+    expect(scoped).toEqual(['.page{color:red}', '.page{color:blue}', '.page{color:green}']);
+    expect(b.sheets[0]).toBe(a.sheets[0]);
+    expect(document.adoptedStyleSheets).toEqual(b.sheets);
+    // A changed theme CSS is a new sheet.
+    const c = await applyThemeStyles({ styles: [{ kind: 'css', css: '.page{color:teal}' }] }, null, { slot: 'u', scopeCss });
+    expect(c.sheets[0]).not.toBe(a.sheets[0]);
+    expect(document.adoptedStyleSheets).toEqual(c.sheets);
+    disposeThemeSlot('u');
   });
 });
 

@@ -218,7 +218,7 @@ test.describe('P3.3 EditorCanvas', () => {
       w.__stop = true;
       // The page texture: Journal's .page background image.
       const url = /url\("([^"]+)"\)/.exec(getComputedStyle(document.querySelector('.page')!).backgroundImage)?.[1] ?? '';
-      const entry = performance.getEntriesByName(url, 'resource')[0];
+      const entry = performance.getEntriesByName(url, 'resource')[0] as PerformanceResourceTiming | undefined;
       return { frames: w.__frames, texture: url.includes('/Journal/') && entry ? entry.responseEnd : null };
     });
     const states = [...new Set(frames.map((f) => f.themes.join('+')))];
@@ -226,7 +226,61 @@ test.describe('P3.3 EditorCanvas', () => {
     const swap = frames.find((f) => f.themes.includes('Journal'))!;
     expect(swap.loadingFonts, 'no font still loading when Journal applies').toBe(0);
     expect(texture, 'the page texture was loaded before Journal applied').not.toBeNull();
-    expect(texture!).toBeLessThanOrEqual(swap.at);
+    expect(texture ?? Infinity).toBeLessThanOrEqual(swap.at);
+  });
+
+  test('a switch to a user theme (CSS text) waits for its fonts and textures too', async ({ page }) => {
+    await openCanvas(page);
+    // "Journal" answered by the API as a user theme: Blank, then CSS text with its own font and
+    // page texture (a relative font URL, resolved against the theme's baseUrl).
+    const css = [
+      '@font-face { font-family: "HB User Theme"; src: url("../../fonts/Journal/PermanentMarker-Regular.woff2") format("woff2"); }',
+      '.page { background-image: url("/assets/Journal/Background2.webp"); }',
+      '.page p { font-family: "HB User Theme"; }',
+    ].join('\n');
+    const bundle = {
+      name: 'User theme',
+      author: null,
+      styles: [
+        { kind: 'url', href: '/themes/V3/Blank/style.scoped.css' },
+        { kind: 'css', css, baseUrl: `${new URL(page.url()).origin}/themes/user/` },
+      ],
+      snippets: [],
+    };
+    await page.route('**/api/themes/Journal/bundle', (route) => route.fulfill({ json: bundle }));
+    await page.evaluate(() => {
+      const w = window as unknown as { __frames: { applied: boolean; loadingFonts: number; at: number }[]; __stop: boolean };
+      w.__frames = [];
+      w.__stop = false;
+      performance.setResourceTimingBufferSize(10_000);
+      const tick = () => {
+        w.__frames.push({
+          applied: document.adoptedStyleSheets.some((s) => Array.from(s.cssRules).some((r) => r.cssText.includes('HB User Theme'))),
+          loadingFonts: Array.from(document.fonts).filter((f) => f.status === 'loading').length,
+          at: performance.now(),
+        });
+        if (!w.__stop) requestAnimationFrame(tick);
+      };
+      tick();
+    });
+    await page.getByTestId('theme-select').selectOption('Journal');
+    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
+    const { frames, font, texture } = await page.evaluate(() => {
+      const w = window as unknown as { __frames: { applied: boolean; loadingFonts: number; at: number }[]; __stop: boolean };
+      w.__stop = true;
+      const end = (part: string) =>
+        (performance.getEntriesByType('resource') as PerformanceResourceTiming[]).find((e) => e.name.includes(part))?.responseEnd ?? null;
+      return { frames: w.__frames, font: end('PermanentMarker-Regular.woff2'), texture: end('/assets/Journal/Background2.webp') };
+    });
+    const first = frames.findIndex((f) => f.applied);
+    expect(first, 'the user theme applied').toBeGreaterThanOrEqual(0);
+    expect(frames.slice(first).every((f) => f.applied)).toBe(true);
+    const swap = frames[first]!;
+    expect(swap.loadingFonts, 'no font still loading when the user theme applies').toBe(0);
+    expect(font, 'the user theme font was loaded before it applied').not.toBeNull();
+    expect(font ?? Infinity).toBeLessThanOrEqual(swap.at);
+    expect(texture, 'the page texture was loaded before the user theme applied').not.toBeNull();
+    expect(texture ?? Infinity).toBeLessThanOrEqual(swap.at);
   });
 
   test('editing the brew CSS restyles live, stays inside the canvas and dispatches REPAGINATE', async ({ page }) => {
