@@ -10,14 +10,20 @@
 // the CI jobs. A step's output is printed only when it fails. Every step is capped at 5 minutes
 // and killed when it prints nothing for 2 (CLAUDE.md "Tests fail fast"). CI=true, as in CI.
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { killTreeSync, repoRoot, TestRunner, webDir } from './testRunner.ts';
+
+// The build writes to a folder of its own, not the API's wwwroot: the dotnet lane's Release build
+// compresses the files in wwwroot while it runs, and a build emptying it meanwhile fails that
+// build (CI runs the two jobs on separate machines).
+const BUILD_OUT = path.join(repoRoot, '.artifacts', 'verify-wwwroot');
 
 const LANES = {
   web: [
     ['lint', 'pnpm run lint', webDir],
     ['typecheck', 'pnpm run typecheck', webDir],
     ['schema manifest', 'pnpm run schema --check', webDir],
-    ['build', 'pnpm run build', webDir],
+    ['build', `pnpm run build --outDir "${BUILD_OUT}" --emptyOutDir`, webDir],
   ],
   unit: [['unit tests', 'pnpm test', webDir]],
   dotnet: [
