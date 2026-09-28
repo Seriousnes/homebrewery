@@ -23,7 +23,7 @@ async function split(page: Page) {
     return {
       head: t[0]![t[0]!.length - 1]!,
       tail: t[1]![0]!,
-      tailIsContinuation: /^paragraph\(cont\)/.test(report[1]!.blocks[0]!),
+      tailIsContinuation: report[1]!.blocks[0]!.startsWith('paragraph(cont)'),
       headStart,
       freeBelowHead: box.bottom - lastBottom,
       lineHeight: parseFloat(getComputedStyle(headEl).lineHeight),

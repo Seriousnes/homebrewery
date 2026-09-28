@@ -69,7 +69,7 @@ export function SnippetPicker({
     if (!open || !active) return;
     document.getElementById(optionId(active))?.scrollIntoView({ block: 'nearest' });
     // optionId only depends on baseId.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [open, active]);
 
   const setOpenState = (next: boolean) => {

@@ -36,8 +36,8 @@ export function pageShellFromTags(tags: InjectedTags | null): PageShell {
   if (!tags) return EMPTY_SHELL;
   return {
     classes: (tags.classes ?? '').split(/\s+/).filter(Boolean),
-    styles: { ...(tags.styles ?? {}) },
-    attributes: { ...(tags.attributes ?? {}) },
+    styles: { ...tags.styles },
+    attributes: { ...tags.attributes },
   };
 }
 

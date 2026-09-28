@@ -58,7 +58,7 @@ describe('createQueryClient error policy', () => {
     const hook = renderHook(() => useQuery({ queryKey: ['x'], queryFn: () => fetchThemes() }), { wrapper });
     await waitFor(() => expect(hook.result.current.isError).toBe(true));
     expect(onSignIn).toHaveBeenCalledOnce();
-    expect((onSignIn.mock.calls[0]?.[0] as ApiError).status).toBe(401);
+    expect((onSignIn.mock.calls[0]![0] as ApiError).status).toBe(401);
     expect(client.getQueryData(queryKeys.account.me())).toBeNull();
     expect(toasts).toHaveLength(0);
   });

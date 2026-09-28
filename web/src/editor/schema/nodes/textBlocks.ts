@@ -1,9 +1,5 @@
 // Paragraphs, headings and the other simple block nodes. Built on the TipTap extensions (their
 // commands, shortcuts and input rules come along) and extended for the CSS contract (§3.2).
-//
-// Note: @tiptap/extension-{paragraph,heading,blockquote,code-block,horizontal-rule,hard-break}
-// are installed as exact-version dependencies of @tiptap/starter-kit (3.31.3) and resolved from
-// the hoisted node_modules. They should be added to web/package.json explicitly.
 import Blockquote from '@tiptap/extension-blockquote';
 import CodeBlock from '@tiptap/extension-code-block';
 import HardBreak from '@tiptap/extension-hard-break';

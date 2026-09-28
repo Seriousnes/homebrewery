@@ -1,5 +1,5 @@
-// Types for the marked extensions marked-hbfm is built from (they ship none). They are
-// dependencies of marked-hbfm, resolved from the hoisted node_modules; see ./renderer.ts.
+// Types for the marked extensions marked-hbfm is built from (they ship none), which web/package.json
+// lists as its own dependencies; see ./renderer.ts.
 
 declare module 'marked-extended-tables' {
   import type { MarkedExtension } from 'marked';

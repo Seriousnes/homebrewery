@@ -1,6 +1,6 @@
 // P5.5 icons on /dev/objects: the picker searches all four icon fonts and inserts the chosen
 // icon; `:` autocomplete lists matches while typing and inserts one; a typed `:name:` converts.
-// E2E_PORT=5328 npx playwright test e2e/objects/icons.spec.ts
+// E2E_PORT=5328 pnpm exec playwright test e2e/objects/icons.spec.ts
 import { expect, type Page } from '@playwright/test';
 import { test, caretAfter, openObjects, undo } from './helpers';
 

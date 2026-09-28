@@ -7,11 +7,11 @@
 // The whole run is one command (from web/; see scripts/fidelity-run.ts): it runs every fixture as
 // several short Playwright runs (sets of about 50 fixtures, each well under the 5-minute cap), then
 // writes the report:
-//   npx tsx scripts/fidelity-run.ts                 # Chromium, all fixtures, writes the report
-//   npx tsx scripts/fidelity-run.ts --browsers chromium,firefox
+//   pnpm exec tsx scripts/fidelity-run.ts                 # Chromium, all fixtures, writes the report
+//   pnpm exec tsx scripts/fidelity-run.ts --browsers chromium,firefox
 // or a few fixtures by hand:
-//   E2E_PORT=5303 FIDELITY_FILTER='^md-emojis' npx playwright test e2e/import/fidelity.spec.ts --project=chromium
-//   npx tsx scripts/fidelity-report.ts --results test-results/5303/fidelity-results/chromium
+//   E2E_PORT=5303 FIDELITY_FILTER='^md-emojis' pnpm exec playwright test e2e/import/fidelity.spec.ts --project=chromium
+//   pnpm exec tsx scripts/fidelity-report.ts --results test-results/5303/fidelity-results/chromium
 //
 // Switches (environment):
 //   FIDELITY_VIEW=plain              a bare TipTap editor instead of EditorCanvas (/dev/import?view=plain)
@@ -43,7 +43,7 @@ const manifest = JSON.parse(readFileSync(path.join(fixturesDir, 'fixtures.json')
 
 const SMOKE =
   /^(?:welcome|md-basic-001-.*|md-mustache-syntax-00[1-3]-.*|md-variables-00[1-2]-.*|md-definition-lists-00[1-2]-.*|snippet-5ephb-phb-(?:front-cover-page|monster-stat-block)|snippet-5ephb-tables-class-tables-full-caster-class-table)$/;
-// A few of them are in the e2e smoke set (@smoke, `npm run e2e:smoke`).
+// A few of them are in the e2e smoke set (@smoke, `pnpm run e2e:smoke`).
 const E2E_SMOKE = /^(?:md-basic-001-.*|md-mustache-syntax-001-.*|md-variables-001-.*|md-definition-lists-001-.*|snippet-5ephb-phb-monster-stat-block)$/;
 const filter = process.env.FIDELITY_FILTER ? new RegExp(process.env.FIDELITY_FILTER) : null;
 const fixtures = manifest.fixtures.filter((f) => {

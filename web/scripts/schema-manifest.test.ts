@@ -37,7 +37,7 @@ describe('schema manifest', () => {
     expect(manifest.generic.safeAttributePattern).toBe('^(data-[\\w-]+|aria-[\\w-]+|title|lang|dir|role)$');
   });
 
-  it('shared/schema-manifest.json is up to date (npm run schema)', () => {
+  it('shared/schema-manifest.json is up to date (pnpm run schema)', () => {
     const committed = readFileSync(manifestFile, 'utf8').replace(/\r\n/g, '\n');
     expect(committed).toBe(serializeSchemaManifest(manifest));
     const parsed = JSON.parse(committed) as SchemaManifest;

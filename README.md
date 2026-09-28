@@ -23,7 +23,7 @@ for reference.
 | --- | --- |
 | `src/` | .NET 10 back end: `Homebrewery.Api` (ASP.NET Core host, endpoints, auth, SPA hosting, share shell), `Homebrewery.Core` (domain services, schema manifest, theme catalog), `Homebrewery.Data` (EF Core `AppDbContext`, configurations, migrations) |
 | `tests/` | `Homebrewery.Api.Tests` (xUnit, WebApplicationFactory, Testcontainers.PostgreSql) and `markdown/`, the upstream markdown fixtures used by the import tests |
-| `web/` | Vite + React 19 + strict TypeScript SPA: the editor, pagination, import, app pages, Vitest unit tests and Playwright e2e specs. `npm run build` writes into `src/Homebrewery.Api/wwwroot` (git-ignored) |
+| `web/` | Vite + React 19 + strict TypeScript SPA: the editor, pagination, import, app pages, Vitest unit tests and Playwright e2e specs. pnpm project; `pnpm run build` writes into `src/Homebrewery.Api/wwwroot` (git-ignored) |
 | `themes/` | Shared with upstream: V3 and Legacy theme LESS, fonts, assets and snippet generators. Edited only to fix bugs |
 | `shared/` | Generated and committed files both sides read: `schema-manifest.json` (from the editor schema by `web/scripts/schema-manifest.ts`; the server validates documents against it), `openapi.json` (the API description; `web/src/api/schema.d.ts` is generated from it) and `url-policy-cases.json` (URL policy cases both test suites run) |
 | `legacy/` | The original Node/React/MongoDB app (`client/`, `server/`, `shared/`, `server.js`, its build and Docker files). Reference only; nothing imports from it at runtime |
@@ -75,14 +75,14 @@ Each stack runs:
 | `db` (shared) | PostgreSQL 18 (official `postgres:18` image), data in the `homebrewery-shared-pgdata` volume | Published on `localhost:5432` (`HB_DB_PORT`); user, password and database are all `homebrewery` |
 | `router` (shared) | Caddy 2 | `homebrewery.dev.localhost` → master's `web`, `<branch>.homebrewery.dev.localhost` → that branch's `web` (or `app` with `--prod`); published on `127.0.0.1:80` (`HB_ROUTER_PORT`) |
 | `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0` plus headless Chromium for PDF export: the Dockerfile's `dev-api` stage) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`). After a Microsoft.Playwright upgrade, `./stack build api` installs the new Chromium |
-| `web` | The Vite dev server (`node:24`) | The one origin, on the worktree's port: its proxy sends `/api`, `/share`, `/openapi` and `/healthz` to `api`. Runs `npm ci` on the first start and whenever `web/package-lock.json` changes |
+| `web` | The Vite dev server (`node:24`) | The one origin, on the worktree's port: its proxy sends `/api`, `/share`, `/openapi` and `/healthz` to `api`. Runs `pnpm install` on the first start and whenever `web/pnpm-lock.yaml` changes |
 
 The repository is bind-mounted into `api` and `web`. When you edit files on the host, `dotnet watch`
 hot-reloads the API (or restarts it) and Vite hot-updates the page. Platform-specific outputs
 (`src/*/bin`, `src/*/obj`, `web/node_modules`) live in named volumes, so the Linux builds in the
 containers never mix with builds on the host (a new branch's first start restores and builds them; the NuGet
 cache and the `api` image are shared). The first start takes a few minutes (the `api` image with Chromium,
-NuGet restore, `npm ci`, first build). `./stack up -d --wait` returns once every service is healthy.
+NuGet restore, `pnpm install`, first build). `./stack up -d --wait` returns once every service is healthy.
 
 `./stack` passes any compose command to the branch's stack:
 
@@ -116,8 +116,9 @@ database daily into the `backups` volume. `./stack up --remove-orphans` switches
 
 ### On the host (alternative)
 
-You need the [.NET 10 SDK](https://dotnet.microsoft.com/download), [Node.js 24](https://nodejs.org/) and
-Docker for PostgreSQL. The containerised dev servers publish only the worktree's port (8080 + slot), so they don't
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download), [Node.js 24](https://nodejs.org/) with
+[pnpm](https://pnpm.io/installation) (installed standalone, it switches to the version `web/package.json` pins; under
+corepack, run it from `web/`, as corepack reads the `package.json` of the working directory) and Docker for PostgreSQL. The containerised dev servers publish only the worktree's port (8080 + slot), so they don't
 collide with this setup; both use the same (shared) database.
 
 1. Start only the shared PostgreSQL 18 (user, password and database are all `homebrewery`, on port 5432):
@@ -145,8 +146,8 @@ collide with this setup; both use the same (shared) database.
 4. Install the front-end dependencies, and Chromium (PDF export and the e2e tests use the same build):
 
    ```
-   npm --prefix web install
-   npm --prefix web exec playwright install chromium
+   pnpm -C web install
+   pnpm -C web exec playwright install chromium
    ```
 
 5. Run the API (http://localhost:5080), then the Vite dev server (http://localhost:5173) in a second terminal.
@@ -154,7 +155,7 @@ collide with this setup; both use the same (shared) database.
 
    ```
    dotnet run --project src/Homebrewery.Api
-   npm --prefix web run dev
+   pnpm -C web run dev
    ```
 
 Tests (on the host). They never use the shared database or another worktree's servers: the API tests start their
@@ -169,13 +170,13 @@ tagged `@smoke`, Chromium, under 3 minutes: the plan §12 flow, core pagination 
 The full e2e suite runs in CI only.
 
 ```
-npm --prefix web run verify                           # what CI checks besides e2e (about 2 minutes)
-npm --prefix web run e2e -- e2e/matrix/typing.spec.ts   # the specs your change can reach, while you work
-node e2e/run-linux.mjs e2e/matrix/typing.spec.ts      # the same on CI's Linux machine, before you push (from web/)
-npm --prefix web run e2e:smoke                        # the smoke set
+pnpm -C web run verify                            # what CI checks besides e2e (about 2 minutes)
+pnpm -C web run e2e e2e/matrix/typing.spec.ts      # the specs your change can reach, while you work
+node e2e/run-linux.mjs e2e/matrix/typing.spec.ts   # the same on CI's Linux machine, before you push (from web/)
+pnpm -C web run e2e:smoke                         # the smoke set
 ```
 
-`verify` runs CI's non-e2e jobs with the same commands, in parallel: lint, typecheck, the schema manifest check
+`verify` runs CI's non-e2e jobs with the same commands, in parallel: lint (oxlint, with type-aware rules), typecheck (TypeScript 7), the schema manifest check
 and the production build; the web unit tests; the .NET Release build (warnings are errors) and `dotnet test`. It
 runs `dotnet test` whatever you changed, because API tests read web files (fonts, the theme catalog). A green
 `verify` means those CI jobs pass; run it before every push. `verify web unit` (or `dotnet`) runs some lanes.
@@ -185,7 +186,7 @@ the axe (color-contrast) checks of every page (`e2e/a11y`, `e2e/admin`, `e2e/lis
 navigation or sign-in also runs `e2e/shell` and `e2e/import-ui`.
 
 `e2e/run-linux.mjs` runs specs where CI does: in the CI e2e job's Playwright image (Linux, its fonts and
-browsers, the .NET SDK, `npm ci`), with `CI=true` (2 workers, no retries), 4 CPUs and 16 GB like CI's runner, a
+browsers, the .NET SDK, `pnpm install`), with `CI=true` (2 workers, no retries), 4 CPUs and 16 GB like CI's runner, a
 `postgres:18` next to it, and a main checkout with LF line endings made from your working tree (uncommitted
 changes included). Pixel diffs, font metrics, line endings and timing behave as in CI, not as on Windows. Its
 arguments go to `run-suite.mjs`: a spec or folder (plus `--project=chromium` for one browser), or a CI shard
@@ -193,8 +194,8 @@ arguments go to `run-suite.mjs`: a spec or folder (plus `--project=chromium` for
 Only Docker is needed; the first run builds the image (a few minutes), later runs start in about 40 s. Traces of
 failed tests land in `web/test-results-linux/`.
 
-Before the first e2e run, install the browsers from `web/`: `npx playwright install chromium firefox`.
-`npm run e2e` with a file or folder starts its own Vite (under the no-progress watchdog); the specs that need an API
+Before the first e2e run, install the browsers from `web/`: `pnpm exec playwright install chromium firefox`.
+`pnpm run e2e` with a file or folder starts its own Vite (under the no-progress watchdog); the specs that need an API
 skip without one. Rarely needed locally, from `web/`:
 
 ```
@@ -204,7 +205,7 @@ node e2e/perf/run-perf.mjs        # the performance tests (web/e2e/perf): local 
 ```
 
 The performance tests assert counts of pagination work and report their timings (never asserted).
-Playwright ignores `web/e2e/perf` unless `E2E_PERF=1`, which `run-perf.mjs` sets, so CI, `npm run e2e`
+Playwright ignores `web/e2e/perf` unless `E2E_PERF=1`, which `run-perf.mjs` sets, so CI, `pnpm run e2e`
 and the suite runners never run them.
 
 After changing an endpoint or a DTO, regenerate `shared/openapi.json` and `web/src/api/schema.d.ts`
@@ -212,7 +213,7 @@ After changing an endpoint or a DTO, regenerate `shared/openapi.json` and `web/s
 
 ```
 HB_UPDATE_OPENAPI=1 dotnet test --project tests/Homebrewery.Api.Tests -- --filter-class Homebrewery.Api.Tests.OpenApiExportTests
-npm --prefix web run api:types
+pnpm -C web run api:types
 ```
 
 The production image on its own (serves the built SPA and the API on port 8080; see above for running it with compose,

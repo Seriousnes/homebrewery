@@ -415,7 +415,7 @@ describe("a reload continues the 'new' draft's create chain (SAVE-8)", () => {
     typeInEditor('!');
     await waitFor(() => expect(router.state.location.pathname).toBe('/edit/newA'));
     expect(posts(server)[0]?.headers.get('Idempotency-Key')).toBe('chain-key-1');
-    expect(docText((posts(server)[0]?.json as { doc: unknown }).doc)).toBe('Sent once');
+    expect(docText((posts(server)[0]!.json as { doc: unknown }).doc)).toBe('Sent once');
     expect(keys.get('chain-key-1')).toBe('newA');
     await waitFor(() => expect(docText(server.brews.get('newA')?.doc)).toBe('Sent once, then more!'));
   });

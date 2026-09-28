@@ -44,8 +44,9 @@ export function findTypeaheadMatch(
   isDisabled: (index: number) => boolean = () => false,
 ): number {
   if (!search || labels.length === 0) return -1;
-  const repeated = [...search].every((c) => c === search[0]);
-  const needle = repeated ? search[0]! : search;
+  const chars = Array.from(search);
+  const repeated = chars.every((c) => c === chars[0]);
+  const needle = repeated ? chars[0]! : search;
   const start = repeated || current < 0 ? current + 1 : current;
   for (let i = 0; i < labels.length; i++) {
     const index = (((start + i) % labels.length) + labels.length) % labels.length;

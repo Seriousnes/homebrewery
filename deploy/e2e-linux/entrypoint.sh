@@ -19,10 +19,12 @@ git commit -q --no-verify -m "working tree"
 # Rewrite every file from the commit: the host's CRLF files come out with CI's line endings.
 git rm -rq --cached .
 git reset -q --hard
-# node_modules was installed from this package-lock.json (the image is built from it).
-touch web/node_modules/.package-lock.json
 echo "[e2e-linux] $(git ls-files | wc -l) files, node $(node -v), dotnet $(dotnet --version)"
 cd web
+# node_modules was installed from these files (the image is built from them), but they are newer
+# now, so pnpm would refuse to run (verifyDepsBeforeRun). An offline install from the image's
+# store records them as installed; it fails if the lockfile differs from the image's.
+pnpm install --frozen-lockfile --offline --reporter=silent
 case "$mode" in
   suite) exec node e2e/matrix/run-suite.mjs "$@" ;;
   verify) exec node scripts/verify.mjs web unit ;;

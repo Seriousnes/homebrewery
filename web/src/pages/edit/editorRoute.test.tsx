@@ -175,7 +175,7 @@ describe('Local history', () => {
     pressSaveKey();
     await waitFor(() => expect(logOf(server, 'PUT', '/api/brews/origA')).toEqual(['200']));
     const put = server.requests.find((r) => r.method === 'PUT');
-    const meta = (put?.json as { meta?: Record<string, unknown> | null }).meta;
+    const meta = (put!.json as { meta?: Record<string, unknown> | null }).meta;
     expect(meta?.title).toBe('Orig');
     expect(meta?.authors ?? null).toBeNull();
   });

@@ -164,7 +164,7 @@ export function StyleEditor({
       viewRef.current = null;
     };
     // The initial props only: later changes are applied by the effects below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // A new value from outside (a loaded brew, a reset): replace the text, outside the undo history.

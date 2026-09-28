@@ -5,7 +5,7 @@
 //   md-<file>-<nnn>-<case>…            one per case in tests/markdown/*.test.js
 //   fixtures.json                      the list, with where each fixture came from
 //
-// Run from web/:  npx tsx scripts/fidelity-fixtures.ts
+// Run from web/:  pnpm exec tsx scripts/fidelity-fixtures.ts
 //
 // Generators use lodash's random helpers (_.sample, _.random, …). lodash captures Math.random
 // when it loads, so a seeded PRNG is installed before anything imports lodash and re-seeded
@@ -315,7 +315,7 @@ async function main() {
       if (casesDir !== outDir) writeFileSync(path.join(outDir, file), text);
     }
 
-    writeFileSync(path.join(outDir, 'fixtures.json'), `${JSON.stringify({ generated: 'npx tsx scripts/fidelity-fixtures.ts', skipped, fixtures }, null, 2)}\n`);
+    writeFileSync(path.join(outDir, 'fixtures.json'), `${JSON.stringify({ generated: 'pnpm exec tsx scripts/fidelity-fixtures.ts', skipped, fixtures }, null, 2)}\n`);
     console.log(`${fixtures.length} fixtures written to ${path.relative(webDir, outDir)}`);
     if (skipped.length) console.log(`skipped:\n  ${skipped.join('\n  ')}`);
   } finally {

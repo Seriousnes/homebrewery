@@ -10,7 +10,7 @@
 // - Page structure: skip link, landmarks, headings, toolbars and live regions on every route; the
 //   save and layout announcements.
 // The API is the in-memory fake (fakeApi.ts), so this runs anywhere.
-//   E2E_PORT=5376 npx playwright test e2e/a11y/keyboard.spec.ts
+//   E2E_PORT=5376 pnpm exec playwright test e2e/a11y/keyboard.spec.ts
 import type { Editor } from '@tiptap/core';
 import { expect, type Page, test } from '@playwright/test';
 import { oversizeDoc, richDoc, TEXTS, trapDoc } from './docs';

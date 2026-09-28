@@ -85,7 +85,7 @@ async function stubOtherSites(context: BrowserContext, request: APIRequestContex
         });
       } else if (/\.(woff2?|ttf|otf)$/.test(url.pathname)) {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'font/woff2' }, body: fontBytes });
-      } else if (/\.css$/.test(url.pathname)) {
+      } else if (url.pathname.endsWith('.css')) {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'text/css' }, body: '' });
       } else {
         await route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'image/png' }, body: PNG });

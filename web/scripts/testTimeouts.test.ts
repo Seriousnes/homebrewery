@@ -94,8 +94,8 @@ describe('test timeout guard', () => {
   it(`unit tests set no timeout above ${UNIT_CEILING / 1000} s`, () => {
     const unit = [
       ...files(path.join(webDir, 'src'), (f) => /\.test\.(ts|tsx)$/.test(f) || (/\.(ts|tsx)$/.test(f) && isTestHelper(f))),
-      ...files(path.join(webDir, 'scripts'), (f) => /\.test\.ts$/.test(f) && !f.endsWith('testTimeouts.test.ts')),
-      ...files(path.join(webDir, 'vite'), (f) => /\.test\.ts$/.test(f)),
+      ...files(path.join(webDir, 'scripts'), (f) => f.endsWith('.test.ts') && !f.endsWith('testTimeouts.test.ts')),
+      ...files(path.join(webDir, 'vite'), (f) => f.endsWith('.test.ts')),
     ];
     const v = scan(unit, UNIT_CEILING);
     expect(v, `\n${report(v)}`).toEqual([]);

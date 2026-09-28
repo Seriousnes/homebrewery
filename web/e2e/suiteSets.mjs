@@ -1,5 +1,5 @@
 // The whole e2e suite as several short Playwright runs ("sets"), for e2e/matrix/run-suite.mjs
-// (private API, as CI) and e2e/run-playwright.mjs (`npm run e2e`, no API). Every Playwright run is
+// (private API, as CI) and e2e/run-playwright.mjs (`pnpm run e2e`, no API). Every Playwright run is
 // capped at 5 minutes (playwright.config.ts globalTimeout; CLAUDE.md "Tests fail fast"), so a big
 // suite is never one run: the projects (chromium, firefox) in groups of folders (SETS). The
 // performance tests (e2e/perf) are not part of the suite: run by hand, e2e/perf/run-perf.mjs.
@@ -7,7 +7,7 @@
 // (playwright.config.ts FIREFOX_SPECS), so most sets are Chromium only. The runner stops at the
 // first set that fails and prints each set's wall time; a set over 4 minutes is flagged: split it
 // (move folders to another set). The full suite runs in CI; locally, run the unit tests, the specs
-// of the area you change and `npm run e2e:smoke`.
+// of the area you change and `pnpm run e2e:smoke`.
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

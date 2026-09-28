@@ -104,8 +104,9 @@ services:
       start_interval: 3s
 
   # Vite dev server, the stack's one origin. It listens on 8080, the port the router (deploy/stack/shared.yml)
-  # expects of every stack. node_modules is a named volume holding Linux binaries; `npm ci` runs only when
-  # package-lock.json (or the Node version) differs from the last install into that volume.
+  # expects of every stack. node_modules is a named volume holding Linux binaries; `pnpm install` runs only when
+  # pnpm-lock.yaml (or the Node version) differs from the last install into that volume. pnpm comes
+  # through corepack, at web/package.json's packageManager version.
   web:
     image: node:24
     working_dir: /repo/web
@@ -114,26 +115,31 @@ services:
       - -c
       - |
         set -e
-        want="$$(sha256sum package-lock.json | cut -d' ' -f1) node $$(node --version)"
+        corepack enable
+        want="$$(sha256sum pnpm-lock.yaml | cut -d' ' -f1) node $$(node --version)"
         have="$$(cat node_modules/.hb-install-stamp 2>/dev/null || true)"
         if [ "$$want" != "$$have" ]; then
-          echo "web: package-lock.json changed since the last install, running npm ci"
-          npm ci --no-audit --no-fund
+          echo "web: pnpm-lock.yaml changed since the last install, running pnpm install"
+          pnpm install --frozen-lockfile
           echo "$$want" > node_modules/.hb-install-stamp
         fi
-        exec npm run dev -- --host 0.0.0.0 --port 8080
+        exec pnpm run dev --host 0.0.0.0 --port 8080
     init: true
     restart: on-failure
     environment:
       HB_API_URL: http://api:8080   # the target of Vite's proxy
       HB_WATCH_POLLING: "1"
-      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      # The package store is a shared volume. Otherwise pnpm keeps it next to the project (the bind-mounted
+      # repository), on the host.
+      PNPM_CONFIG_STORE_DIR: /pnpm-store
     ports:
       # Loopback only: the dev server has no authentication and serves source files.
       - 127.0.0.1:${HB_HTTP_PORT:-8080}:8080
     volumes:
       - .:/repo                  # Vite reads ../themes (and later ../shared) next to web/
       - web-node-modules:/repo/web/node_modules
+      - pnpm-store:/pnpm-store
     labels:
       # ./stack finds this worktree's stacks by it (the one of the branch checked out before holds the same port).
       hb.worktree: ${HB_WORKTREE:-}
@@ -145,7 +151,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 10m      # the first start runs npm ci
+      start_period: 10m      # the first start runs pnpm install
       start_interval: 3s
 
 volumes:
@@ -154,6 +160,9 @@ volumes:
   # start doesn't download them all again.
   nuget-packages:
     name: homebrewery-nuget-packages
+  # The same for the pnpm package store.
+  pnpm-store:
+    name: homebrewery-pnpm-store
   aspnet-keys:
   dotnet-api-bin:
   dotnet-api-obj:

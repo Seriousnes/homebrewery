@@ -2,7 +2,7 @@
 // inserted and removed from the BlockMenu (one undo step each); definition lists have Enter keys.
 // Also the images of plan §6.6 (natural size, aspect ratio) and the fidelity rules in canvas.css
 // for empty definition terms and float-only paragraphs.
-// E2E_PORT=5328 npx playwright test e2e/objects/blocks.spec.ts
+// E2E_PORT=5328 pnpm exec playwright test e2e/objects/blocks.spec.ts
 import { expect, type Page } from '@playwright/test';
 import { test, blockMenu, caretAfter, openObjects, settle, undo } from './helpers';
 

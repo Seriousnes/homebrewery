@@ -3,24 +3,23 @@
 // green run here means the "Web (lint, typecheck, schema, build)", "Web unit tests" and ".NET"
 // jobs pass (CLAUDE.md "Tests"). Run it before every push.
 //
-//   npm --prefix web run verify              all three lanes (about 2 minutes)
-//   npm --prefix web run verify web unit     some of them (web, unit, dotnet)
+//   pnpm -C web run verify              all three lanes (about 2 minutes)
+//   pnpm -C web run verify web unit     some of them (web, unit, dotnet)
 //
 // The lanes run in parallel, each step in order and stopping at its lane's first failure, like
 // the CI jobs. A step's output is printed only when it fails. Every step is capped at 5 minutes
 // and killed when it prints nothing for 2 (CLAUDE.md "Tests fail fast"). CI=true, as in CI.
-import { existsSync, statSync } from 'node:fs';
-import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { killTreeSync, repoRoot, TestRunner, webDir } from './testRunner.ts';
 
 const LANES = {
   web: [
-    ['lint', 'npm run lint', webDir],
-    ['typecheck', 'npm run typecheck', webDir],
-    ['schema manifest', 'npm run schema -- --check', webDir],
-    ['build', 'npm run build', webDir],
+    ['lint', 'pnpm run lint', webDir],
+    ['typecheck', 'pnpm run typecheck', webDir],
+    ['schema manifest', 'pnpm run schema --check', webDir],
+    ['build', 'pnpm run build', webDir],
   ],
-  unit: [['unit tests', 'npm test', webDir]],
+  unit: [['unit tests', 'pnpm test', webDir]],
   dotnet: [
     ['dotnet build (Release, warnings as errors)', 'dotnet build Homebrewery.slnx --configuration Release', repoRoot],
     // Microsoft.Testing.Platform prints little until the end: only the 5-minute cap applies (the test app has its own).
@@ -40,10 +39,12 @@ if (unknown.length) {
   process.exit(2);
 }
 
-// CI installs with `npm ci`: dependencies older than package-lock.json lint and build differently.
-const installed = path.join(webDir, 'node_modules', '.package-lock.json');
-if (!existsSync(installed) || statSync(installed).mtimeMs < statSync(path.join(webDir, 'package-lock.json')).mtimeMs) {
-  runner.error('web/node_modules is missing or older than package-lock.json: run `npm --prefix web ci` first.');
+// CI installs exactly pnpm-lock.yaml: other dependencies lint and build differently. pnpm checks
+// node_modules against the lockfile before it runs anything (verifyDepsBeforeRun in
+// pnpm-workspace.yaml); once here, so a stale install fails before the lanes start.
+const deps = spawnSync('pnpm exec node -e 0', { cwd: webDir, shell: true, encoding: 'utf8' });
+if (deps.status !== 0) {
+  runner.error(`web/node_modules doesn't match pnpm-lock.yaml: run \`pnpm -C web install\` first.\n${deps.stdout}${deps.stderr}`);
   process.exit(2);
 }
 

@@ -13,7 +13,7 @@ afterEach(() => {
 
 /** navigator of a Chromium-based browser (userAgentData brands), or of another engine. */
 function engine(chromium: boolean) {
-  vi.stubGlobal('navigator', { ...navigator, userAgentData: chromium ? { brands: [{ brand: 'Chromium' }, { brand: 'Google Chrome' }] } : undefined });
+  vi.stubGlobal('navigator', { userAgentData: chromium ? { brands: [{ brand: 'Chromium' }, { brand: 'Google Chrome' }] } : undefined });
 }
 
 /** The probe element the browser would skip (the last child of body). */

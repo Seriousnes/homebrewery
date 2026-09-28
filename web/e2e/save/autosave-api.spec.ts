@@ -5,7 +5,7 @@
 //
 // or start it yourself and point Vite at it:
 //
-//   HB_API_URL=http://localhost:5425 E2E_PORT=5325 npx playwright test e2e/save
+//   HB_API_URL=http://localhost:5425 E2E_PORT=5325 pnpm exec playwright test e2e/save
 //
 // Without HB_API_URL these tests are skipped; autosave.spec.ts covers the same flows against an
 // in-memory server.

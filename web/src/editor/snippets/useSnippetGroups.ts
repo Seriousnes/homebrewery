@@ -39,7 +39,7 @@ export function useSnippetGroups(
       cancelled = true;
     };
     // ids is derived from idsKey.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey]);
 
   return useMemo<SnippetGroupsState>(() => {

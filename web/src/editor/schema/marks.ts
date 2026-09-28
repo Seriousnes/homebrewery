@@ -1,8 +1,4 @@
 // Marks: bold, italic, underline, strike, code, superscript, subscript, link and span.
-//
-// Note: @tiptap/extension-{bold,italic,strike,code} are installed as exact-version dependencies
-// of @tiptap/starter-kit (3.31.3) and resolved from the hoisted node_modules; they should be
-// added to web/package.json explicitly.
 import { Mark } from '@tiptap/core';
 import Bold from '@tiptap/extension-bold';
 import Code from '@tiptap/extension-code';

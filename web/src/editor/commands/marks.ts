@@ -268,7 +268,7 @@ export function applySpan(classes: readonly string[]): Command {
     if (!canHoldMark(state, type)) return false;
     if (!dispatch) return true;
     const tr = state.tr;
-    const mark = type.create({ ...(target?.mark.attrs ?? {}), classes: clean });
+    const mark = type.create({ ...target?.mark.attrs, classes: clean });
     if (target && target.from === target.to) {
       // A span only in the stored marks (nothing typed yet): swap it.
       tr.removeStoredMark(target.mark).addStoredMark(mark);

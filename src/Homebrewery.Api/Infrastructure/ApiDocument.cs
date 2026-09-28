@@ -7,7 +7,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// The OpenAPI document (<c>/openapi/v1.json</c>, Development and Testing only) that web/ generates its client types from.
 /// </summary>
 /// <remarks>
-/// The committed copy is <c>shared/openapi.json</c>; <c>npm --prefix web run api:types</c> turns it into
+/// The committed copy is <c>shared/openapi.json</c>; <c>pnpm -C web run api:types</c> turns it into
 /// <c>web/src/api/schema.d.ts</c>. The test <c>OpenApiExportTests</c> fails when the copy is stale; run it with
 /// <c>HB_UPDATE_OPENAPI=1</c> to rewrite it (see that test for the command).
 /// </remarks>

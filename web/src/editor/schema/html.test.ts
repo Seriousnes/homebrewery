@@ -75,7 +75,7 @@ describe('ignored characters before and inside the scheme (server UrlPolicy.Sche
   });
 
   it('skips exactly the characters IGNORED_URL_CHARS removes (C0, DEL, JavaScript \\s)', () => {
-    // eslint-disable-next-line no-control-regex -- the client's definition, one character at a time
+    // oxlint-disable-next-line no-control-regex -- the client's definition, one character at a time
     const ignored = /^[\u0000-\u001F\u007F\s]$/;
     const wrong: string[] = [];
     for (let c = 0; c <= 0xffff; c++) {

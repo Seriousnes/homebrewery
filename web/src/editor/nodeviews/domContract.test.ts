@@ -23,7 +23,7 @@ function normalizeEditorDom(root: Element): string {
   for (const el of Array.from(clone.querySelectorAll('*'))) {
     for (const name of EDITOR_ONLY_ATTRS) el.removeAttribute(name);
     if (el.classList.contains('page')) el.removeAttribute('id');
-    for (const c of Array.from(el.classList)) if (/^ProseMirror/.test(c)) el.classList.remove(c);
+    for (const c of Array.from(el.classList)) if (c.startsWith('ProseMirror')) el.classList.remove(c);
     // Objects lane (P5.6): leading header rows get this editor-only decoration class.
     el.classList.remove('hb-header-row');
     if (el.getAttribute('class') === '') el.removeAttribute('class');

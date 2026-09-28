@@ -1,6 +1,6 @@
 // Accessibility of the objects lane's UI on /dev/objects (axe, serious and critical): the object
 // frame and toolbar, the block and table menus, the icon picker and the `:` suggestion list.
-// E2E_PORT=5328 npx playwright test e2e/objects/a11y.spec.ts
+// E2E_PORT=5328 pnpm exec playwright test e2e/objects/a11y.spec.ts
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 import { test, caretAfter, clickObject, frame, openObjects } from './helpers';

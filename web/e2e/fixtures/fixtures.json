@@ -1,5 +1,5 @@
 {
-  "generated": "npx tsx scripts/fidelity-fixtures.ts",
+  "generated": "pnpm exec tsx scripts/fidelity-fixtures.ts",
   "skipped": [
     "Blank/Text Editor/Footer/Footer from H1: Cannot read properties of undefined (reading 'line')",
     "Blank/Text Editor/Footer/Footer from H2: Cannot read properties of undefined (reading 'line')",

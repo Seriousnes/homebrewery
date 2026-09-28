@@ -2,7 +2,7 @@
 // sends every test and step, as it begins and ends, to the parent process over IPC. The runner
 // attaches it with PW_TEST_REPORTER (an extra reporter next to the configured or --reporter ones),
 // so it prints nothing and needs no change to playwright.config.ts. Without an IPC channel (a plain
-// `npx playwright test PW_TEST_REPORTER=…`) it does nothing.
+// `pnpm exec playwright test PW_TEST_REPORTER=…`) it does nothing.
 import path from 'node:path';
 import type { FullResult, Reporter, Suite, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
 import type { ProgressEvent } from './testRunner.ts';

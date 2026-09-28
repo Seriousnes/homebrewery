@@ -23,7 +23,7 @@ export function escapeAttribute(value: string): string {
 }
 
 /** An attribute name the HTML parser reads back as the same name. */
-// eslint-disable-next-line no-control-regex -- control characters are exactly what it rejects
+// oxlint-disable-next-line no-control-regex -- control characters are exactly what it rejects
 const SAFE_ATTRIBUTE_NAME = /^[^\s"'>/=\u0000-\u001f\u007f]+$/;
 
 function serializeNode(node: Node, out: string[]): void {

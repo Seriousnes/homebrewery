@@ -118,7 +118,7 @@ export function SnippetBodyEditor({ store, snippetKey, value, label, describedBy
       viewRef.current = null;
     };
     // The initial props only: later changes go through the effects below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Show the store's text: another snippet (from the top), or an undo/redo (the caret goes to the

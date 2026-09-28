@@ -78,7 +78,7 @@ describe('fallbackStore', () => {
     expect(inner.map.has('new')).toBe(false);
     expect(await store.get('new')).toBe(2);
     expect(await store.get('old')).toBe(1);
-    expect((await store.entries()).sort()).toEqual([
+    expect((await store.entries()).sort(([a], [b]) => a.localeCompare(b))).toEqual([
       ['new', 2],
       ['old', 1],
     ]);

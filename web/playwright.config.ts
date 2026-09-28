@@ -15,7 +15,7 @@ import { slotPort } from './scripts/worktree';
 //   firefox                           the same, but only the editing and pagination specs
 //                                     (FIREFOX_SPECS; E2E_FIREFOX=all runs every spec in Firefox)
 // The smoke set (tests tagged @smoke, Chromium, about 50 tests in under 3 minutes) is
-// `npm run e2e:smoke`. run-suite.mjs runs the suite as short sets one after the other (groups of
+// `pnpm run e2e:smoke`. run-suite.mjs runs the suite as short sets one after the other (groups of
 // folders in chromium + firefox).
 //
 // The performance tests (web/e2e/perf: the §4.10 / P8.1 performance work, S2's 30-page section) are
@@ -97,8 +97,8 @@ export default defineConfig({
     : {
         webServer: {
           command: preview
-            ? `npx vite preview --port ${port} --strictPort`
-            : `npx vite --port ${port} --strictPort`,
+            ? `pnpm exec vite preview --port ${port} --strictPort`
+            : `pnpm exec vite --port ${port} --strictPort`,
           url: `http://localhost:${port}/`,
           reuseExistingServer: !isCI && process.env.E2E_PORT === undefined,
           // Vite is up in a few seconds; a minute means it's stuck (port in use, config error).

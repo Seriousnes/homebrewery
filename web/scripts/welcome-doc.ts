@@ -1,8 +1,8 @@
 // Converts upstream's welcome brew once into the home page's bundled document (plan §9: "bundled
 // doc JSON, converted once from welcome_msg.md"). From web/:
 //
-//   npx tsx scripts/welcome-doc.ts            # writes src/pages/home/welcome.doc.json
-//   npx tsx scripts/welcome-doc.ts --check    # exits 1 when the committed file is stale
+//   pnpm exec tsx scripts/welcome-doc.ts            # writes src/pages/home/welcome.doc.json
+//   pnpm exec tsx scripts/welcome-doc.ts --check    # exits 1 when the committed file is stale
 //
 // Options: --url <origin> (use a running dev server), --port <n> (default $E2E_PORT or 5329; the
 // script starts Vite there with e2e/flows/vite.isolated.config.mjs), --headed.
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
       // missing: stale
     }
     if (current !== text) {
-      console.error(`${WELCOME_OUTPUT} is stale: run npx tsx scripts/welcome-doc.ts`);
+      console.error(`${WELCOME_OUTPUT} is stale: run pnpm exec tsx scripts/welcome-doc.ts`);
       process.exit(1);
     }
     console.log(`${WELCOME_OUTPUT} is up to date.`);

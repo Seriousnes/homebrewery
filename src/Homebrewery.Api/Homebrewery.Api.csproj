@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <!--
-    The editor schema (plan §3.7), written by the web build (npm run schema). DocInspector validates saved
+    The editor schema (plan §3.7), written by the web build (pnpm run schema). DocInspector validates saved
     documents against it. It is copied next to the binaries for dotnet run / test / publish (and so into the
     Docker image, whose api stage copies shared/ before publishing); Schema:ManifestPath overrides the location.
   -->

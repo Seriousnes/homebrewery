@@ -13,8 +13,8 @@
 // Arguments go to run-suite.mjs; a filter or --shard is required (no whole-suite run here: that is
 // CI's). The working tree is what runs, uncommitted changes included: the files git would commit
 // (tracked and untracked, not ignored) are streamed into the container. The image
-// (deploy/e2e-linux/Dockerfile) is rebuilt when package-lock.json changes, the first build takes
-// a few minutes (image pull, .NET SDK, npm ci); NuGet packages persist in the volume
+// (deploy/e2e-linux/Dockerfile) is rebuilt when pnpm-lock.yaml changes, the first build takes
+// a few minutes (image pull, .NET SDK, pnpm install); NuGet packages persist in the volume
 // hb-e2e-linux-nuget. The container gets 4 CPUs and 16 GB, as CI's runner (HB_LINUX_CPUS,
 // HB_LINUX_MEMORY). On a failure, test-results/ (traces, screenshots) is copied to
 // web/test-results-linux/.
@@ -27,6 +27,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { dockerSync, killTreeSync, removeContainerSync, repoRoot, sleep, TestRunner, webDir } from '../scripts/testRunner.ts';
+import { lockedVersion } from '../scripts/lockfile.ts';
 import { worktreeInfo } from '../scripts/worktree.ts';
 
 const runner = new TestRunner('e2e-linux');
@@ -46,10 +47,9 @@ if (images.length !== 1) {
 }
 const image = images[0];
 const imageVersion = /:v([\w.-]+?)-noble/.exec(image)[1];
-const lock = JSON.parse(readFileSync(path.join(webDir, 'package-lock.json'), 'utf8'));
-const playwrightVersion = lock.packages?.['node_modules/@playwright/test']?.version;
+const playwrightVersion = lockedVersion(webDir, '@playwright/test');
 if (playwrightVersion !== imageVersion) {
-  runner.error(`CI's image is Playwright ${imageVersion} but package-lock.json has @playwright/test ${playwrightVersion}: update ci.yml's images (CI can't launch the browsers otherwise).`);
+  runner.error(`CI's image is Playwright ${imageVersion} but pnpm-lock.yaml has @playwright/test ${playwrightVersion}: update ci.yml's images (CI can't launch the browsers otherwise).`);
   process.exit(2);
 }
 
@@ -145,7 +145,7 @@ try {
 
   rmSync(resultsDir, { recursive: true, force: true });
   if (status !== 0 && dockerSync(['cp', `${run}:/repo/web/test-results`, resultsDir]).status === 0) {
-    runner.log(`test results (traces: npx playwright show-trace <trace.zip>) in ${path.relative(repoRoot, resultsDir)}`);
+    runner.log(`test results (traces: pnpm exec playwright show-trace <trace.zip>) in ${path.relative(repoRoot, resultsDir)}`);
   }
 } catch (error) {
   runner.error(error instanceof Error ? error.message : String(error));

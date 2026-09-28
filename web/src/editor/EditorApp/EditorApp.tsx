@@ -437,7 +437,7 @@ export function EditorApp({
     if (saves) forgetBrew(stopped.editId, metaBrew.shareId, stopped.result.brewDeleted);
     onDeleted?.(stopped.result, stopped.editId);
     // Once per deletion.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [stopped]);
 
   const theme = metaDraft.theme || initial.brew.meta.theme;

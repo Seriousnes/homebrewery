@@ -22,10 +22,10 @@
 //   each test well under a minute; about a minute and a half per browser at 6 workers, one
 //   Playwright run per browser. A local tool, not in CI; Firefox needs
 //   E2E_FIREFOX=all:
-//     SNIPPET_FIDELITY=all E2E_PORT=5327 npx playwright test e2e/snippets/snippetFidelity.spec.ts --project=chromium
+//     SNIPPET_FIDELITY=all E2E_PORT=5327 pnpm exec playwright test e2e/snippets/snippetFidelity.spec.ts --project=chromium
 // The upstream render page is loaded once per test; each next fixture is a route change (upstreamShots).
 //
-// Run: E2E_PORT=5327 npx playwright test e2e/snippets/snippetFidelity.spec.ts
+// Run: E2E_PORT=5327 pnpm exec playwright test e2e/snippets/snippetFidelity.spec.ts
 // SNIPPET_FILTER=<regex> limits the fixtures. Results: test-results/<port>/snippet-fidelity/<project>.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

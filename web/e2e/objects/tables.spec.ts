@@ -1,7 +1,7 @@
 // P5.6 tables on /dev/objects: header rows styled like upstream's <thead> by the theme's own
 // rules (hb-header-row + the selector rewrite), the class table snippet imported and edited
 // without losing spans, and the TableMenu (insert, merge/split, widths, header rows, classes).
-// E2E_PORT=5328 npx playwright test e2e/objects/tables.spec.ts
+// E2E_PORT=5328 pnpm exec playwright test e2e/objects/tables.spec.ts
 import { expect, type Page } from '@playwright/test';
 import { test, caretAfter, clickInText, openObjects, settle, tableMenu, undo } from './helpers';
 

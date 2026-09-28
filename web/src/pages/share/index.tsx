@@ -43,7 +43,7 @@ function ShareView({ brew, onAuthorSignedIn }: { brew: BrewForShare; onAuthorSig
   useEffect(() => {
     if (needsEditId) onAuthorSignedIn();
     // Once per sign-in.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [needsEditId]);
 
   const navItems = !me.data ? null : author ? (

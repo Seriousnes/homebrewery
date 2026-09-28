@@ -10,8 +10,12 @@
 # ---- 1. web: build the SPA and the theme assets --------------------------------------------
 FROM node:24 AS web
 WORKDIR /repo
-COPY web/package.json web/package-lock.json web/
-RUN npm --prefix web ci
+# pnpm through corepack, at web/package.json's packageManager version: corepack reads the
+# package.json of the working directory, so pnpm runs in web/.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml web/.pnpmfile.cjs web/
+RUN cd web && pnpm install --frozen-lockfile
 COPY themes themes
 # shared/ holds the committed schema manifest. The glob keeps this step working before it exists,
 # and mkdir guarantees the folder that the api stage copies from (a glob that matches nothing
@@ -20,7 +24,7 @@ COPY shared* shared/
 RUN mkdir -p shared
 COPY web web
 # Writes src/Homebrewery.Api/wwwroot (SPA + /themes/...) and shared/schema-manifest.json.
-RUN npm --prefix web run build
+RUN cd web && pnpm run build
 
 # ---- 2. restore: the NuGet packages of the ASP.NET Core host ---------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore

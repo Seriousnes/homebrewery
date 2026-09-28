@@ -22,7 +22,7 @@ on pages upstream clipped counts as "clipped upstream (expected)" (the editor pa
 ## Findings (hand-written; kept in `web/e2e/fixtures/fidelity-findings.md`)
 
 Reproduce the whole report from `web/` with:
-`npx tsx scripts/fidelity-run.ts --browsers chromium,firefox --variants keep,trailing-break --workers 4`.
+`pnpm exec tsx scripts/fidelity-run.ts --browsers chromium,firefox --variants keep,trailing-break --workers 4`.
 Without `--workers` on a busy machine, some Firefox tests can time out while the dev modules load. This run had 7; they were rerun with 2 workers and merged.
 To rebuild only the report from saved runs, add `--report-only`.
 

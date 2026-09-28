@@ -8,5 +8,3 @@ declare module '@tanstack/react-query' {
     mutationMeta: ApiRequestMeta;
   }
 }
-
-export {};
