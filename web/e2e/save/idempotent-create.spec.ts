@@ -34,8 +34,8 @@ test.beforeEach(async ({ page }) => {
   await page.clock.install();
 });
 
-/** The app's autosave state (the editor pages' dev API). */
-const saveState = (page: Page) => page.evaluate(() => window.__hbEditorApp?.save() ?? null);
+/** When the app's autosave retries a failed save (epoch ms, the page's clock), or null. */
+const retryAt = (page: Page) => page.evaluate(() => (window.__hbEditorApp?.save() as { retryAt?: number | null } | null | undefined)?.retryAt ?? null);
 
 interface SeenPost {
   key: string | null;
@@ -86,7 +86,7 @@ test('a /new POST whose answer is lost is sent again with the same key: exactly 
   await typeAt(page, 'Lost answer');
   await page.clock.runFor(AUTOSAVE_DELAY_MS);
   // The answer is lost: the autosave waits for its first retry.
-  await expect.poll(async () => (await saveState(page))?.retryAt ?? null).not.toBeNull();
+  await expect.poll(() => retryAt(page)).not.toBeNull();
   expect(posts).toHaveLength(1);
   await page.clock.runFor(FIRST_RETRY_MS);
   await expect(page).toHaveURL(/\/edit\/[\w-]+$/, SAVE_TIMEOUT);

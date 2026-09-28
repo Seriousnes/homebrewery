@@ -4,6 +4,8 @@ import { expect, expectClean, expectNoEmptyAutoPages, flowText, openEditor, page
 
 test('deleting on page 1 of a 3-page section pulls content back and removes the emptied auto pages', { tag: '@smoke' }, async ({ page }) => {
   const errors = watchErrors(page);
+  // Playwright's fake clock (web/e2e/clock.ts), for the undo history's grouping below.
+  await page.clock.install();
   await openEditor(page, { doc: sectionDoc(2.3) });
   const before = await pages(page);
   expect(before.map((p) => p.kind)).toEqual(['manual', 'auto', 'auto']);
@@ -16,7 +18,6 @@ test('deleting on page 1 of a 3-page section pulls content back and removes the 
   });
   await select(page, deleted.from, deleted.to);
   await page.keyboard.press('Backspace');
-  const firstDeletion = Date.now();
   await settled(page);
   const afterFirst = await pages(page);
   expect(afterFirst.map((p) => p.kind)).toEqual(['manual', 'auto']);
@@ -28,9 +29,9 @@ test('deleting on page 1 of a 3-page section pulls content back and removes the 
   expect(afterFirst[0]!.freeSpace!).toBeLessThan(60);
 
   // The history merges adjacent edits made less than 500 ms apart into one undo step (on a quiet
-  // machine the two deletions were): let 600 ms pass since the first, so each deletion is its own
+  // machine the two deletions were): 600 ms pass on the page's clock, so each deletion is its own
   // step, as for an author.
-  await page.waitForTimeout(Math.max(0, 600 - (Date.now() - firstDeletion)));
+  await page.clock.fastForward(600);
 
   // 2. Everything from the second paragraph of page 1 to the middle of page 2, across the seam:
   //    the rest fits on page 1, so the last auto page goes too.

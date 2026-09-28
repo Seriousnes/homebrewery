@@ -32,8 +32,10 @@ test('typing at the end of a full 2-column page moves the last line before paint
   }
   const report: FrameReport = await page.evaluate(() => window.__hbFrameWatch!());
   await testInfo.attach('frames.json', { body: JSON.stringify({ movedAt, ...report }, null, 2), contentType: 'application/json' });
-  // Every painted frame was checked right before paint (after pagination): none showed an overflowing page.
-  expect(report.frames).toBeGreaterThan(typed.length);
+  // Every painted frame was checked right before paint (after pagination): none showed an overflowing
+  // page. Each keystroke's check above waited for a frame of its own (the watch toggles its probe in
+  // every frame), so there were at least as many frames as keystrokes.
+  expect(report.frames).toBeGreaterThanOrEqual(typed.length);
   expect(report.overflowFrames).toEqual([]);
 
   // The line moved to page 2, and the caret with it: in the model, in the DOM selection, on screen.
