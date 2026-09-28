@@ -1,5 +1,5 @@
 # Override for deploy/scripts/test-restore.sh: the production stack (docker-compose.yml + compose.prod.yml) in its own
-# compose project, so it never touches the dev database or its ports. Caddy listens on HB_HTTP_PORT (the script sets
+# compose project, so it never touches the dev database or its ports. The app listens on HB_HTTP_PORT (the script sets
 # it); the database publishes no port.
 services:
   db:

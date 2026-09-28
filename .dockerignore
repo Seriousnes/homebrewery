@@ -10,14 +10,13 @@
 *.user
 *.swp
 
-# Not part of the image (the compose files and deploy/caddy are the local dev/run stack)
+# Not part of the image (the compose files are the local dev/run stack)
 legacy/
 tests/
 Dockerfile
 .dockerignore
 docker-compose.yml
 compose*.yml
-deploy/caddy/
 
 # Dependencies and build outputs (rebuilt inside the image)
 **/node_modules

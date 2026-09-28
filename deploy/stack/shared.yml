@@ -1,0 +1,97 @@
+# What every branch's dev stack shares (README "Running locally", deploy/stack/stack.mjs), in a compose project of
+# its own, so stopping or removing a branch's stack never touches it:
+#
+# - db: the one PostgreSQL. The stacks' api (and, in production-image mode, app and backup) join its network, where
+#   it answers as `db`. The data volume belongs to this one container. Never mount it into a second PostgreSQL: two
+#   servers on one data directory corrupt it. Tests never use this database (they start their own,
+#   web/scripts/testRunner.ts).
+# - router: http://homebrewery.dev.localhost for master's stack and http://<branch>.homebrewery.dev.localhost for
+#   every other branch's (web/scripts/worktree.ts stackUrl). Browsers resolve *.localhost to the loopback address
+#   themselves, so there is nothing to set up on the host. It sends <name>.homebrewery.dev.localhost (and the bare
+#   name to master) to the container with the alias hb-front-<name> on the homebrewery-router network (a stack's
+#   web, or app with --prod; deploy/stack/dev.yml), port 8080, keeping the Host header. Adding a stack needs no
+#   change here: the name is resolved per request.
+#
+#   ./stack db up          start the database (./stack up starts both anyway)
+#   ./stack db down        stop both; the data stays in the homebrewery-shared-pgdata volume
+#
+# ./stack creates the homebrewery-router network, so a stack starts even when the router can't (port 80 taken).
+# The router's Caddyfile is inline (not a bind mount): the project must not depend on the worktree that started it.
+#
+# Settings (environment):
+#   HB_DB_PORT       host port of the database (default 5432), for a host-run API and tools
+#   HB_ROUTER_PORT   host port of the router (default 80; any other port goes into the URL: homebrewery.dev.localhost:<port>)
+
+name: homebrewery-shared
+
+# The router's Caddyfile. Compose interpolates this text: $$ is one $.
+x-router-caddyfile: &router-caddyfile |
+  {
+  	# Local development only: plain HTTP, no certificates, no admin endpoint.
+  	auto_https off
+  	admin off
+  }
+
+  :80 {
+  	# Every proxy keeps the Host header (and adds X-Forwarded-For/-Proto/-Host), so the API's same-origin
+  	# checks, its cookies and Vite's host check all see the browser's name. Websockets (Vite's HMR) pass through.
+  	@main header_regexp main Host ^homebrewery\.dev\.localhost(?::[0-9]+)?$$
+  	handle @main {
+  		reverse_proxy hb-front-master:8080
+  	}
+  	@branch header_regexp branch Host ^([a-z0-9-]+)\.homebrewery\.dev\.localhost(?::[0-9]+)?$$
+  	handle @branch {
+  		reverse_proxy hb-front-{re.branch.1}:8080
+  	}
+  	# Any other name: a bare 404, no hint.
+  	handle {
+  		respond 404
+  	}
+  	# The name resolves to no running stack.
+  	handle_errors 502 {
+  		respond "No stack answers for {http.request.host}. Run ./stack up in that branch's worktree; ./stack ls lists the stacks." 502
+  	}
+  }
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: homebrewery
+      POSTGRES_PASSWORD: homebrewery
+      POSTGRES_DB: homebrewery
+    ports: ["${HB_DB_PORT:-5432}:5432"]
+    volumes: ["pgdata:/var/lib/postgresql"]   # postgres 18 images keep data under a versioned subfolder
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homebrewery -d homebrewery"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+      start_interval: 1s
+
+  router:
+    image: caddy:2
+    restart: unless-stopped
+    # The Caddyfile comes in an environment variable, not a compose config: compose recreates a container when its
+    # environment changes, but not when only a config's content does, so an edited Caddyfile reaches the router
+    # with the next ./stack up.
+    command: ["sh", "-c", "printf '%s' \"$$HB_CADDYFILE\" > /etc/caddy/Caddyfile && exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    environment:
+      HB_CADDYFILE: *router-caddyfile
+    ports:
+      # Loopback only: the dev servers behind it have no authentication and serve source files.
+      - 127.0.0.1:${HB_ROUTER_PORT:-80}:80
+    networks: [router]
+
+volumes:
+  pgdata:
+    name: homebrewery-shared-pgdata
+
+networks:
+  default:
+    name: homebrewery-shared
+  router:
+    external: true
+    name: homebrewery-router

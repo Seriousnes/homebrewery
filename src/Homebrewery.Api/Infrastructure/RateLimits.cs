@@ -17,7 +17,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// <item>A global limiter for writes (POST, PUT, PATCH, DELETE) on every path, per client IP.</item>
 /// </list>
 /// A rejected request gets 429 problem+json with a <c>Retry-After</c> header. The client IP is the connection's
-/// remote address, which the forwarded-headers middleware sets from <c>X-Forwarded-For</c> behind Caddy.
+/// remote address, which the forwarded-headers middleware sets from <c>X-Forwarded-For</c> behind a reverse proxy.
 /// </summary>
 public static class RateLimits
 {

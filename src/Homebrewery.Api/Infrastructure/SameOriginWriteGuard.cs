@@ -7,7 +7,7 @@ namespace Homebrewery.Api.Infrastructure;
 /// clients must send <c>Origin</c>.
 /// </summary>
 /// <remarks>
-/// The request's scheme and host are the ones the browser used: behind Caddy the forwarded-headers middleware applies
+/// The request's scheme and host are the ones the browser used: behind a reverse proxy the forwarded-headers middleware applies
 /// <c>X-Forwarded-Proto</c> and <c>X-Forwarded-Host</c> first (see <see cref="ForwardedHeadersSetup"/>); through the
 /// Vite dev proxy the <c>Host</c> header is kept (<c>changeOrigin: false</c>).
 /// </remarks>

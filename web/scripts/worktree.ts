@@ -4,8 +4,8 @@
 // Every worktree of the repository gets a SLOT: the main checkout is slot 0, every other worktree
 // the lowest free slot from 1, kept in <git common dir>/hb-worktree-slots.json (shared by all
 // worktrees, so two never get the same slot; entries of removed worktrees are dropped). Slot 0 keeps
-// the historical defaults (Caddy :8080, the runners' 5174/5374/5474 …), slot n moves them by n × 1000
-// (test ports) or n (the dev stack's Caddy port). HB_SLOT forces a slot. Without git (CI container
+// the historical defaults (the dev stack's :8080, the runners' 5174/5374/5474 …), slot n moves them by n × 1000
+// (test ports) or n (the dev stack's port). HB_SLOT forces a slot. Without git (CI container
 // jobs refuse the checkout's owner) the checkout counts as the main one.
 //
 // Plain Node (type stripping only): deploy/stack/stack.mjs imports this file too.
@@ -157,4 +157,25 @@ export function stackName(info: WorktreeInfo = worktreeInfo()): string {
   const slug = dockerSlug(info.branch ?? path.basename(info.root));
   if (info.branch === slug) return `hb-${slug}`;
   return `hb-${slug}-${createHash('sha256').update(info.branch ?? info.root).digest('hex').slice(0, 8)}`;
+}
+
+/**
+ * The dev stack's name for the shared router (deploy/stack/shared.yml, stackUrl): the branch (the worktree folder
+ * on a detached HEAD) as a DNS label, without stackName's hash, so it reads like the branch. The lossy slug can give
+ * two branches one name (feature/foo, feature-foo); ./stack refuses to run both at once.
+ */
+export function stackHost(info: WorktreeInfo = worktreeInfo()): string {
+  return dockerSlug(info.branch ?? path.basename(info.root));
+}
+
+/** The branch whose stack the router serves without a branch in the URL (the Caddyfile in deploy/stack/shared.yml). */
+export const MAIN_BRANCH = 'master';
+
+/**
+ * The router's URL of the stack named `host` (stackHost): http://homebrewery.dev.localhost for MAIN_BRANCH,
+ * http://<host>.homebrewery.dev.localhost for every other; a router port other than 80 goes into the URL.
+ */
+export function stackUrl(host: string, routerPort: string | number = 80): string {
+  const port = String(routerPort) === '80' ? '' : `:${routerPort}`;
+  return `http://${host === MAIN_BRANCH ? '' : `${host}.`}homebrewery.dev.localhost${port}`;
 }

@@ -8,7 +8,7 @@ import type { paths } from './schema';
 export type ApiClient = Client<paths>;
 
 export interface ApiClientOptions {
-  /** Default: this page's origin (the SPA and the API share it; Vite and Caddy proxy /api). */
+  /** Default: this page's origin (the SPA and the API share it; the Vite dev server proxies /api). */
   baseUrl?: string;
   /** Default: the global fetch, looked up on every call (so tests can stub it at any time). */
   fetch?: (request: Request) => Promise<Response>;

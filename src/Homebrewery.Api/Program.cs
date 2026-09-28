@@ -48,7 +48,7 @@ builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
 // them with their own status (400, 413, ...) as the other environments do, not with a 500.
 builder.Services.Configure<ExceptionHandlerOptions>(o => o.StatusCodeSelector = ex =>
     ex is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
-builder.Services.AddProxyForwardedHeaders();                // X-Forwarded-For/-Proto/-Host behind Caddy
+builder.Services.AddProxyForwardedHeaders();                // X-Forwarded-For/-Proto/-Host behind a reverse proxy
 builder.Services.AddSecurityHeaders();                      // CSP, HSTS, nosniff, ... (SecurityHeaders:*)
 builder.Services.AddRateLimits();                           // RateLimits:* (auth, import, pdf, writes)
 builder.Services.TryAddSingleton(TimeProvider.System);

@@ -28,9 +28,9 @@ for reference.
 | `shared/` | Generated and committed files both sides read: `schema-manifest.json` (from the editor schema by `web/scripts/schema-manifest.ts`; the server validates documents against it), `openapi.json` (the API description; `web/src/api/schema.d.ts` is generated from it) and `url-policy-cases.json` (URL policy cases both test suites run) |
 | `legacy/` | The original Node/React/MongoDB app (`client/`, `server/`, `shared/`, `server.js`, its build and Docker files). Reference only; nothing imports from it at runtime |
 | `Homebrewery.slnx`, `global.json`, `Directory.*.props` | .NET solution, SDK pin and shared build settings (central package versions) |
-| `docker-compose.yml` | Local dev stack: PostgreSQL 18, the API under `dotnet watch`, the Vite dev server and Caddy (see [Running locally](#running-locally)) |
-| `compose.prod.yml` | Override that runs the production image behind the same Caddy and database instead of the dev servers, plus the scheduled `backup` service |
-| `deploy/caddy/Caddyfile` | Local routing: one origin (http://localhost:8080) for the API and the Vite dev server |
+| `docker-compose.yml` | Local dev stack: PostgreSQL 18, the API under `dotnet watch` and the Vite dev server (see [Running locally](#running-locally)) |
+| `compose.prod.yml` | Override that runs the production image on the same port and database instead of the dev servers, plus the scheduled `backup` service |
+| `stack`, `deploy/stack/` | `./stack`: one dev stack per branch, and the shared project (PostgreSQL and the `<branch>.homebrewery.dev.localhost` router, `shared.yml`) |
 | `deploy/` (the rest) | Operations: `backup/hb-backup.sh` (scheduled `pg_dump`), `scripts/` (backup-now, restore and the operations tests), `compose.external-db.yml` (production against a managed PostgreSQL) |
 | `Dockerfile` | Production image: Vite build, then `dotnet publish`, then the ASP.NET Core runtime |
 | `.github/workflows/ci.yml` | CI: web lint, typecheck, unit tests, build and Playwright (in short shards); .NET restore, build and test |
@@ -46,17 +46,23 @@ You need [Docker](https://www.docker.com/) with Compose 2.24.4 or later (any cur
 ./stack up          # sh (Git Bash, macOS, Linux); PowerShell or cmd: .\stack up
 ```
 
-It prints the URL: **http://localhost:8080** in the main checkout. Every branch gets a stack of its own, so
-worktrees run side by side:
+It prints the URLs: **http://homebrewery.dev.localhost** and **http://localhost:8080** in the main
+checkout. Every branch gets a stack of its own, so worktrees run side by side:
 
-- **One stack per branch.** The compose project is `hb-<branch>` (containers, network, build volumes). A
-  worktree's Caddy port is 8080 in the main checkout and 8080 + n in the worktree with slot n (the first
+- **One stack per branch.** The compose project is `hb-<branch>` (containers, network, build volumes).
+- **A name per branch.** The shared router serves master's stack at `http://homebrewery.dev.localhost` and every
+  other branch's at `http://<branch>.homebrewery.dev.localhost` (the branch in lower case, other characters as
+  `-`: `claude/Fix-X` → `claude-fix-x.homebrewery.dev.localhost`).
+  Browsers resolve `*.localhost` to your machine by themselves; there is nothing to set up. Sign-ins are
+  per name, so two stacks' cookies never clash. The router listens on port 80 (`HB_ROUTER_PORT` picks
+  another, which then goes into the URL). When it can't start, `./stack up` warns and the port below still works.
+- **A port per worktree.** 8080 in the main checkout and 8080 + n in the worktree with slot n (the first
   worktree 8081, …; `./stack info` shows it; `HB_HTTP_PORT` in the environment or `.env` overrides it).
   Switching branches in a worktree and running `./stack up` stops the previous branch's stack, which held
   the port.
 - **One database for all of them.** Every stack's API uses the same PostgreSQL, the `homebrewery-shared`
-  compose project ([deploy/stack/shared-db.yml](./deploy/stack/shared-db.yml)), whose data lives in the
-  `homebrewery-shared-pgdata` volume. `./stack up` starts it first. Removing a branch's stack never touches
+  compose project ([deploy/stack/shared.yml](./deploy/stack/shared.yml), with the router), whose data lives in
+  the `homebrewery-shared-pgdata` volume. `./stack up` starts it first. Removing a branch's stack never touches
   it. Migrations are shared too: a branch that adds one migrates the database for every branch.
 - **Moving from the single stack.** The first `./stack up` copies the data of the old `homebrewery_pgdata`
   volume into the shared one (the old volume is kept). It asks you to stop the old stack first
@@ -67,9 +73,9 @@ Each stack runs:
 | Service | Runs | Notes |
 | --- | --- | --- |
 | `db` (shared) | PostgreSQL 18 (official `postgres:18` image), data in the `homebrewery-shared-pgdata` volume | Published on `localhost:5432` (`HB_DB_PORT`); user, password and database are all `homebrewery` |
+| `router` (shared) | Caddy 2 | `homebrewery.dev.localhost` → master's `web`, `<branch>.homebrewery.dev.localhost` → that branch's `web` (or `app` with `--prod`); published on `127.0.0.1:80` (`HB_ROUTER_PORT`) |
 | `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0` plus headless Chromium for PDF export: the Dockerfile's `dev-api` stage) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`). After a Microsoft.Playwright upgrade, `./stack build api` installs the new Chromium |
-| `web` | The Vite dev server (`node:24`) | Runs `npm ci` on the first start and whenever `web/package-lock.json` changes |
-| `caddy` | Caddy 2 with [deploy/caddy/Caddyfile](./deploy/caddy/Caddyfile) | The one origin: `/api`, `/share`, `/openapi` and `/healthz` go to `api`; everything else, including Vite's HMR websocket, goes to `web` |
+| `web` | The Vite dev server (`node:24`) | The one origin, on the worktree's port: its proxy sends `/api`, `/share`, `/openapi` and `/healthz` to `api`. Runs `npm ci` on the first start and whenever `web/package-lock.json` changes |
 
 The repository is bind-mounted into `api` and `web`. When you edit files on the host, `dotnet watch`
 hot-reloads the API (or restarts it) and Vite hot-updates the page. Platform-specific outputs
@@ -83,8 +89,8 @@ NuGet restore, `npm ci`, first build). `./stack up -d --wait` returns once every
 - `./stack logs -f api web` follows the dev servers; `./stack ps` lists them.
 - `./stack restart api` restarts the API, which also applies migrations added since it started.
 - `./stack stop` stops the branch's stack; `./stack down -v` removes it with its build caches (never the database).
-- `./stack db stop` / `./stack db up` stop and start the shared database; `./stack ls` lists every stack.
-- `./stack info` shows the branch, the worktree's slot, the stack's URL and this worktree's test ports.
+- `./stack db up` starts the shared database, `./stack db stop` stops it and the router; `./stack ls` lists every stack.
+- `./stack info` shows the branch, the worktree's slot, the stack's URLs and this worktree's test ports.
 
 Plain `docker compose up` still runs [docker-compose.yml](./docker-compose.yml) alone: one stack with a
 database of its own (its own `<project>_pgdata` volume), as the operations tests use it.
@@ -98,7 +104,7 @@ dotnet ef migrations add <Name> --project src/Homebrewery.Data --startup-project
 ```
 
 To run the production image instead of the dev servers, against the same shared database and at the same
-URL:
+URLs:
 
 ```
 ./stack --prod up --build
@@ -111,7 +117,7 @@ database daily into the `backups` volume. `./stack up --remove-orphans` switches
 ### On the host (alternative)
 
 You need the [.NET 10 SDK](https://dotnet.microsoft.com/download), [Node.js 24](https://nodejs.org/) and
-Docker for PostgreSQL. The containerised dev servers publish no ports of their own, so they don't
+Docker for PostgreSQL. The containerised dev servers publish only the worktree's port (8080 + slot), so they don't
 collide with this setup; both use the same (shared) database.
 
 1. Start only the shared PostgreSQL 18 (user, password and database are all `homebrewery`, on port 5432):

@@ -3,8 +3,9 @@
 - Plan of record: [https://claude.ai/artifact/1X5nXZesTgEWWRCTuCXEgt](https://claude.ai/artifact/1X5nXZesTgEWWRCTuCXEgt) ("Homebrewery WYSIWYG Plan").
 Before starting a task, read the plan section for its ID (e.g. P4.3) and meet its "Done when".
 - Run: ./stack up (PowerShell: .\stack up) → the branch's own stack (compose project hb-<branch>: API under dotnet watch,
-Vite, Caddy on 8080 in the main checkout, 8080 + slot in a worktree; ./stack info) on ONE shared PostgreSQL for every
-branch (compose project homebrewery-shared). README "Running locally". Production image: ./stack --prod up --build
+Vite; http://<branch>.homebrewery.dev.localhost (master: http://homebrewery.dev.localhost), or localhost:8080 in the
+main checkout, 8080 + slot in a worktree; ./stack info) on ONE shared PostgreSQL and router for every branch (compose
+project homebrewery-shared). README "Running locally". Production image: ./stack --prod up --build
 - User secrets: every project shares UserSecretsId "homebrewery" (set once in Directory.Build.props). e.g. dotnet user-secrets set <key> <value> --project src/Homebrewery.Api
 - Backend: src/ (.NET 10, ASP.NET Core minimal APIs, EF Core + Npgsql, PostgreSQL 18).
 Host-only run: ./stack db up (the shared PostgreSQL on :5432), then dotnet run --project src/Homebrewery.Api (:5080)
@@ -28,16 +29,17 @@ worktree's slot ports and temp folders. Only Docker needs to be running.
 ## Development guidelines (beyond the plan)
 
 - Container-first: running the app on a developer machine means `./stack up`, which starts
-every required resource (Postgres, API, web dev server, Caddy). Host-only runs stay possible but
+every required resource (Postgres, API, web dev server, the router). Host-only runs stay possible but
 are secondary.
-- One stack per branch/worktree (compose project hb-<branch>, Caddy port per worktree slot), all on
-one shared PostgreSQL (project homebrewery-shared, volume homebrewery-shared-pgdata). Never mount a
+- One stack per branch/worktree (compose project hb-<branch>, http://<branch>.homebrewery.dev.localhost, port per
+worktree slot), all on one shared PostgreSQL (project homebrewery-shared, volume homebrewery-shared-pgdata). Never mount a
 PostgreSQL data volume into a second container. Tests run their own stack: their own PostgreSQL
 container and the worktree's ports, never the shared database.
 - Postgres always comes from the official Docker image (postgres:18), in compose and in tests
 (Testcontainers, the e2e runners' containers). Never assume a locally installed Postgres.
-- Caddy does local routing: one origin for the browser, /api, /share, /openapi and /healthz go to
-the API, everything else to the Vite dev server (including the HMR websocket).
+- One origin per stack, the Vite dev server: its proxy sends /api, /share, /openapi and /healthz to the API.
+No proxy container per stack. The one shared router (Caddy in deploy/stack/shared.yml) only maps
+homebrewery.dev.localhost (master) and <branch>.homebrewery.dev.localhost to the branch's stack.
 - Tests fail or succeed fast. There are NO long tests and no long test runs — no exceptions, no
   opt-in "long" tier, no nightly long jobs.
   - Per test: Playwright 15 s default (5 s expect/action, 10 s navigation), Vitest 5 s. Explicit

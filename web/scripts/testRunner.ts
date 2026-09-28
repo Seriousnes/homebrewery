@@ -53,7 +53,7 @@ export const LIMITS = {
 
 export const HUMAN_PORTS = ['5080', '5173', '8080'];
 
-/** A port of a person's stack: the host-run API and Vite, or a dev stack's Caddy (8080 + worktree slot, deploy/stack). */
+/** A port of a person's stack: the host-run API and Vite, or a dev stack's port (8080 + worktree slot, deploy/stack). */
 export function isHumanPort(port: string | number): boolean {
   const n = Number(port);
   return HUMAN_PORTS.includes(String(n)) || (n >= 8080 && n <= 8080 + MAX_SLOT);

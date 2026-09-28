@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 namespace Homebrewery.Api.Tests.Security;
 
 /// <summary>
-/// P8 hardening: the sign-in cookie is <c>Secure</c> whenever the browser's request is HTTPS, including behind Caddy
+/// P8 hardening: the sign-in cookie is <c>Secure</c> whenever the browser's request is HTTPS, including behind a TLS proxy
 /// (<c>X-Forwarded-Proto: https</c> with <c>ASPNETCORE_FORWARDEDHEADERS_ENABLED=true</c>), and always with
 /// <c>Auth:CookieSecurePolicy=Always</c>. It stays HttpOnly and SameSite=Lax.
 /// </summary>

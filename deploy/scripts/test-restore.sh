@@ -3,8 +3,8 @@
 #
 #   deploy/scripts/test-restore.sh [--keep] [--no-build]
 #
-# Starts the production stack (docker-compose.yml + compose.prod.yml: db, app, Caddy, backup) as its own compose project
-# (default hb-ops-restore-test, Caddy on 127.0.0.1:5478, no database port), then through the API: creates an account and
+# Starts the production stack (docker-compose.yml + compose.prod.yml: db, app, backup) as its own compose project
+# (default hb-ops-restore-test, the app on 127.0.0.1:5478, no database port), then through the API: creates an account and
 # a brew, backs up with deploy/scripts/backup-now.sh, changes data after the backup (a second account and brew), and
 # restores with deploy/scripts/restore.sh, which drops and re-creates the database. Afterwards the API must show exactly
 # the backed-up state: the first account signs in, its brew is back, the later account and brew are gone, and the
@@ -51,8 +51,8 @@ trap cleanup EXIT
 step "Start the production stack ($COMPOSE_PROJECT_NAME, $BASE_URL, image $HB_TEST_IMAGE)"
 docker compose down --volumes --remove-orphans >/dev/null 2>&1 || true
 if ((build)); then docker compose build app; fi
-docker compose up -d --wait --wait-timeout 300 db app caddy backup
-check "/healthz answers 200 through Caddy" wait_healthy "$BASE_URL/healthz" 60
+docker compose up -d --wait --wait-timeout 300 db app backup
+check "/healthz answers 200 on the published port" wait_healthy "$BASE_URL/healthz" 60
 expect_eq "/healthz reports the database" ok "$(curl -s "$BASE_URL/healthz" | json checks.database)"
 expect_eq "/healthz/ready reports the database" ok "$(curl -s "$BASE_URL/healthz/ready" | json checks.database)"
 expect_eq "/healthz/live answers" ok "$(curl -s "$BASE_URL/healthz/live" | json status)"

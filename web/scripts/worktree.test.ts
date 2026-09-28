@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dockerSlug, readWorktreeInfo, registerSlot, slotPort, slotTmp, stackName } from './worktree';
+import { dockerSlug, readWorktreeInfo, registerSlot, slotPort, slotTmp, stackHost, stackName, stackUrl } from './worktree';
 
 const dirs: string[] = [];
 function tempDir(): string {
@@ -116,5 +116,19 @@ describe('ports, folders and names', () => {
     expect(stackName(info(null, 'D:/a/homebrewery'))).toMatch(/^hb-homebrewery-[0-9a-f]{8}$/);
     expect(stackName(info(null, 'D:/a/homebrewery'))).not.toBe(stackName(info(null, 'D:/b/homebrewery')));
     expect(stackName(info(null, 'D:/a/homebrewery'))).not.toBe(stackName(info('homebrewery')));
+  });
+
+  it('names stacks for the router after the branch, as one DNS label', () => {
+    const info = (branch: string | null, root = 'D:/p/homebrewery.x') => ({ root, commonDir: null, main: false, branch, slot: 2 });
+    expect(stackHost(info('master'))).toBe('master');
+    expect(stackHost(info('claude/Fix Pagination_2'))).toBe('claude-fix-pagination-2');
+    expect(stackHost(info(null, 'D:/a/homebrewery.pdf'))).toBe('homebrewery-pdf');
+    expect(stackHost(info('x'.repeat(80)))).toMatch(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/);
+  });
+
+  it('serves master without a branch in the URL and other branches under homebrewery', () => {
+    expect(stackUrl('master')).toBe('http://homebrewery.dev.localhost');
+    expect(stackUrl('claude-fix-x')).toBe('http://claude-fix-x.homebrewery.dev.localhost');
+    expect(stackUrl('claude-fix-x', '8000')).toBe('http://claude-fix-x.homebrewery.dev.localhost:8000');
   });
 });

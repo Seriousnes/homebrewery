@@ -1,8 +1,15 @@
 # Override that `./stack --prod` adds after compose.prod.yml: the production image and the backup service use the
-# shared database (deploy/stack/shared-db.yml), like the dev api (deploy/stack/dev.yml).
+# shared database (deploy/stack/shared.yml), like the dev api, and the app takes web's place on the router network
+# (deploy/stack/dev.yml).
 services:
   app:
-    networks: [default, shared]
+    networks:
+      default: {}
+      shared: {}
+      router:
+        aliases: ["hb-front-${HB_HOST:?./stack sets HB_HOST}"]
+    labels:
+      hb.host: ${HB_HOST}
     depends_on: !reset {}
   backup:
     networks: [default, shared]

@@ -1,18 +1,20 @@
 # Local development stack (CLAUDE.md "Development guidelines", plan §2 "Running locally").
 #
-# Run it through ./stack (deploy/stack/stack.mjs): one stack per branch (compose project hb-<branch>), Caddy on
-# a port per worktree (8080 in the main checkout, 8080 + n in worktree slot n), and ONE shared PostgreSQL for
-# all of them (deploy/stack/shared-db.yml, joined through deploy/stack/dev.yml):
+# Run it through ./stack (deploy/stack/stack.mjs): one stack per branch (compose project hb-<branch>) on ONE shared
+# PostgreSQL (deploy/stack/shared.yml, joined through deploy/stack/dev.yml). The browser opens the stack at the
+# branch's name, http://<branch>.homebrewery.dev.localhost (master: http://homebrewery.dev.localhost; the shared
+# router, also in deploy/stack/shared.yml), or at the worktree's port, http://localhost:<8080 in the main checkout,
+# 8080 + n in worktree slot n>:
 #   ./stack up                   everything below; open the URL it prints
 #   ./stack db up                only the shared PostgreSQL, for running the API and Vite on the host
 #   ./stack --prod up --build    the production image instead of the dev servers (compose.prod.yml)
 #
 # Plain `docker compose up` runs this file alone: a stack with a database of its own (the db service below,
-# volume <project>_pgdata), as the ops tests use it (deploy/scripts/test-restore.sh).
+# volume <project>_pgdata) on http://localhost:8080, as the ops tests use it (deploy/scripts/test-restore.sh).
 #
-# Routing (deploy/caddy/Caddyfile): /api, /share, /openapi and /healthz go to the API, everything
-# else (SPA, Vite modules, HMR websocket) to the Vite dev server. Only Caddy and Postgres publish
-# ports on the host, so a host-run API (:5080) or Vite (:5173) never collides with the containers.
+# One origin for the browser, the Vite dev server: its proxy (web/vite.config.ts) sends /api, /share, /openapi
+# and /healthz to the API and serves everything else (SPA, Vite modules, HMR websocket) itself. Only web and
+# Postgres publish ports on the host, so a host-run API (:5080) or Vite (:5173) never collides with the containers.
 #
 # The repository is bind-mounted into api and web, so edits on the host are picked up by
 # `dotnet watch` and Vite. Build outputs that are platform-specific (src/*/bin, src/*/obj,
@@ -20,7 +22,7 @@
 # containers never mix with Windows or macOS builds on the host.
 #
 # Settings (environment or a .env file next to this one):
-#   HB_HTTP_PORT   host port for Caddy (default 8080; ./stack: 8080 + the worktree's slot)
+#   HB_HTTP_PORT   host port of the stack (default 8080; ./stack: 8080 + the worktree's slot)
 
 services:
   db:
@@ -63,8 +65,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-      # Caddy sends X-Forwarded-For/-Proto. ASP.NET Core's built-in switch applies them from any
-      # peer, which is safe here because the API publishes no port and only Caddy reaches it.
+      # The router (deploy/stack/shared.yml) sends X-Forwarded-For/-Proto/-Host and Vite's proxy passes them on.
+      # ASP.NET Core's built-in switch applies them from any peer, which is safe here because the API
+      # publishes no port and only Vite reaches it.
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       ConnectionStrings__Homebrewery: Host=db;Port=5432;Database=homebrewery;Username=homebrewery;Password=homebrewery
       Database__MigrateOnStartup: "true"
@@ -100,7 +103,8 @@ services:
       start_period: 10m      # the first start restores packages and builds the solution
       start_interval: 3s
 
-  # Vite dev server. node_modules is a named volume holding Linux binaries; `npm ci` runs only when
+  # Vite dev server, the stack's one origin. It listens on 8080, the port the router (deploy/stack/shared.yml)
+  # expects of every stack. node_modules is a named volume holding Linux binaries; `npm ci` runs only when
   # package-lock.json (or the Node version) differs from the last install into that volume.
   web:
     image: node:24
@@ -117,48 +121,32 @@ services:
           npm ci --no-audit --no-fund
           echo "$$want" > node_modules/.hb-install-stamp
         fi
-        exec npm run dev -- --host 0.0.0.0 --port 5173
+        exec npm run dev -- --host 0.0.0.0 --port 8080
     init: true
     restart: on-failure
     environment:
-      # Vite's proxy (vite.config.ts) is not on Caddy's path for /api, but keep it working for
-      # requests that reach Vite directly.
-      HB_API_URL: http://api:8080
+      HB_API_URL: http://api:8080   # the target of Vite's proxy
       HB_WATCH_POLLING: "1"
-      HB_HMR_CLIENT_PORT: ${HB_HTTP_PORT:-8080}
       NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    ports:
+      # Loopback only: the dev server has no authentication and serves source files.
+      - 127.0.0.1:${HB_HTTP_PORT:-8080}:8080
     volumes:
       - .:/repo                  # Vite reads ../themes (and later ../shared) next to web/
       - web-node-modules:/repo/web/node_modules
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:5173/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10m      # the first start runs npm ci
-      start_interval: 3s
-
-  # One origin for the browser: http://localhost:${HB_HTTP_PORT:-8080}.
-  caddy:
-    image: caddy:2
-    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
-    environment:
-      HB_HTTP_PORT: ${HB_HTTP_PORT:-8080}
-      HB_API_UPSTREAM: api:8080
-      HB_WEB_UPSTREAM: web:5173
-    ports:
-      # Loopback only: the dev server has no authentication and serves source files.
-      - 127.0.0.1:${HB_HTTP_PORT:-8080}:${HB_HTTP_PORT:-8080}
-    volumes:
-      - ./deploy/caddy:/etc/caddy:ro
     labels:
       # ./stack finds this worktree's stacks by it (the one of the branch checked out before holds the same port).
       hb.worktree: ${HB_WORKTREE:-}
     depends_on:
       api:
         condition: service_started
-      web:
-        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10m      # the first start runs npm ci
+      start_interval: 3s
 
 volumes:
   pgdata:

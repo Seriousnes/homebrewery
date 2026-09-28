@@ -16,14 +16,12 @@ const apiTarget = process.env.HB_API_URL ?? 'http://localhost:5080';
 // write check sees Origin and Host agree and cookies are set for the Vite origin.
 const apiProxy = { target: apiTarget, changeOrigin: false };
 
-// Container development (`docker compose up`, see docker-compose.yml). Both are unset on the host,
-// where Vite's defaults apply.
-// - HB_WATCH_POLLING=1: the repository is bind-mounted from the host, and file events from a
-//   Windows or macOS host don't reach the container, so the watcher polls instead.
-// - HB_HMR_CLIENT_PORT: the browser reaches Vite through Caddy on one origin (e.g. :8080), so the
-//   HMR client opens its websocket on Caddy's port instead of 5173.
+// Container development (`docker compose up`, see docker-compose.yml): HB_WATCH_POLLING=1, because the
+// repository is bind-mounted from the host and file events from a Windows or macOS host don't reach the
+// container, so the watcher polls instead. Unset on the host, where Vite's defaults apply.
+// The HMR client needs no port setting: it opens its websocket on the page's own host and port, whether the
+// browser came through the published port or the router (<branch>.homebrewery.dev.localhost, deploy/stack/shared.yml).
 const watchPolling = /^(?:1|true)$/i.test(process.env.HB_WATCH_POLLING ?? '');
-const hmrClientPort = Number(process.env.HB_HMR_CLIENT_PORT) || undefined;
 
 export default defineConfig({
   plugins: [
@@ -62,14 +60,13 @@ export default defineConfig({
     },
     port: 5173,
     strictPort: true,
-    // server.ws replaces the deprecated server.hmr.clientPort in Vite 8.
-    ws: { clientPort: hmrClientPort },
     // Binary files (theme fonts and images) change rarely, so they are polled less often.
     watch: watchPolling ? { usePolling: true, interval: 300, binaryInterval: 1000 } : {},
     proxy: {
       '^/api(?:/|$)': apiProxy,
       '^/share(?:/|$)': apiProxy,
       '^/openapi(?:/|$)': apiProxy,
+      '^/healthz(?:/|$)': apiProxy,
     },
     fs: {
       // web/ itself plus the shared theme sources imported through @themes.

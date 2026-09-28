@@ -2,21 +2,25 @@
 // The dev stack of this worktree's branch (README "Running locally"). Run it as ./stack (sh) or
 // .\stack (PowerShell, cmd) from the repository root:
 //
-//   ./stack up [-d --wait]     the branch's stack: compose project hb-<branch>, Caddy on http://localhost:<8080 + slot>
+//   ./stack up [-d --wait]     the branch's stack: compose project hb-<branch>, on http://<branch>.homebrewery.dev.localhost
+//                              (master: http://homebrewery.dev.localhost) and http://localhost:<8080 + slot>
 //   ./stack <compose args…>    any other compose command for that project: logs -f api, ps, restart api, stop, down …
 //   ./stack --prod up -d --build   the production image instead of the dev servers (compose.prod.yml)
-//   ./stack db <compose args…>     the shared PostgreSQL (deploy/stack/shared-db.yml): up -d, logs, stop …
-//   ./stack info               branch, slot, project, URL, database, test ports
-//   ./stack ls                 every branch stack and the shared database, with their state
+//   ./stack db <compose args…>     the shared project (deploy/stack/shared.yml: PostgreSQL and the router): up -d, logs, stop …
+//   ./stack info               branch, slot, project, URLs, database, test ports
+//   ./stack ls                 every branch stack and the shared project, with their state
 //   ./stack slot               this worktree's slot (for scripts)
 //
-// Every branch gets its own containers, networks and build volumes (dotnet bin/obj, node_modules), and every
-// worktree its own Caddy port (web/scripts/worktree.ts: 8080 for the main checkout, 8080 + n for worktree slot n;
-// HB_HTTP_PORT in the environment or .env overrides it). All of them use ONE PostgreSQL, the homebrewery-shared
-// project, so every stack sees the same data. Commands that start containers start it first (and, once, copy the
-// data of the old single-stack volume homebrewery_pgdata into it; one ./stack at a time, and an interrupted copy is
-// redone), stop this worktree's stack of the branch checked out before, which holds the same port, and stop the
-// containers of the other mode (app and backup of --prod in dev mode, api and web in --prod mode).
+// Every branch gets its own containers, networks and build volumes (dotnet bin/obj, node_modules), a name
+// (web/scripts/worktree.ts stackHost: the branch, lower case, [a-z0-9-]) that the shared router serves as
+// http://<name>.homebrewery.dev.localhost (master: http://homebrewery.dev.localhost; stackUrl), and every worktree
+// its own port (8080 for the main checkout, 8080 + n for worktree slot n; HB_HTTP_PORT in the environment or .env
+// overrides it). All of them use ONE PostgreSQL, in the
+// homebrewery-shared project, so every stack sees the same data. Commands that start containers start the database
+// first (and, once, copy the data of the old single-stack volume homebrewery_pgdata into it; one ./stack at a time,
+// and an interrupted copy is redone) and the router (a warning only when it can't start: the port still works), stop
+// this worktree's stack of the branch checked out before, which holds the same port, and stop the containers of the
+// other mode (app and backup of --prod in dev mode, api and web in --prod mode).
 //
 // Plain `docker compose up` still works: it runs docker-compose.yml alone, a stack with a database of its own.
 import { spawnSync } from 'node:child_process';
@@ -24,12 +28,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MAX_SLOT, slotPort, stackName, worktreeInfo } from '../../web/scripts/worktree.ts';
+import { MAX_SLOT, slotPort, stackHost, stackName, stackUrl, worktreeInfo } from '../../web/scripts/worktree.ts';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SHARED_PROJECT = 'homebrewery-shared';
 const SHARED_VOLUME = 'homebrewery-shared-pgdata';
-const SHARED_FILE = 'deploy/stack/shared-db.yml';
+const SHARED_FILE = 'deploy/stack/shared.yml';
+/** The router and the stacks' fronts (web, or app with --prod) meet on this network (deploy/stack/shared.yml). */
+const ROUTER_NETWORK = 'homebrewery-router';
 /** The volume of the single stack that docker-compose.yml ran before per-branch stacks (project "homebrewery"). */
 const OLD_VOLUME = 'homebrewery_pgdata';
 /** In the root of SHARED_VOLUME (next to PostgreSQL's 18/ folder) while the copy from OLD_VOLUME is not finished. */
@@ -75,6 +81,11 @@ function httpPort(slot) {
     // no .env
   }
   return String(8080 + slot);
+}
+
+/** The router's URL for stack name `host` (HB_ROUTER_PORT, default 80). */
+function routerUrl(host) {
+  return stackUrl(host, process.env.HB_ROUTER_PORT || '80');
 }
 
 /** Whether the lock's owner still runs (or has not written its pid yet). */
@@ -169,7 +180,30 @@ function prepareSharedDb() {
       fail(`the copy failed; ${OLD_VOLUME} is unchanged. Run this again to retry.`);
     }
   }
-  docker(['compose', '-f', SHARED_FILE, 'up', '-d', '--wait', '--wait-timeout', '120'], { inherit: true });
+  docker(['compose', '-f', SHARED_FILE, 'up', '-d', '--wait', '--wait-timeout', '120', 'db'], { inherit: true });
+}
+
+/** Creates ROUTER_NETWORK unless it exists (external in every compose file, so no project owns or removes it). */
+function ensureRouterNetwork() {
+  if (docker(['network', 'inspect', ROUTER_NETWORK], { allowFail: true }).status === 0) return;
+  // A ./stack running at the same time may create it first.
+  if (docker(['network', 'create', ROUTER_NETWORK], { allowFail: true }).status !== 0) docker(['network', 'inspect', ROUTER_NETWORK]);
+}
+
+/** Starts the router. A stack works without it (on its port), so a router that can't start is only a warning. */
+function ensureRouter(fallbackUrl) {
+  const up = docker(['compose', '-f', SHARED_FILE, 'up', '-d', 'router'], { inherit: true, allowFail: true });
+  if (up.status !== 0) {
+    say(`the router could not start (is port ${process.env.HB_ROUTER_PORT || 80} taken? HB_ROUTER_PORT picks another); the stack still answers on ${fallbackUrl}`);
+  }
+}
+
+/** Fails when a running stack of another branch has the same name (feature/foo and feature-foo): the router would mix them. */
+function checkHostFree(host, project) {
+  const others = lines(docker(['ps', '--filter', `label=hb.host=${host}`, '--format', '{{.Label "com.docker.compose.project"}}']).out).filter((p) => p !== project);
+  if (others.length) {
+    fail(`${[...new Set(others)].join(', ')} already runs as ${routerUrl(host)}. Stop it first (./stack stop in its worktree, or docker compose -p <project> stop).`);
+  }
 }
 
 /**
@@ -184,7 +218,7 @@ function stopContainers(name, services) {
   if (ids.length && docker(['stop', ...ids], { allowFail: true }).status !== 0) say(`could not stop every container of ${name}`);
 }
 
-/** Stops this worktree's stacks of other branches: they hold the same Caddy port. */
+/** Stops this worktree's stacks of other branches: they hold the same port (and would serve this checkout's files). */
 function stopOtherBranches(root, project) {
   const projects = new Set(
     lines(docker(['ps', '--filter', `label=hb.worktree=${root}`, '--format', '{{.Label "com.docker.compose.project"}}']).out).filter((p) => p && p !== project),
@@ -198,7 +232,9 @@ function stopOtherBranches(root, project) {
 const argv = process.argv.slice(2);
 const info = worktreeInfo(repo);
 const project = stackName(info);
+const host = stackHost(info);
 const port = httpPort(info.slot);
+const portUrl = `http://localhost:${port}`;
 
 if (argv[0] === 'slot') {
   console.log(info.slot);
@@ -213,7 +249,7 @@ if (argv[0] === 'info') {
   ];
   console.log(`branch      ${info.branch ?? '(detached HEAD)'}`);
   console.log(`worktree    ${info.root} (${info.main ? 'main checkout' : 'linked worktree'}, slot ${info.slot} of ${MAX_SLOT})`);
-  console.log(`stack       ${project} → http://localhost:${port}`);
+  console.log(`stack       ${project} → ${routerUrl(host)} or ${portUrl}`);
   console.log(`database    ${SHARED_PROJECT} (localhost:${process.env.HB_DB_PORT ?? 5432}, volume ${SHARED_VOLUME})`);
   for (const [label, ...bases] of testPorts) console.log(`test ports  ${label}: ${bases.map((b) => slotPort(b, info.slot)).join(' / ')}`);
   process.exit(0);
@@ -227,6 +263,7 @@ if (argv[0] === 'ls') {
 
 if (argv[0] === 'db') {
   const rest = argv.slice(1);
+  ensureRouterNetwork(); // compose refuses the project's files while an external network is missing
   if (rest[0] === 'up') {
     ensureSharedDb();
     process.exit(0);
@@ -240,17 +277,20 @@ if (!args.length) fail('usage: ./stack [--prod] <compose command …> | ./stack 
 
 const command = args.find((a) => !a.startsWith('-'));
 if (command && STARTS.has(command)) {
+  checkHostFree(host, project);
   ensureSharedDb();
+  ensureRouterNetwork();
+  ensureRouter(portUrl);
   stopOtherBranches(info.root, project);
   // The other mode's services are not in this mode's compose files, so compose would leave them running.
   stopContainers(project, prod ? ['api', 'web'] : ['app', 'backup']);
-  say(`${project} (branch ${info.branch ?? 'detached'}, slot ${info.slot}) → http://localhost:${port}`);
+  say(`${project} (branch ${info.branch ?? 'detached'}, slot ${info.slot}) → ${routerUrl(host)} or ${portUrl}`);
 }
 
 const files = ['-f', 'docker-compose.yml', '-f', 'deploy/stack/dev.yml', ...(prod ? ['-f', 'compose.prod.yml', '-f', 'deploy/stack/prod.yml'] : [])];
 const result = docker(['compose', '-p', project, ...files, ...args], {
   inherit: true,
   allowFail: true,
-  env: { HB_HTTP_PORT: port, HB_WORKTREE: info.root },
+  env: { HB_HTTP_PORT: port, HB_WORKTREE: info.root, HB_HOST: host },
 });
 process.exit(result.status);

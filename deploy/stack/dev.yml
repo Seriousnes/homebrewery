@@ -1,14 +1,27 @@
-# Override that ./stack (deploy/stack/stack.mjs) adds to docker-compose.yml: the stack uses the shared database
-# (deploy/stack/shared-db.yml) instead of its own. The api joins the shared network, where the database answers as
-# `db`, so its connection string stays the same.
+# Override that ./stack (deploy/stack/stack.mjs) adds to docker-compose.yml:
+# - The stack uses the shared database (deploy/stack/shared.yml) instead of its own. The api joins the shared
+#   network, where the database answers as `db`, so its connection string stays the same.
+# - web, the stack's one origin, joins the router network as hb-front-<HB_HOST>, so the shared router sends
+#   http://<HB_HOST>.homebrewery.dev.localhost (master: http://homebrewery.dev.localhost) to it. Only the router and
+#   the stacks' fronts are on that network: web never sees another stack's api there.
 services:
   db:
     scale: 0
   api:
     networks: [default, shared]
     depends_on: !reset {}
+  web:
+    networks:
+      default: {}
+      router:
+        aliases: ["hb-front-${HB_HOST:?./stack sets HB_HOST}"]
+    labels:
+      hb.host: ${HB_HOST}
 
 networks:
   shared:
     external: true
     name: homebrewery-shared
+  router:
+    external: true
+    name: homebrewery-router

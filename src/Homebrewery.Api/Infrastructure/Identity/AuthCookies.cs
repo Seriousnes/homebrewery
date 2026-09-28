@@ -9,7 +9,7 @@ namespace Homebrewery.Api.Infrastructure.Identity;
 /// <remarks>
 /// <para><c>Auth:CookieSecurePolicy</c>:</para>
 /// <list type="bullet">
-/// <item><c>SameAsRequest</c> (default): <c>Secure</c> when the request is HTTPS. Behind Caddy that is the browser's
+/// <item><c>SameAsRequest</c> (default): <c>Secure</c> when the request is HTTPS. Behind a TLS proxy that is the browser's
 /// scheme, because the forwarded-headers middleware (<see cref="ForwardedHeadersSetup"/>, switched on by
 /// <c>ASPNETCORE_FORWARDEDHEADERS_ENABLED=true</c>) applies <c>X-Forwarded-Proto</c> first. Plain-HTTP development
 /// (http://localhost:8080, TestServer) keeps working.</item>
