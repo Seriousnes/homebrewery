@@ -1,6 +1,7 @@
 // blocks.ts: read-outs for the toolbar, alignment, column breaks, the manual page break stand-in,
 // theme-block wrapping (plan §6.1, §6.2).
 import type { Editor, JSONContent } from '@tiptap/core';
+import { undoDepth } from '@tiptap/pm/history';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { AttrStep } from '@tiptap/pm/transform';
 import type { Command, Transaction } from '@tiptap/pm/state';
@@ -19,11 +20,17 @@ import {
   listKindOf,
   setAlign,
   setTextBlockKind,
+  setTextStyle,
   themeBlockAt,
+  themeBoxesAt,
   toggleTextBlockKind,
+  toggleThemeBox,
   unwrapThemeBlock,
   wrapInThemeBlock,
 } from './blocks';
+import { mountPaginated, type MountedEditor } from '../pagination/testEditor';
+import { DD, DL, DOC, DT, P, PAGE, canonical, pageTexts, posOf as posIn } from '../pagination/testing';
+import { runChain } from './keymap';
 
 let editor: Editor | undefined;
 afterEach(() => {
@@ -70,10 +77,10 @@ describe('read-outs', () => {
     expect([listKindOf(e.state), inListItem(e.state), inBlockquote(e.state)]).toEqual([null, false, true]);
   });
 
-  it('block kind of definition list parts is other; of a selected atom null', () => {
+  it('block kind of definition list parts is definitionList; of a selected atom null', () => {
     const e = open(docWith(node('definitionList', {}, [node('definitionTerm', {}, [text('Term')]), node('definitionDesc', {}, [text('Desc')])]), node('columnBreak'), p('x')));
     selectText(e, 'Term', 1);
-    expect(blockKindOf(e.state)).toBe('other');
+    expect(blockKindOf(e.state)).toBe('definitionList');
     const breakPos = e.state.doc.child(0).child(0).nodeSize + 1;
     selectNode(e, breakPos);
     expect(blockKindOf(e.state)).toBeNull();
@@ -234,5 +241,147 @@ describe('theme blocks', () => {
     e.commands.setTextSelection({ from: posOf(e.state.doc, 'two') + 1, to: posOf(e.state.doc, 'three') + 2 });
     run(e, wrapInThemeBlock([]));
     expect(shape(e)).toEqual([[['paragraph', 'one'], ['themeBlock', ['paragraph', 'two']]], [['paragraph', 'three']]]);
+  });
+});
+
+describe('text styles: definition lists', () => {
+  const dl = (...items: [string, string][]) =>
+    node('definitionList', {}, items.flatMap(([t, d]) => [node('definitionTerm', {}, t ? [text(t)] : []), node('definitionDesc', {}, d ? [text(d)] : [])]));
+  const style = (e: Editor, kind: Parameters<typeof setTextStyle>[0]) => runChain(e, (c) => c.command(setTextStyle(kind)));
+
+  it('a paragraph becomes a term and a description, split at "::"; the caret ends the description', () => {
+    const e = open(docWith(p('Armor Class :: 15 (natural armor)'), p('after')));
+    selectText(e, 'Armor', 2);
+    expect(style(e, 'definitionList')).toBe(true);
+    expect(shape(e)).toEqual([[['definitionList', ['definitionTerm', 'Armor Class'], ['definitionDesc', '15 (natural armor)']], ['paragraph', 'after']]]);
+    expect(e.state.selection.$from.parent.type.name).toBe('definitionDesc');
+    expect(e.state.selection.$from.parentOffset).toBe('15 (natural armor)'.length);
+    expect(blockKindOf(e.state)).toBe('definitionList');
+    expect(e.can().command(setTextStyle('definitionList'))).toBe(false); // already one
+    e.commands.undo();
+    expect(shape(e)).toEqual([[['paragraph', 'Armor Class :: 15 (natural armor)'], ['paragraph', 'after']]]);
+  });
+
+  it('several blocks become one list (a heading too, marks kept); without "::" the block is the term', () => {
+    const e = open(docWith(node('paragraph', {}, [text('Speed', [{ type: 'bold' }]), text(' :: 30 ft.')]), h(3, 'Senses'), p('rest')));
+    e.commands.setTextSelection({ from: posOf(e.state.doc, 'Speed') + 1, to: posOf(e.state.doc, 'Senses') + 2 });
+    expect(style(e, 'definitionList')).toBe(true);
+    expect(shape(e)).toEqual([[['definitionList', ['definitionTerm', 'Speed'], ['definitionDesc', '30 ft.'], ['definitionTerm', 'Senses'], ['definitionDesc', '']], ['paragraph', 'rest']]]);
+    expect(e.state.doc.child(0).child(0).child(0).child(0).marks.map((m) => m.type.name)).toEqual(['bold']);
+  });
+
+  it('merges a definition list in the selection', () => {
+    const e = open(docWith(p('A :: a'), dl(['B', 'b'])));
+    e.commands.setTextSelection({ from: posOf(e.state.doc, 'A') + 1, to: posOf(e.state.doc, 'B') + 1 });
+    expect(blockKindOf(e.state)).toBe('mixed');
+    expect(style(e, 'definitionList')).toBe(true);
+    expect(shape(e)).toEqual([[['definitionList', ['definitionTerm', 'A'], ['definitionDesc', 'a'], ['definitionTerm', 'B'], ['definitionDesc', 'b']]]]);
+  });
+
+  it('a list item’s first paragraph can’t become one: nothing changes', () => {
+    const e = open(docWith(ul(li(p('item :: x')))));
+    selectText(e, 'item', 1);
+    const before = e.state.doc;
+    expect(style(e, 'definitionList')).toBe(false);
+    expect(e.state.doc.eq(before)).toBe(true);
+    expect(undoDepth(e.state)).toBe(0);
+  });
+
+  it('another style turns the whole list into "Term :: Description" blocks; the caret keeps its place', () => {
+    const e = open(docWith(dl(['Str', '18'], ['Dex', ''], ['', 'lone'])));
+    selectText(e, '18', 1);
+    expect(style(e, 'heading2')).toBe(true);
+    expect(shape(e)).toEqual([[['heading', 'Str :: 18'], ['heading', 'Dex'], ['heading', 'lone']]]);
+    expect(e.state.doc.child(0).child(0).attrs.level).toBe(2);
+    expect(e.state.selection.$from.parent.textContent.slice(e.state.selection.$from.parentOffset)).toBe('8');
+    // …and back: the round trip is exact.
+    e.commands.setTextSelection({ from: posOf(e.state.doc, 'Str') + 1, to: posOf(e.state.doc, 'lone') + 1 });
+    style(e, 'definitionList');
+    expect(shape(e)).toEqual([
+      [['definitionList', ['definitionTerm', 'Str'], ['definitionDesc', '18'], ['definitionTerm', 'Dex'], ['definitionDesc', ''], ['definitionTerm', 'lone'], ['definitionDesc', '']]],
+    ]);
+    selectText(e, 'Dex', 1);
+    expect(style(e, 'paragraph')).toBe(true);
+    expect(shape(e)).toEqual([[['paragraph', 'Str :: 18'], ['paragraph', 'Dex'], ['paragraph', 'lone']]]);
+    expect(undoDepth(e.state)).toBe(3);
+  });
+});
+
+describe('text styles: split across pages (line layout, 10 lines of 10 characters)', () => {
+  let m: MountedEditor | undefined;
+  afterEach(() => {
+    m?.destroy();
+    m = undefined;
+  });
+  const words = (tag: string, n: number) => {
+    let s = '';
+    for (let i = 0; s.length < n; i++) s += `${tag}${i} `;
+    return s.slice(0, n);
+  };
+  const mount = (doc: PMNode) => {
+    m = mountPaginated(doc, { lines: { columns: 1 } });
+    m.settle();
+    return m;
+  };
+  const types = (x: MountedEditor) => {
+    const out: string[] = [];
+    canonical(x.editor.state.doc).child(0).forEach((b) => out.push(b.type.name));
+    return out;
+  };
+
+  it('a split paragraph becomes one definition list; one undo restores the pages', () => {
+    const x = mount(DOC(PAGE({ columns: 1, pid: 'aaaaaaaa' }, P(words('a', 50)), P(`Term :: ${words('b', 72)}`))));
+    const before = x.editor.state.doc;
+    expect(before.childCount).toBe(2);
+    x.select(posIn(before, 'Term') + 1);
+    expect(runChain(x.editor, (c) => c.command(setTextStyle('definitionList')))).toBe(true);
+    x.settle();
+    expect(types(x)).toEqual(['paragraph', 'definitionList']);
+    expect(canonical(x.editor.state.doc).child(0).child(1).child(1).textContent).toBe(words('b', 72));
+    expect(x.editor.commands.undo()).toBe(true);
+    x.settle();
+    expect(pageTexts(x.editor.state.doc)).toEqual(pageTexts(before));
+  });
+
+  it('a definition list split across pages becomes paragraphs, all of it; one undo restores it', () => {
+    const items = Array.from({ length: 8 }, (_, k) => [DT(`t${k}`), DD(`d${k}`)]).flat();
+    const x = mount(DOC(PAGE({ columns: 1, pid: 'aaaaaaaa' }, P(words('a', 50)), DL(null, ...items))));
+    const before = x.editor.state.doc;
+    expect(before.childCount).toBe(2);
+    x.select(posIn(before, 't0') + 1);
+    expect(runChain(x.editor, (c) => c.command(setTextStyle('paragraph')))).toBe(true);
+    x.settle();
+    expect(types(x)).toEqual(['paragraph', ...Array.from({ length: 8 }, () => 'paragraph')]);
+    expect(pageTexts(canonical(x.editor.state.doc)).flat().slice(1)).toEqual(Array.from({ length: 8 }, (_, k) => `t${k} :: d${k}`));
+    expect(x.editor.commands.undo()).toBe(true);
+    x.settle();
+    expect(pageTexts(x.editor.state.doc)).toEqual(pageTexts(before));
+  });
+});
+
+describe('text styles: theme boxes', () => {
+  it('wraps in a box, swaps the box class (keeping wide), and takes the box off', () => {
+    const e = open(docWith(p('one'), p('two')));
+    selectText(e, 'one', 1);
+    expect(themeBoxesAt(e.state)).toEqual([]);
+    expect(run(e, toggleThemeBox('note'))).toBe(true);
+    expect(shape(e)).toEqual([[['themeBlock', ['paragraph', 'one']], ['paragraph', 'two']]]);
+    expect(themeBoxesAt(e.state)).toEqual(['note']);
+    const boxPos = 1; // the first block of the first page
+    e.view.dispatch(e.state.tr.setNodeAttribute(boxPos, 'classes', ['note', 'wide']));
+    expect(run(e, toggleThemeBox('descriptive'))).toBe(true);
+    expect(e.state.doc.child(0).child(0).attrs.classes).toEqual(['descriptive', 'wide']);
+    expect(themeBoxesAt(e.state)).toEqual(['descriptive']);
+    expect(run(e, toggleThemeBox('descriptive'))).toBe(true);
+    expect(shape(e)).toEqual([[['paragraph', 'one'], ['paragraph', 'two']]]);
+  });
+
+  it('takes off the box with the class, not an inner theme block; nested boxes read out', () => {
+    const e = open(docWith(block(['quote'], block(['monster'], p('inside')))));
+    selectText(e, 'inside', 1);
+    expect(themeBoxesAt(e.state)).toEqual(['quote']);
+    expect(run(e, toggleThemeBox('quote'))).toBe(true);
+    expect(shape(e)).toEqual([[['themeBlock', ['paragraph', 'inside']]]]);
+    expect(e.state.doc.child(0).child(0).attrs.classes).toEqual(['monster']);
   });
 });

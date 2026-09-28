@@ -107,6 +107,23 @@ describe('EditorToolbar', () => {
     expect(e.state.doc.child(0).child(0).type.name).toBe('blockquote');
   });
 
+  it('the block type menu previews every text style in the theme’s markup and offers definition lists', async () => {
+    const { e, user } = mount(docWith(p('Speed :: 30 ft.')));
+    act$(() => selectText(e, 'Speed', 1));
+    await user.click(button('Block type: Paragraph'));
+    const menu = screen.getByRole('menu', { name: 'Block type' });
+    const names = within(menu)
+      .getAllByRole('menuitemradio')
+      .map((item) => item.getAttribute('aria-label') ?? item.textContent);
+    expect(names).toEqual(['Paragraph', 'Heading 1', 'Heading 2', 'Heading 3', 'Heading 4', 'Heading 5', 'Heading 6', 'Code block', 'Definition list']);
+    const h1 = within(menu).getByRole('menuitemradio', { name: 'Heading 1' });
+    expect(h1.querySelector('.hb-canvas > .page > h1')).toHaveTextContent('Heading 1');
+    await user.click(within(menu).getByRole('menuitemradio', { name: 'Definition list' }));
+    expect(e.state.doc.child(0).child(0).type.name).toBe('definitionList');
+    expect(button('Block type: Definition list')).toBeInTheDocument();
+    expect(Number(undoDepth(e.state))).toBe(1);
+  });
+
   it('alignment buttons set and reset the paragraph align', async () => {
     const { e, user } = mount(docWith(p('alpha')));
     act$(() => selectText(e, 'alpha', 1));
