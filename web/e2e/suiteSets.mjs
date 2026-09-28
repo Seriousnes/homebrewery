@@ -1,10 +1,9 @@
 // The whole e2e suite as several short Playwright runs ("sets"), for e2e/matrix/run-suite.mjs
 // (private API, as CI) and e2e/run-playwright.mjs (`npm run e2e`, no API). Every Playwright run is
 // capped at 5 minutes (playwright.config.ts globalTimeout; CLAUDE.md "Tests fail fast"), so a big
-// suite is never one run: first the parallel projects (chromium, firefox) in groups of folders
-// (SETS), then the @serial tests (the performance work on the big fixtures and S2: one worker,
-// nothing else running, so the timings they report are clean; they assert counts, not times) in
-// chromium-serial and in firefox-serial. Firefox runs only the editing and pagination specs
+// suite is never one run: the projects (chromium, firefox) in groups of folders (SETS). The
+// performance tests (e2e/perf) are not part of the suite: run by hand, e2e/perf/run-perf.mjs.
+// Firefox runs only the editing and pagination specs
 // (playwright.config.ts FIREFOX_SPECS), so most sets are Chromium only. The runner stops at the
 // first set that fails and prints each set's wall time; a set over 4 minutes is flagged: split it
 // (move folders to another set). The full suite runs in CI; locally, run the unit tests, the specs
@@ -28,7 +27,7 @@ export const SETS = [
   { name: 'a11y, snippets, objects, inspector, panels', paths: ['e2e/a11y', 'e2e/smoke.spec.ts', 'e2e/dev-schema.spec.ts', 'e2e/snippets', 'e2e/snippets-editor', 'e2e/objects', 'e2e/inspector', 'e2e/panels'] },
   { name: 'shell, toolbar, save, flows, lists, admin, export', paths: ['e2e/shell', 'e2e/toolbar', 'e2e/ui-kit', 'e2e/save', 'e2e/flows', 'e2e/lists', 'e2e/admin', 'e2e/export'] },
   { name: 'canvas, pagination, sections', paths: ['e2e/canvas', 'e2e/pagination', 'e2e/sections'] },
-  { name: 'matrix, import, perf', paths: ['e2e/matrix', 'e2e/import', 'e2e/import-ui', 'e2e/perf', 'e2e/security'] },
+  { name: 'matrix, import', paths: ['e2e/matrix', 'e2e/import', 'e2e/import-ui', 'e2e/security'] },
 ];
 
 /** Top-level entries of web/e2e with specs: folders holding a *.spec.ts, and *.spec.ts files (not _scratch ones). */
@@ -36,6 +35,7 @@ export function specEntries() {
   const isSpec = (name) => /^[^_].*\.spec\.ts$/.test(name);
   const hasSpec = (dir) => readdirSync(dir, { withFileTypes: true }).some((e) => (e.isDirectory() ? hasSpec(path.join(dir, e.name)) : isSpec(e.name)));
   return readdirSync(path.join(webDir, 'e2e'), { withFileTypes: true })
+    .filter((e) => e.name !== 'perf') // performance tests: run-perf.mjs only
     .filter((e) => (e.isDirectory() ? hasSpec(path.join(webDir, 'e2e', e.name)) : isSpec(e.name)))
     .map((e) => `e2e/${e.name}`);
 }
@@ -55,9 +55,9 @@ export function timePerFolder(tests) {
 
 /**
  * The sets for `args` (playwright arguments; give options their values with `=`):
- *   - no file or folder filter: SETS, then the two serial sets;
- *   - a filter: one parallel set with it, then the two serial sets with it.
- * Options go to every set (--workers not to the serial ones). Each set gets its own output folder
+ *   - no file or folder filter: SETS;
+ *   - a filter: one set with it.
+ * Options go to every set. Each set gets its own output folder
  * test-results/<port>-<set>: a run empties its folder first, which would drop the traces of the
  * sets before it. A --grep may select nothing in a set: that is not a failure.
  * `only` (set numbers from 1, e.g. from --set=2,6) keeps just those sets.
@@ -73,22 +73,9 @@ export function planSets(args, { port, only = null, log = console.log }) {
     groups = SETS.map((s, i) => (i === SETS.length - 1 ? { ...s, paths: [...s.paths, ...unnamed] } : s));
   }
   const slug = (name) => name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
-  const sets = [
-    ...groups.map((g) => ({
-      name: g.name,
-      args: ['--project=chromium', '--project=firefox', '--pass-with-no-tests', `--output=test-results/${port}-${slug(g.name)}`, ...g.paths, ...options],
-    })),
-    ...['chromium', 'firefox'].map((browser) => ({
-      name: `serial ${browser}`,
-      args: [
-        `--project=${browser}-serial`,
-        '--workers=1',
-        '--pass-with-no-tests',
-        `--output=test-results/${port}-${browser}-serial`,
-        ...filters,
-        ...options.filter((a) => !a.startsWith('--workers')),
-      ],
-    })),
-  ];
+  const sets = groups.map((g) => ({
+    name: g.name,
+    args: ['--project=chromium', '--project=firefox', '--pass-with-no-tests', `--output=test-results/${port}-${slug(g.name)}`, ...g.paths, ...options],
+  }));
   return pickSets(sets, only);
 }

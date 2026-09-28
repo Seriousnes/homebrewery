@@ -9,9 +9,10 @@
 // steps per page plus one per pull), no other pass, and boundaries moved (on after the inserts,
 // back after the delete). The time, measured in the page from a performance mark right before
 // the edit to the settle, is reported (console and timings.json), never asserted: it depends on how
-// fast and how busy the machine is. Tagged @serial (the serial projects, one worker) so the reported
+// fast and how busy the machine is. A performance test (e2e/perf: local, run by hand with
+// run-perf.mjs, never in CI), tagged @serial (the serial projects, one worker) so the reported
 // times come from a run with nothing beside it; the assertions don't need it.
-import { expect, section, SETTLE_TIMEOUT, test, useHarness } from './harness';
+import { expect, section, SETTLE_TIMEOUT, test, useHarness } from '../pagination/harness';
 import { passShape, passStepLimit } from './passShape';
 
 test('a 30-page section settles in one forward pass after an edit on page 1 @serial', async ({ page }, testInfo) => {

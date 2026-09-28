@@ -41,7 +41,7 @@
 //
 // With HB_PERF_OUT=<file>, every result is also appended to that file as one JSON line.
 import { expect, test, type Page } from '@playwright/test';
-import { passShape, passStepLimit, type PassShape } from '../pagination/passShape';
+import { passShape, passStepLimit, type PassShape } from './passShape';
 import { rawBrew150, rawSection50, textLength, type JsonNode } from './fixtureGen';
 import {
   machineContext,

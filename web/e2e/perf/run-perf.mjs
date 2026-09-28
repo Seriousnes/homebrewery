@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Runs the performance e2e (web/e2e/perf, plan §4.10 / P8.1) on its own: one worker (the specs
+// Runs the performance e2e (web/e2e/perf, plan §4.10 / P8.1, S2) on its own: one worker (the specs
 // report timings, which other work beside them would skew; they assert counts, never times),
-// against a server nobody edits under it.
+// against a server nobody edits under it. Local and by hand only: CI and the suite runners never
+// run them (Playwright ignores e2e/perf without E2E_PERF=1, which this script sets).
 //
 //   node e2e/perf/run-perf.mjs [playwright args…]          (from web/) Vite dev server, no HMR
 //   node e2e/perf/run-perf.mjs --prod [playwright args…]   a production build with the dev routes
@@ -11,7 +12,7 @@
 // Three short sets (each its own Playwright run, under the 5-minute cap; the next runs only when
 // one passed): 1, the smoke tests and pagination-work.spec.ts (chromium; firefox runs only
 // pagination-work.spec.ts, playwright.config.ts FIREFOX_SPECS); 2, the performance work on the big
-// fixtures (@serial) in chromium-serial; 3, the same in firefox-serial (about 2 minutes each).
+// fixtures and S2 (@serial) in chromium-serial; 3, the same in firefox-serial (about 2 minutes each).
 // The timings are the output: one line per result, attachments, HB_PERF_OUT (perf.spec.ts).
 // --set=<n>[,<n>…] runs only those. With a --project argument it runs once, as given.
 //
@@ -41,7 +42,7 @@ try {
   } else {
     ({ url: baseUrl } = await runner.startVite({ port, config: 'e2e/perf/vite.perf.config.mjs' }));
   }
-  const env = { E2E_PORT: port, E2E_BASE_URL: baseUrl, HB_PERF_BUILD: prod ? 'production' : 'development' };
+  const env = { E2E_PERF: '1', E2E_PORT: port, E2E_BASE_URL: baseUrl, HB_PERF_BUILD: prod ? 'production' : 'development' };
   const base = ['e2e/perf', '--workers=1', ...args];
   if (args.some((a) => a === '--project' || a.startsWith('--project='))) {
     status = (await runner.runPlaywright(base, { env })).status;
@@ -49,8 +50,8 @@ try {
     // Each set its own output folder: a run empties its folder first.
     const sets = [
       { name: 'smoke', args: ['--project=chromium', '--project=firefox', `--output=test-results/${port}-smoke`, ...base] },
-      { name: 'budgets chromium', args: ['--project=chromium-serial', `--output=test-results/${port}-chromium-serial`, ...base] },
-      { name: 'budgets firefox', args: ['--project=firefox-serial', `--output=test-results/${port}-firefox-serial`, ...base] },
+      { name: 'serial chromium', args: ['--project=chromium-serial', `--output=test-results/${port}-chromium-serial`, ...base] },
+      { name: 'serial firefox', args: ['--project=firefox-serial', `--output=test-results/${port}-firefox-serial`, ...base] },
     ];
     status = (await runner.runSets(pickSets(sets, only), { env })).status;
   }

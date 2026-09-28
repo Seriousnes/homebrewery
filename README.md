@@ -200,7 +200,12 @@ skip without one. Rarely needed locally, from `web/`:
 ```
 node e2e/matrix/run-suite.mjs     # the whole suite as CI runs it: private API (:5474) and Vite (:5374) + 1000 × slot, in short sets
 node e2e/security/run-csp.mjs     # the production build under the enforced CSP, every page
+node e2e/perf/run-perf.mjs        # the performance tests (web/e2e/perf): local and by hand only, never in CI
 ```
+
+The performance tests assert counts of pagination work and report their timings (never asserted).
+Playwright ignores `web/e2e/perf` unless `E2E_PERF=1`, which `run-perf.mjs` sets, so CI, `npm run e2e`
+and the suite runners never run them.
 
 After changing an endpoint or a DTO, regenerate `shared/openapi.json` and `web/src/api/schema.d.ts`
 (`OpenApiExportTests` fails while they are stale):
