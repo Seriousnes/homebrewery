@@ -9,12 +9,13 @@ import { addColumnAfter, addRowAfter, CellSelection, deleteColumn, deleteRow, me
 import { describe, expect, it } from 'vitest';
 import classTableText from '../../../e2e/fixtures/snippet-5ephb-tables-class-tables-full-caster-class-table.hbfm.txt?raw';
 import { createHbfmRenderer } from '../import/hbfm/renderer';
-import { DOC, P, PAGE, posOf, schema } from '../pagination/testing';
+import { BLOCK, DOC, P, PAGE, posOf, schema } from '../pagination/testing';
 import { markMultilineDefinitionLists } from '../schema';
 import {
   createTable,
   insertTable,
   isHeaderRowSelected,
+  removeTable,
   resetColumnWidths,
   selectedColumnWidth,
   setColumnWidth,
@@ -252,5 +253,61 @@ describe('insertTable', () => {
     expect(headerRowCount(node)).toBe(1);
     expect(s.selection.$from.node(-1).type.name).toBe('tableHeader');
     expect(undoDepth(s)).toBe(1);
+  });
+});
+
+describe('removeTable', () => {
+  const at = (doc: PMNode) => inCell(EditorState.create({ doc, plugins: plugins() }), 1, 1);
+
+  it('deletes the table; the caret goes to the start of the block after it, one undo step', () => {
+    let s = at(DOC(PAGE(null, P('Before'), createTable(schema, { rows: 3, cols: 3 })!, P('After'))));
+    s = run(s, removeTable)!;
+    expect(s.doc.child(0).childCount).toBe(2);
+    expect(s.selection.empty).toBe(true);
+    expect(s.selection.$from.parent.textContent).toBe('After');
+    expect(s.selection.$from.parentOffset).toBe(0);
+    expect(undoDepth(s)).toBe(1);
+    s = run(s, undo)!;
+    expect(firstTable(s.doc).node.childCount).toBe(3);
+  });
+
+  it('puts the caret at the end of the block before when the table was last', () => {
+    let s = at(DOC(PAGE(null, P('Before'), createTable(schema, { rows: 2, cols: 2 })!)));
+    s = run(s, removeTable)!;
+    expect(s.selection.$from.parent.textContent).toBe('Before');
+    expect(s.selection.$from.parentOffset).toBe(6);
+  });
+
+  it("leaves an empty paragraph when the table was its page's only block", () => {
+    let s = at(DOC(PAGE(null, createTable(schema, { rows: 2, cols: 2 })!), PAGE(null, P('Next page'))));
+    s = run(s, removeTable)!;
+    expect(s.doc.child(0).childCount).toBe(1);
+    expect(s.doc.child(0).child(0).type.name).toBe('paragraph');
+    expect(s.selection.$from.parent).toBe(s.doc.child(0).child(0));
+  });
+
+  it('deletes the class table block with its heading, but only the table from a block with other content', () => {
+    let s = inCell(EditorState.create({ doc: classTableDoc(), plugins: plugins() }), 3, 0);
+    const blocks = s.doc.child(0).childCount;
+    s = run(s, removeTable)!;
+    let found = false;
+    s.doc.descendants((n) => {
+      if (n.type.name === 'table' || (n.type.name === 'themeBlock' && (n.attrs.classes as string[]).includes('classTable'))) found = true;
+    });
+    expect(found).toBe(false);
+    expect(s.doc.child(0).childCount).toBeLessThanOrEqual(blocks);
+
+    const table = createTable(schema, { rows: 2, cols: 2 })!;
+    s = at(DOC(PAGE(null, BLOCK(['classTable'], P('A note that stays'), table), P('After'))));
+    s = run(s, removeTable)!;
+    const block = s.doc.child(0).child(0);
+    expect(block.type.name).toBe('themeBlock');
+    expect(block.childCount).toBe(1);
+    expect(block.textContent).toBe('A note that stays');
+  });
+
+  it('does nothing outside a table', () => {
+    const s = EditorState.create({ doc: DOC(PAGE(null, P('x'))), plugins: plugins() });
+    expect(removeTable(s)).toBe(false);
   });
 });

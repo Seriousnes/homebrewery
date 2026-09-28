@@ -71,6 +71,19 @@
   opacity: 0.8;
 }
 
+.submenuArrow {
+  flex: none;
+  margin-left: 16px;
+}
+
+/* A hint under the items (ContextMenu footer), styled as the group labels. */
+.footer {
+  padding: 6px 10px;
+  font-size: 10px;
+  color: var(--hbui-bar-text-disabled);
+  border-top: 1px solid var(--hbui-bar-divider);
+}
+
 .separator {
   height: 1px;
   margin: 0;

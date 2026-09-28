@@ -63,6 +63,7 @@ import {
 } from '@/editor/save';
 import { SnippetGeneratorError, generateStyleSnippet, groupsForView, insertStyleSnippet, useSnippetGroups } from '@/editor/snippets';
 import { BlockMenu } from '@/editor/ui/blockMenu/BlockMenu';
+import { ContextMenuHost } from '@/editor/ui/contextMenu';
 import { IconPickerButton } from '@/editor/ui/iconPicker/IconPicker';
 import { InsertMenu, SnippetPicker } from '@/editor/ui/insertMenu';
 import { InspectorPanel } from '@/editor/ui/inspector';
@@ -70,6 +71,7 @@ import { MetadataDialog } from '@/editor/ui/metadata/MetadataDialog';
 import { OutlinePanel } from '@/editor/ui/outline/OutlinePanel';
 import { usePageTracker } from '@/editor/ui/pageNav/usePageTracker';
 import { SnippetsPanel, SnippetsToggle, useSnippetsEditor } from '@/editor/ui/snippetsEditor';
+import { SourceEditorHost } from '@/editor/ui/sourceEditor';
 import { StylePanel } from '@/editor/ui/styleDrawer';
 import { TableMenu } from '@/editor/ui/tableMenu/TableMenu';
 import { EditorToolbar } from '@/editor/ui/toolbar';
@@ -619,6 +621,8 @@ export function EditorApp({
         ) : editable ? (
           <div className={styles.placeholderBar} />
         ) : null}
+        {/* The right-click menu (a portal; its editor needs HbContextMenu, editingExtensions). */}
+        {editable && editor ? <ContextMenuHost editor={editor} /> : null}
         <EditorAppBar
           mode={mode}
           editor={editor}
@@ -731,6 +735,7 @@ export function EditorApp({
           local
         />
       ) : null}
+      {editable && editor ? <SourceEditorHost editor={editor} /> : null}
     </div>
   );
 }

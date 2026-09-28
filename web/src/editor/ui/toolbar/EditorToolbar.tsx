@@ -1,10 +1,11 @@
 import type { Editor } from '@tiptap/core';
 import clsx from 'clsx';
-import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef } from 'react';
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { type Spread, uiStore, useUiStore, ZOOM_LEVELS } from '@/app/uiStore';
 import { IconButton, type IconName, type MenuEntry, MenuButton, Toolbar, ToolbarGroup, ToolbarSeparator } from '@/ui';
-import { type AlignValue, TEXT_BLOCK_KINDS, TEXT_BLOCK_LABELS, type TextBlockKind } from '../../commands/blocks';
+import { type AlignValue, TEXT_STYLE_LABELS } from '../../commands/blocks';
 import { editorActions, emitKeymapRequest, onKeymapRequest, shortcutFor, type ShortcutId } from '../../commands/keymap';
+import { textStyleEntries } from './textStyles';
 import { EditorDialogs } from './EditorDialogs';
 import styles from './EditorToolbar.module.css';
 import type { ToolbarMark } from './toolbarState';
@@ -41,28 +42,6 @@ const ALIGN_BUTTONS: readonly { value: Exclude<AlignValue, null>; icon: IconName
   { value: 'justify', icon: 'alignJustify', label: 'Justify' },
 ];
 
-const KIND_ICONS: Record<TextBlockKind, IconName> = {
-  paragraph: 'paragraph',
-  heading1: 'heading1',
-  heading2: 'heading2',
-  heading3: 'heading3',
-  heading4: 'heading',
-  heading5: 'heading',
-  heading6: 'heading',
-  codeBlock: 'code',
-};
-
-const KIND_SHORTCUTS: Record<TextBlockKind, ShortcutId> = {
-  paragraph: 'paragraph',
-  heading1: 'heading1',
-  heading2: 'heading2',
-  heading3: 'heading3',
-  heading4: 'heading4',
-  heading5: 'heading5',
-  heading6: 'heading6',
-  codeBlock: 'codeBlock',
-};
-
 const SPREAD_LABELS: Record<Spread, string> = { single: 'Single pages', facing: 'Facing pages', flow: 'Flowing pages' };
 const SPREAD_ICONS: Record<Spread, IconName> = { single: 'spreadSingle', facing: 'spreadFacing', flow: 'spreadFlow' };
 
@@ -80,6 +59,7 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
   const zoom = useUiStore((s) => s.zoom);
   const spread = useUiStore((s) => s.spread);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [blockMenuOpen, setBlockMenuOpen] = useState(false);
 
   // Alt+F10 in the editor: focus the toolbar's current item.
   useEffect(
@@ -116,39 +96,10 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
   };
 
   const blockLabel =
-    state.blockKind === null ? 'Block' : state.blockKind === 'mixed' ? 'Mixed' : state.blockKind === 'other' ? 'Definition' : TEXT_BLOCK_LABELS[state.blockKind];
-  const blockItems: MenuEntry[] = [
-    {
-      type: 'group',
-      id: 'text-style',
-      label: 'Text style',
-      items: TEXT_BLOCK_KINDS.map((kind) => ({
-        id: kind,
-        type: 'radio' as const,
-        label: TEXT_BLOCK_LABELS[kind],
-        icon: KIND_ICONS[kind],
-        shortcut: shortcutFor(KIND_SHORTCUTS[kind]).label,
-        checked: state.blockKind === kind,
-        onSelect: () => {
-          editorActions.setBlockKind(editor, kind);
-          focusEditor();
-        },
-      })),
-    },
-    { type: 'separator' },
-    {
-      id: 'blockquote',
-      type: 'checkbox',
-      label: 'Blockquote',
-      icon: 'quote',
-      shortcut: shortcutFor('blockquote').label,
-      checked: state.quote,
-      onCheckedChange: () => {
-        editorActions.blockquote(editor);
-        focusEditor();
-      },
-    },
-  ];
+    state.blockKind === null ? 'Block' : state.blockKind === 'mixed' ? 'Mixed' : state.blockKind === 'other' ? 'Text' : TEXT_STYLE_LABELS[state.blockKind];
+  // Built while the menu is open only: the previews and the theme boxes on offer follow the
+  // stylesheets applied when it opens (and the state, which re-renders the toolbar).
+  const blockItems: MenuEntry[] = blockMenuOpen ? textStyleEntries(editor, editor.state, { afterSelect: focusEditor }) : [];
 
   const classItems: MenuEntry[] = [
     {
@@ -205,6 +156,8 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
             aria-label={`Block type: ${blockLabel}`}
             menuLabel="Block type"
             items={blockItems}
+            open={blockMenuOpen}
+            onOpenChange={setBlockMenuOpen}
             variant="ghost"
             disabled={disabled || state.blockKind === null}
             className={styles.blockType}

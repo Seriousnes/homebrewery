@@ -9,6 +9,8 @@
 //                                                     render like upstream's <thead>
 // - setColumnWidth(px | null), resetColumnWidths()    colwidth of the selected columns
 // - toggleTableClass(cls)                             classTable, frame, decoration, wide
+// - removeTable                                       the table (with its class table block),
+//                                                     caret to the text where it was
 //
 // Table classes live where upstream puts them: `{{classTable,frame,decoration …}}` is a theme
 // block around the table (5ePHB styles `.classTable.frame`), so they are toggled on that
@@ -17,7 +19,7 @@
 // the table itself. Every command is one transaction (one undo step) and changes attributes with
 // setNodeAttribute (pagination convention, PG-2).
 import type { Node as PMNode, Schema } from '@tiptap/pm/model';
-import { TextSelection, type Command, type EditorState, type Transaction } from '@tiptap/pm/state';
+import { Selection, TextSelection, type Command, type EditorState, type Transaction } from '@tiptap/pm/state';
 import { CellSelection, selectedRect, isInTable, type TableMap, type TableRect } from '@tiptap/pm/tables';
 import { insertBlock } from '../ui/blockMenu/blockCommands';
 
@@ -308,3 +310,48 @@ export function toggleTableClass(cls: TableClass): Command {
     return true;
   };
 }
+
+// ---------------------------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------------------------
+
+/** Whether the class table block holds nothing but the table, headings and empty text blocks (the snippet's shape). */
+function holdsOnlyTable(wrapper: PMNode, table: PMNode): boolean {
+  let only = true;
+  wrapper.forEach((child) => {
+    if (child !== table && child.type.name !== 'heading' && !(child.isTextblock && child.content.size === 0)) only = false;
+  });
+  return only;
+}
+
+/**
+ * Deletes the table at the selection, with its class table block when that holds only the table
+ * (and its heading). The caret goes into the block that followed it, else to the end of the one
+ * before; an empty paragraph takes its place when it was its parent's only block (a page, a
+ * theme block).
+ */
+export const removeTable: Command = (state, dispatch) => {
+  const ctx = tableContext(state);
+  if (!ctx) return false;
+  const target = ctx.wrapper && holdsOnlyTable(ctx.wrapper.node, ctx.table) ? ctx.wrapper : { node: ctx.table, pos: ctx.tablePos };
+  const from = target.pos;
+  const to = from + target.node.nodeSize;
+  const $from = state.doc.resolve(from);
+  const paragraph = state.schema.nodes.paragraph;
+  const alone = $from.parent.childCount === 1;
+  if (alone && !(paragraph && $from.parent.canReplaceWith($from.index(), $from.index() + 1, paragraph))) return false;
+  if (!dispatch) return true;
+  const tr = state.tr;
+  if (alone) {
+    tr.replaceWith(from, to, paragraph!.create());
+    tr.setSelection(TextSelection.create(tr.doc, from + 1));
+  } else {
+    tr.delete(from, to);
+    const $gap = tr.doc.resolve(from);
+    const next = $gap.nodeAfter ? Selection.findFrom($gap, 1, true) : null;
+    const selection = next && next.from < from + ($gap.nodeAfter?.nodeSize ?? 0) ? next : (Selection.findFrom($gap, -1, true) ?? Selection.near($gap));
+    tr.setSelection(selection);
+  }
+  dispatch(tr.scrollIntoView());
+  return true;
+};

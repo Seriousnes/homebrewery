@@ -40,6 +40,16 @@ export const ICONS = {
   columnBreak: { d: 'M3 5h7 M3 9h7 M3 13h4 M7 13v4h6 M10.5 14.5 13 17l-2.5 2.5 M14 5h7 M14 9h7 M17 13h4' },
   columns: { d: `${page} M12 4v16` },
   table: { d: 'M4 5h16v14H4z M4 10h16 M4 14.5h16 M10 5v14' },
+
+  // Tables: a half table with a plus (add) or a cross (delete) on the side it acts on.
+  rowAbove: { d: 'M4 11h16v9H4z M4 15.5h16 M12 11v9 M12 3v5 M9.5 5.5h5' },
+  rowBelow: { d: 'M4 4h16v9H4z M4 8.5h16 M12 4v9 M12 16v5 M9.5 18.5h5' },
+  rowDelete: { d: 'M4 4h16v9H4z M4 8.5h16 M12 4v9 M10 16l4 4 M14 16l-4 4' },
+  columnLeft: { d: 'M11 4h9v16h-9z M15.5 4v16 M11 12h9 M3 12h5 M5.5 9.5v5' },
+  columnRight: { d: 'M4 4h9v16H4z M8.5 4v16 M4 12h9 M16 12h5 M18.5 9.5v5' },
+  columnDelete: { d: 'M4 4h9v16H4z M8.5 4v16 M4 12h9 M16 10l4 4 M20 10l-4 4' },
+  cellsMerge: { d: 'M4 5h16v14H4z M12 5v3 M12 16v3 M5.5 12H10 M8.5 10.5 10 12l-1.5 1.5 M18.5 12H14 M15.5 10.5 14 12l1.5 1.5' },
+  cellSplit: { d: 'M4 5h16v14H4z M12 5v14 M10 12H6 M7.5 10.5 6 12l1.5 1.5 M14 12h4 M16.5 10.5 18 12l-1.5 1.5' },
   image: { d: 'M4 5h16v14H4z M4 16l4.5-4.5 3 3 3.5-3.5L20 16 M9 9h.01' },
   insert: { d: `${page} M12 8v8 M8 12h8` },
   plus: { d: 'M12 5v14 M5 12h14' },

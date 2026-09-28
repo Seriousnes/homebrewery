@@ -8,6 +8,7 @@ import type { CanvasGate } from '@/editor/canvas/canvasState';
 import { hbKeymapExtensions } from '@/editor/commands/keymap';
 import { pageEditingExtensions } from '@/editor/objects';
 import { paginatedExtensions } from '@/editor/paginatedExtensions';
+import { HbContextMenu } from '@/editor/ui/contextMenu/contextMenuExtension';
 
 /** The accessible name of the editor's root (TipTap gives it role="textbox" without one). */
 export const EDITOR_LABEL = 'Brew pages';
@@ -17,7 +18,7 @@ export const EDITOR_LABEL = 'Brew pages';
  * description (EditorApp renders it, visually hidden, and passes its id as `describedBy`).
  */
 export const EDITOR_KEYBOARD_HINT =
-  'Alt+F10 moves to the editing toolbar; Escape comes back to the text. Shift+Alt+F10 moves to the controls of the theme block at the caret. In lists Tab indents and in tables it moves between cells; elsewhere Shift+Tab reaches the toolbars and Tab the panels.';
+  'Alt+F10 moves to the editing toolbar; Escape comes back to the text. Shift+Alt+F10 moves to the controls of the table or theme block at the caret. In lists Tab indents and in tables it moves between cells; elsewhere Shift+Tab reaches the toolbars and Tab the panels.';
 
 export interface EditorAccessibilityOptions {
   label: string;
@@ -48,13 +49,15 @@ export const EditorAccessibility = Extension.create<EditorAccessibilityOptions>(
 
 /**
  * The editable editor: keymap (§6.1), pagination with sections, seam editing and history-safe
- * block types (§4), page objects, icon autocomplete and definition-list keys (§4.9, §6.6).
+ * block types (§4), page objects, icon autocomplete and definition-list keys (§4.9, §6.6), and
+ * the right-click menu.
  */
 export function editingExtensions(gate: CanvasGate, label = EDITOR_LABEL, describedBy: string | null = null): AnyExtension[] {
   return [
     ...hbKeymapExtensions,
     ...paginatedExtensions({ gate }),
     ...pageEditingExtensions,
+    HbContextMenu,
     EditorAccessibility.configure({ label, readOnly: false, describedBy }),
   ];
 }

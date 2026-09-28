@@ -158,7 +158,7 @@ test.describe('Insert menu', () => {
     await trigger(page).click();
     await search(page).fill('license');
     await expect(listbox(page).getByRole('option').first()).toBeVisible();
-    const results = await new AxeBuilder({ page }).setLegacyMode(true).include('[data-testid="insert-menu-popover"]').include('[data-testid="insert-menu"]').analyze();
+    const results = await new AxeBuilder({ page }).setLegacyMode(true).include('[data-testid="insert-menu-dialog"]').include('[data-testid="insert-menu"]').analyze();
     expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes[0]?.html ?? ''}`)).toEqual([]);
   });
 });

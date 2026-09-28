@@ -67,6 +67,40 @@ async function holdRequests(page: Page, url: RegExp): Promise<HeldRequests> {
   return { arrived, release };
 }
 
+/**
+ * Requests held back one by one: each waits until a release covers it, and a release also covers
+ * the matching requests that arrive later. What a theme switch waits for is then decided by the
+ * test alone, whatever the network, the engine or the machine's speed.
+ */
+interface GatedRequests {
+  /** Paths of the requests seen so far, in order. */
+  seen: string[];
+  /** Lets through every request (held or later) whose path matches. */
+  release: (path: RegExp) => void;
+}
+
+async function gateRequests(page: Page, url: RegExp): Promise<GatedRequests> {
+  const seen: string[] = [];
+  const released: RegExp[] = [];
+  const waiting: { path: string; go: () => void }[] = [];
+  await page.route(url, async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    seen.push(path);
+    if (!released.some((r) => r.test(path))) await new Promise<void>((go) => waiting.push({ path, go }));
+    await route.continue().catch(() => undefined); // the page closed meanwhile
+  });
+  return {
+    seen,
+    release: (path) => {
+      released.push(path);
+      for (const w of waiting.splice(0)) {
+        if (path.test(w.path)) w.go();
+        else waiting.push(w);
+      }
+    },
+  };
+}
+
 /** The state of the canvas's theme styles at one moment. */
 interface ThemeSnapshot {
   /** Theme links that apply (not inert), by theme folder. */
@@ -77,22 +111,19 @@ interface ThemeSnapshot {
   font: boolean;
   /**
    * Once the new theme applies: the laid-out width of the first words of the first paragraph (the
-   * new theme's text font), compared with the width once everything has loaded; before, null.
+   * new theme's text font); before, null.
    */
   textWidth: number | null;
-  /** Once the new theme applies: whether each of its textures has been decoded; before, null. */
-  textures: boolean[] | null;
 }
 
 /**
  * Records the canvas's theme styles now and at every change of the theme links in <head> (a
  * MutationObserver: a link switched in, a stale link removed; the switch does both, and adopts
- * user CSS, in one task). Textures count as decoded once an image of theirs resolved decode()
- * (how the page loads images ahead; no engine tells synchronously whether an image is cached).
+ * user CSS, in one task).
  */
-async function recordThemeSwitch(page: Page, font: string, textures: string[]): Promise<void> {
+async function recordThemeSwitch(page: Page, font: string): Promise<void> {
   await page.evaluate(
-    ([family, urls]) => {
+    (family) => {
       const w = window as unknown as { __themeSnapshots: ThemeSnapshot[]; __textWidth: () => number; __themeReloads: string[] };
       // A theme link that loads again once applied: its sheet was dropped and re-created (what
       // changing a link's media attribute does in Firefox), so for a moment neither theme applied.
@@ -105,12 +136,6 @@ async function recordThemeSwitch(page: Page, font: string, textures: string[]): 
         },
         true,
       );
-      const decoded = new Set<string>();
-      const decode = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'decode')!.value as (this: HTMLImageElement) => Promise<void>;
-      HTMLImageElement.prototype.decode = function (this: HTMLImageElement) {
-        const src = this.src;
-        return decode.call(this).then(() => void decoded.add(src));
-      };
       // Layout reads bring the page up to date: the font a face is chosen from is the one set now.
       w.__textWidth = () => {
         const text = document.querySelector('.page p')!.firstChild!;
@@ -130,7 +155,6 @@ async function recordThemeSwitch(page: Page, font: string, textures: string[]): 
           userTheme,
           font: Array.from(document.fonts).some((f) => f.family.replace(/"/g, '') === family && f.status === 'loaded'),
           textWidth: applied ? w.__textWidth() : null,
-          textures: applied ? urls.map((url) => decoded.has(new URL(url, location.href).href)) : null,
         };
       };
       w.__themeSnapshots = [snapshot()];
@@ -141,7 +165,7 @@ async function recordThemeSwitch(page: Page, font: string, textures: string[]): 
         attributeFilter: ['media', 'data-hb-theme-applied'],
       });
     },
-    [font, textures] as const,
+    font,
   );
 }
 
@@ -317,41 +341,61 @@ test.describe('P3.3 EditorCanvas', () => {
     await expect.poll(() => page.evaluate(() => document.fonts.check('16px "Open Sans"'))).toBe(true);
   });
 
-  // Theme switches (themeLoader.applyThemeStyles). The new theme's fonts and textures are held
-  // back at the network and the page's clock is stopped, so what the switch waits for is decided
-  // by the test alone: while they are held the previous theme stays; once they are released the
-  // new theme applies, in one step, with its font loaded and its textures in the image cache.
+  // Theme switches (themeLoader.applyThemeStyles). Each of the new theme's font and texture
+  // requests is held at the network and the page's clock is stopped, so what the switch waits for
+  // is decided by the test alone, never by how fast a machine loads or decodes: everything but one
+  // file arrives and the previous theme stays; the last file arrives and the new theme applies, in
+  // one step, with its font loaded. (Whether an engine has decoded an image is not observable
+  // without racing it, so textures are checked by the switch waiting for their requests.)
   // Journal's fonts and textures are the ones the page hasn't loaded yet (it opens in 5ePHB).
   const JOURNAL_FILES = /\/(fonts|assets)\/Journal\//;
-  const JOURNAL_TEXTURES = ['/assets/Journal/Background1.webp', '/assets/Journal/Background2.webp'];
 
-  test('a theme switch is atomic: the previous theme stays until the new one applies with its fonts and textures', async ({ page }) => {
-    await page.clock.install();
-    await openCanvas(page);
-    const held = await holdRequests(page, JOURNAL_FILES);
-    await recordThemeSwitch(page, 'ReenieBeanie', JOURNAL_TEXTURES);
+  /**
+   * Switches to Journal with `last` held back after everything else of Journal's has arrived:
+   * checks the previous theme stays until then, and returns the snapshots once Journal is ready.
+   */
+  async function switchWithLastFile(page: Page, font: string, last: RegExp): Promise<ThemeSnapshot[]> {
+    const gate = await gateRequests(page, JOURNAL_FILES);
+    const finished = new Set<string>();
+    page.on('requestfinished', (r) => void finished.add(new URL(r.url()).pathname));
+    await recordThemeSwitch(page, font);
     await pauseClock(page); // the switch's 3 s fallback can't fire
     await page.getByTestId('theme-select').selectOption('Journal');
-    await held.arrived; // Journal's stylesheet is in (inert) and its fonts and textures are loading
+    await expect.poll(() => gate.seen.some((p) => last.test(p)), { message: 'the switch requests the file held back last' }).toBe(true);
+    // Journal's stylesheet is in (inert) and its fonts and textures are loading.
     const waiting = await page.evaluate(() => ({
       applied: Array.from(document.querySelectorAll('link[data-hb-theme-href*="/Journal/"]')).map((l) => l.hasAttribute('data-hb-theme-applied')),
       font: getComputedStyle(document.querySelector('.page p')!).fontFamily,
     }));
-    expect(waiting.applied).toEqual([false]); // loaded inert
+    if (waiting.applied.length) expect(waiting.applied).toEqual([false]); // loaded inert (a user theme has no link)
     expect(waiting.font).toContain('BookInsanityRemake');
-    expect(await statesOf(page)).toEqual(['Blank+5ePHB']); // unchanged so far
+
+    gate.release(new RegExp(`^(?!.*(?:${last.source}))`)); // everything else, also what comes later
+    const others = () => gate.seen.filter((p) => !last.test(p));
+    await expect.poll(() => others().length > 0 && others().every((p) => finished.has(p)), { message: 'every other file has arrived' }).toBe(true);
+    expect(await statesOf(page), 'the previous theme stays while one file is missing').toEqual(['Blank+5ePHB']);
     await expect(page.locator('[data-canvas-status]')).toHaveAttribute('data-canvas-status', 'loading');
 
-    held.release();
+    gate.release(/./);
     await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
-    const snapshots = await themeSnapshots(page);
-    expect(distinct(snapshots)).toEqual(['Blank+5ePHB', 'Blank+Journal']); // never neither, never both
-    const flip = snapshots.find((s) => s.links.includes('Journal'))!;
-    expect(flip.font, 'Journal’s font is loaded when Journal applies').toBe(true);
-    expect(flip.textWidth, 'the text is laid out in Journal’s font from the switch on').toBe(await textWidth(page));
-    expect(flip.textures, 'Journal’s page textures are loaded when Journal applies').toEqual([true, true]);
-    expect(await themeReloads(page), 'no applied theme sheet was dropped and loaded again').toEqual([]);
-  });
+    return themeSnapshots(page);
+  }
+
+  for (const [what, last] of [
+    ['a texture', /\/assets\/Journal\/Background2\.webp$/],
+    ['a font', /\/fonts\/Journal\//],
+  ] as const) {
+    test(`a theme switch is atomic: the previous theme stays until the new one applies, also while ${what} is missing`, async ({ page }) => {
+      await page.clock.install();
+      await openCanvas(page);
+      const snapshots = await switchWithLastFile(page, 'ReenieBeanie', last);
+      expect(distinct(snapshots)).toEqual(['Blank+5ePHB', 'Blank+Journal']); // never neither, never both
+      const flip = snapshots.find((s) => s.links.includes('Journal'))!;
+      expect(flip.font, 'Journal’s font is loaded when Journal applies').toBe(true);
+      expect(flip.textWidth, 'the text is laid out in Journal’s font from the switch on').toBe(await textWidth(page));
+      expect(await themeReloads(page), 'no applied theme sheet was dropped and loaded again').toEqual([]);
+    });
+  }
 
   test('a switch to a user theme (CSS text) waits for its fonts and textures too', async ({ page }) => {
     await page.clock.install();
@@ -373,30 +417,19 @@ test.describe('P3.3 EditorCanvas', () => {
       snippets: [],
     };
     await page.route('**/api/themes/Journal/bundle', (route) => route.fulfill({ json: bundle }));
-    const held = await holdRequests(page, JOURNAL_FILES);
-    await recordThemeSwitch(page, 'HB User Theme', ['/assets/Journal/Background2.webp']);
-    await pauseClock(page);
-    await page.getByTestId('theme-select').selectOption('Journal');
-    await held.arrived;
-    expect(await page.evaluate(() => getComputedStyle(document.querySelector('.page p')!).fontFamily)).toContain('BookInsanityRemake');
-    expect(await statesOf(page)).toEqual(['Blank+5ePHB']);
-    await expect(page.locator('[data-canvas-status]')).toHaveAttribute('data-canvas-status', 'loading');
-
-    held.release();
-    await expect(page.locator('[data-canvas-theme="Journal"][data-canvas-status="ready"]')).toBeVisible(READY_TIMEOUT);
-    const snapshots = await themeSnapshots(page);
+    // The texture comes last: the switch waits for it after the font has arrived.
+    const snapshots = await switchWithLastFile(page, 'HB User Theme', /\/assets\/Journal\/Background2\.webp$/);
     expect(distinct(snapshots)).toEqual(['Blank+5ePHB', 'Blank+user']);
     const flip = snapshots.find((s) => s.userTheme)!;
     expect(flip.font, 'the user theme’s font is loaded when it applies').toBe(true);
     expect(flip.textWidth, 'the text is laid out in its font from the switch on').toBe(await textWidth(page));
-    expect(flip.textures, 'its page texture is loaded when it applies').toEqual([true]);
   });
 
   test('a theme switch whose fonts and textures never arrive goes ahead after 3 s', async ({ page }) => {
     await page.clock.install();
     await openCanvas(page);
     const held = await holdRequests(page, JOURNAL_FILES);
-    await recordThemeSwitch(page, 'ReenieBeanie', JOURNAL_TEXTURES);
+    await recordThemeSwitch(page, 'ReenieBeanie');
     await pauseClock(page);
     await page.getByTestId('theme-select').selectOption('Journal');
     // The preload and its 3 s limit start in one task, before the first font or texture request.

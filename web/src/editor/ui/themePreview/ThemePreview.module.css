@@ -1,0 +1,76 @@
+/*
+ * A theme preview: sample HTML in div.hb-canvas › div.page, where the active theme's CSS (scoped
+ * to .hb-canvas and applied to every .hb-canvas of the document, themeLoader.ts) and the brew's
+ * own CSS style it as on a page, but without the page itself: no page size, background, padding,
+ * columns or page decorations, so a sample fits a menu row or a gallery tile.
+ *
+ * Hooks for the embedding UI (custom properties on the root or an ancestor):
+ *   --hb-preview-padding   space around the sample inside the page (default 0), e.g. for theme
+ *                          boxes whose border images reach outside their box
+ *   --hb-preview-zoom      scale of the whole preview (default 1)
+ */
+
+/* .hb-canvas plays the <body> of upstream's preview iframe, as in the editor: inherited properties
+   start from their initial values, not from the app around the preview (the same reset as
+   EditorCanvas.module.css :where(.canvas), plus canvas.css's upstream font). Zero specificity, so
+   theme `body`/`:root` rules (scoped to .hb-canvas) still win. */
+:where(.root) {
+  display: block;
+  color-scheme: light;
+  color: #000;
+  font: 400 16px/1 'Open Sans', sans-serif;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: start;
+  text-indent: 0;
+  text-transform: none;
+  text-shadow: none;
+  white-space: normal;
+  hyphens: manual;
+  direction: ltr;
+  writing-mode: horizontal-tb;
+  visibility: visible;
+  list-style: disc outside none;
+  tab-size: 8;
+  -webkit-text-stroke: 0;
+  paint-order: normal;
+  zoom: var(--hb-preview-zoom, 1);
+  /* Decorative: the embedding item takes the pointer (and names itself). */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The page without the page (theme rules are `.hb-canvas .page`, canvas.css adds flex and
+   column settings): three classes, so this wins over both. */
+.root:global(.hb-canvas) > :global(.page) {
+  position: relative;
+  z-index: auto;
+  display: block;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  padding: var(--hb-preview-padding, 0);
+  margin: 0;
+  overflow: visible;
+  contain: none;
+  columns: auto;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+  counter-increment: none;
+}
+
+/* No page background, unless asked for (data-background: a gallery tile that shows the page's
+   look keeps the theme's). */
+.root:global(.hb-canvas):not([data-background]) > :global(.page) {
+  background: none;
+}
+
+/* Page decorations (5ePHB's footer accent, Journal's page edges…). */
+.root:global(.hb-canvas) > :global(.page)::before,
+.root:global(.hb-canvas) > :global(.page)::after {
+  content: none;
+  display: none;
+}

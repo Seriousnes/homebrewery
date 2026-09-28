@@ -2,7 +2,7 @@
 // (deep-equal), so transactions that don't change it, pagination's included, don't re-render.
 import type { Editor } from '@tiptap/core';
 import { redoDepth, undoDepth } from '@tiptap/pm/history';
-import { alignOf, blockKindOf, inBlockquote, listKindOf, type ListKind, type TextBlockKind } from '../../commands/blocks';
+import { alignOf, blockKindOf, inBlockquote, listKindOf, type ListKind, type TextStyleKind, type ThemeBoxClass, themeBoxesAt } from '../../commands/blocks';
 import { inRichText } from '../../commands/marks';
 
 export const TOOLBAR_MARKS = ['bold', 'italic', 'underline', 'strike', 'superscript', 'subscript', 'code', 'link', 'span'] as const;
@@ -15,8 +15,10 @@ export interface ToolbarState {
   editable: boolean;
   /** The selection is in text where marks apply (not in a code block). */
   inText: boolean;
-  blockKind: TextBlockKind | 'mixed' | 'other' | null;
+  blockKind: TextStyleKind | 'mixed' | 'other' | null;
   quote: boolean;
+  /** The theme boxes (note, descriptive, quote) around the selection. */
+  boxes: ThemeBoxClass[];
   marks: Record<ToolbarMark, boolean>;
   align: ToolbarAlign;
   list: ListKind | null;
@@ -35,6 +37,7 @@ export function toolbarStateOf(editor: Editor): ToolbarState {
     inText: inRichText(state),
     blockKind: blockKindOf(state),
     quote: inBlockquote(state),
+    boxes: themeBoxesAt(state),
     marks,
     align: align === undefined ? 'none' : align === null ? 'default' : align,
     list: listKindOf(state),

@@ -388,6 +388,17 @@ test('editing: typing, autosave, Insert menu, Style drawer, Outline, Properties,
   await expect(properties).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(properties).toBeHidden();
+
+  // Edit source (lazy chunk, CodeMirror's HTML language): a block added through the source.
+  await page.locator('.hb-canvas .ProseMirror').getByText('The end of the walk.').click();
+  await page.getByTestId('open-source').click();
+  const source = page.getByRole('dialog', { name: 'Edit source' });
+  await expect(source.locator('.cm-content')).toBeFocused(LOAD);
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.insertText('\n<p>Added in the source.</p>');
+  await source.getByRole('button', { name: 'Apply' }).click();
+  await expect(source).toBeHidden();
+  await expect(page.locator('.hb-canvas .ProseMirror')).toContainText('Added in the source.');
   await settle(page);
 
   // Reload: the saved brew comes back (fonts, images, user CSS again); then its share page and the author's pages.

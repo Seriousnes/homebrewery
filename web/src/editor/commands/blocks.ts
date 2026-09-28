@@ -1,6 +1,6 @@
-// Block commands behind the keymap and the toolbar (plan §6.1, §6.2): block type changes, column
-// breaks, theme-block wrapping, paragraph alignment, and the read-outs the toolbar shows (block
-// type, list type, alignment).
+// Block commands behind the keymap and the toolbar (plan §6.1, §6.2): block type changes, the
+// "Text style" menu's styles (definition lists, theme boxes), column breaks, theme-block wrapping,
+// paragraph alignment, and the read-outs the toolbar shows (block type, list type, alignment).
 //
 // Every command builds one transaction: plain ProseMirror commands (see marks.ts for how they run
 // inside TipTap chains), and the block type changes as TipTap command props. Attribute changes use
@@ -13,7 +13,7 @@ import { EditorState, Selection, TextSelection, type Command, type Transaction }
 import { canSplit, findWrapping, liftTarget } from '@tiptap/pm/transform';
 import { JoinPagesStep, fragmentChain, pageAt, pageIndexAt, rejoinContinuations } from '../pagination';
 import type { ParagraphAlign } from '../schema/nodes/textBlocks';
-import { blockTypeTargets, isTextblockActive, restorePages, setTextblockType, withChainsJoined } from './blockType';
+import { blockTypeTargets, convertedContent, isTextblockActive, restorePages, setTextblockType, withChainsJoined } from './blockType';
 import { cleanClassList } from './marks';
 
 // ---------------------------------------------------------------------------------------------
@@ -34,6 +34,26 @@ export const TEXT_BLOCK_LABELS: Record<TextBlockKind, string> = {
   codeBlock: 'Code block',
 };
 
+/**
+ * Every text style the "Text style" menu offers: the text block kinds and definition lists (the
+ * block-level styles upstream's markdown wrote as `#`…`######`, fences and `Term :: Definition`).
+ */
+export const TEXT_STYLE_KINDS = [...TEXT_BLOCK_KINDS, 'definitionList'] as const;
+export type TextStyleKind = (typeof TEXT_STYLE_KINDS)[number];
+
+export const TEXT_STYLE_LABELS: Record<TextStyleKind, string> = { ...TEXT_BLOCK_LABELS, definitionList: 'Definition list' };
+
+/**
+ * Theme boxes the "Text style" menu offers ({{note}}, {{descriptive}}, {{quote}} upstream): theme
+ * blocks with one of these classes. The menu shows a box when the active theme styles its class
+ * (5ePHB and 5eDMG: all three; Journal: note and descriptive; Blank and UnearthedArcana: none),
+ * and always while the selection is in one.
+ */
+export const THEME_BOX_CLASSES = ['note', 'descriptive', 'quote'] as const;
+export type ThemeBoxClass = (typeof THEME_BOX_CLASSES)[number];
+
+export const THEME_BOX_LABELS: Record<ThemeBoxClass, string> = { note: 'Note', descriptive: 'Descriptive text box', quote: 'Quote' };
+
 export const headingKind = (level: number): TextBlockKind => `heading${Math.min(6, Math.max(1, Math.round(level)))}` as TextBlockKind;
 
 /** The heading level of a kind, or null for paragraph and code block. */
@@ -42,7 +62,7 @@ export function kindLevel(kind: TextBlockKind): 1 | 2 | 3 | 4 | 5 | 6 | null {
   return match ? (Number(match[1]) as 1 | 2 | 3 | 4 | 5 | 6) : null;
 }
 
-function kindOf(node: PMNode): TextBlockKind | 'other' {
+function kindOf(node: PMNode): TextStyleKind | 'other' {
   switch (node.type.name) {
     case 'paragraph':
       return 'paragraph';
@@ -50,8 +70,11 @@ function kindOf(node: PMNode): TextBlockKind | 'other' {
       return headingKind(Number(node.attrs.level));
     case 'codeBlock':
       return 'codeBlock';
+    case 'definitionTerm':
+    case 'definitionDesc':
+      return 'definitionList';
     default:
-      return 'other'; // definition terms and descriptions
+      return 'other';
   }
 }
 
@@ -78,11 +101,12 @@ function selectedTextblocks(state: EditorState): { node: PMNode; pos: number }[]
 }
 
 /**
- * The block type the selection has: one kind, 'mixed' for several, 'other' for definition list
- * parts, null when no text block is selected (a selected image, rule or column break).
+ * The text style the selection has: one kind ('definitionList' for definition list parts), 'mixed'
+ * for several, 'other' for a text block no style describes, null when no text block is selected
+ * (a selected image, rule or column break).
  */
-export function blockKindOf(state: EditorState): TextBlockKind | 'mixed' | 'other' | null {
-  let kind: TextBlockKind | 'other' | null = null;
+export function blockKindOf(state: EditorState): TextStyleKind | 'mixed' | 'other' | null {
+  let kind: TextStyleKind | 'other' | null = null;
   for (const { node } of selectedTextblocks(state)) {
     const k = kindOf(node);
     if (kind === null) kind = k;
@@ -97,6 +121,20 @@ export function inBlockquote(state: EditorState): boolean {
   for (let d = $from.depth; d > 0; d--) if ($from.node(d).type.name === 'blockquote') return true;
   return false;
 }
+
+/** The theme box classes of the theme blocks around the selection's start. */
+export function themeBoxesAt(state: EditorState): ThemeBoxClass[] {
+  const $from = state.selection.$from;
+  const found = new Set<ThemeBoxClass>();
+  for (let d = $from.depth; d > 1; d--) {
+    const node = $from.node(d);
+    if (node.type.name !== 'themeBlock') continue;
+    for (const cls of THEME_BOX_CLASSES) if (classesOf(node).includes(cls)) found.add(cls);
+  }
+  return THEME_BOX_CLASSES.filter((cls) => found.has(cls));
+}
+
+const classesOf = (node: PMNode): readonly string[] => (Array.isArray(node.attrs.classes) ? (node.attrs.classes as string[]) : []);
 
 export type ListKind = 'bulletList' | 'orderedList';
 
@@ -287,6 +325,188 @@ export function toggleTextBlockKind(kind: TextBlockKind): (props: CommandProps) 
 }
 
 // ---------------------------------------------------------------------------------------------
+// text styles: the block kinds and definition lists (the "Text style" menu)
+
+/**
+ * Sets the selection's text style (TipTap command props, for chains): setTextBlockKind for the
+ * text block kinds, toDefinitionList for 'definitionList'. From a definition list, another kind
+ * turns the whole list into text blocks of that kind (fromDefinitionList). One transaction; false
+ * (nothing changed) when the selection already has the style.
+ */
+export function setTextStyle(kind: TextStyleKind): (props: CommandProps) => boolean {
+  return (props) => {
+    const { state, dispatch } = props;
+    if (kind === 'definitionList') return toDefinitionList(state, dispatch);
+    if (!definitionListAt(state)) return setTextBlockKind(kind)(props);
+    const target = kindType(state.schema, kind);
+    if (!target) return false;
+    return fromDefinitionList(target.type, target.attrs)(state, dispatch);
+  };
+}
+
+/** The innermost definition list around the selection's start. */
+function definitionListAt(state: EditorState): { pos: number; node: PMNode; depth: number } | null {
+  const $from = state.selection.$from;
+  for (let d = $from.depth; d > 1; d--) {
+    const node = $from.node(d);
+    if (node.type.name === 'definitionList') return { pos: $from.before(d), node, depth: d };
+  }
+  return null;
+}
+
+/**
+ * Runs `change` on a copy of the document in which the pages that the page-level blocks from the
+ * selection's start to its end (on the start's page) span are joined, and those blocks' fragments
+ * re-joined (JoinPagesStep and join steps, as moveListItem does): a paragraph or definition list
+ * that pagination split is changed whole, and the undo, whose steps are all ReplaceSteps, maps
+ * through pagination's later joins and splits (PG-2). `change` gets the selection's range in the
+ * joined document and returns false to give up. Joined pages that carried objects or markers come
+ * back after the change (restorePages).
+ */
+function changeJoinedBlocks(state: EditorState, change: (tr: Transaction, from: number, to: number) => boolean, dispatch?: (tr: Transaction) => void): boolean {
+  const { $from } = state.selection;
+  if ($from.depth < 2) return false;
+  const to = Math.max($from.pos, Math.min(state.selection.to, $from.end(1)));
+  const $to = state.doc.resolve(to);
+  if ($to.depth < 2) return false;
+  const doc = state.doc;
+  const head = fragmentChain(doc, $from.before(2));
+  const tail = fragmentChain(doc, $to.before(2));
+  const first = pageIndexAt(doc, head[0]!);
+  const last = pageIndexAt(doc, tail[tail.length - 1]!);
+  // On a copy: nothing reaches the caller's transaction (a TipTap chain's, which is dispatched
+  // whatever its commands answer) unless all of it works.
+  const tr = EditorState.create({ doc, selection: state.selection }).tr;
+  const joined: PMNode[] = [];
+  for (let k = last; k > first; k--) {
+    const page = pageAt(tr.doc, k)!;
+    if (tr.maybeStep(new JoinPagesStep(page.pos, 1)).failed) return false;
+    joined.unshift(page.node);
+    rejoinContinuations(tr, page.pos - 1);
+  }
+  if (!change(tr, tr.mapping.map($from.pos), tr.mapping.map(to))) return false;
+  restorePages(tr, tr.selection.to, joined);
+  if (dispatch) {
+    const out = state.tr;
+    for (const step of tr.steps) out.step(step);
+    out.setSelection(Selection.fromJSON(out.doc, tr.selection.toJSON()));
+    dispatch(out.scrollIntoView());
+  }
+  return true;
+}
+
+const OBJECT_REPLACEMENT = String.fromCharCode(0xfffc);
+
+/** `fragment` without white space at its start and end. */
+function trimmed(fragment: Fragment): Fragment {
+  const nodes: PMNode[] = [];
+  fragment.forEach((n) => nodes.push(n));
+  const edge = (i: number, pattern: RegExp) => {
+    const n = nodes[i];
+    if (!n?.isText) return;
+    const text = n.text!.replace(pattern, '');
+    if (text) nodes[i] = n.type.schema.text(text, n.marks);
+    else nodes.splice(i, 1);
+  };
+  edge(0, /^\s+/);
+  edge(nodes.length - 1, /\s+$/);
+  return Fragment.from(nodes);
+}
+
+/** A text block's content as a term and a description: split at the first `::` (upstream's `Term :: Definition`). */
+function termAndDescription(block: PMNode, schema: Schema): [Fragment, Fragment] {
+  const content = convertedContent(block.content, schema.nodes.definitionTerm!, schema);
+  // One character per inline leaf (icons, images, breaks), so text offsets are content offsets.
+  const text = content.textBetween(0, content.size, undefined, OBJECT_REPLACEMENT);
+  const split = text.indexOf('::');
+  if (split < 0) return [content, Fragment.empty];
+  return [trimmed(content.cut(0, split)), trimmed(content.cut(split + 2))];
+}
+
+/**
+ * Turns the selected text blocks (siblings: paragraphs, headings, code blocks) into one definition
+ * list, one term and description per block, split at `::` (without one the block becomes the term).
+ * Definition lists among them are merged in. One transaction; the caret goes to the end of the
+ * list's last item. False when the selection already is all definition list, or the blocks can't
+ * become one (a list item's first paragraph).
+ */
+export const toDefinitionList: Command = (state, dispatch) => {
+  const { definitionList, definitionTerm, definitionDesc } = state.schema.nodes;
+  if (!definitionList || !definitionTerm || !definitionDesc) return false;
+  if (blockKindOf(state) === 'definitionList') return false;
+  const build = (tr: Transaction, from: number, to: number): boolean => {
+    const $from = tr.doc.resolve(from);
+    const range = $from.blockRange(tr.doc.resolve(to), (parent) => !parent.isTextblock && parent.type !== definitionList);
+    if (!range) return false;
+    const items: PMNode[] = [];
+    for (let i = range.startIndex; i < range.endIndex; i++) {
+      const child = range.parent.child(i);
+      if (child.type === definitionList) child.forEach((item) => items.push(item));
+      else if (child.isTextblock) {
+        const [term, desc] = termAndDescription(child, state.schema);
+        items.push(definitionTerm.create(null, term), definitionDesc.create(null, desc));
+      } else return false;
+    }
+    const dl = definitionList.create(null, items);
+    if (!range.parent.canReplaceWith(range.startIndex, range.endIndex, definitionList)) return false;
+    tr.replaceWith(range.start, range.end, dl);
+    tr.setSelection(TextSelection.create(tr.doc, range.start + dl.nodeSize - 2));
+    return true;
+  };
+  return changeJoinedBlocks(state, build, dispatch);
+};
+
+/**
+ * Turns the definition list at the selection's start into text blocks of `type`: one per term,
+ * holding "Term :: Description" (the inverse of toDefinitionList), and one per description that
+ * has no term. One transaction; the caret keeps its place in the text.
+ */
+export function fromDefinitionList(type: NodeType, attrs: Attrs | null = null): Command {
+  return (state, dispatch) => {
+    if (!definitionListAt(state) || !type.isTextblock) return false;
+    const schema = state.schema;
+    const build = (tr: Transaction, from: number): boolean => {
+      const $from = tr.doc.resolve(from);
+      let depth = -1;
+      for (let d = $from.depth; d > 1 && depth < 0; d--) if ($from.node(d).type.name === 'definitionList') depth = d;
+      if (depth < 0) return false;
+      const dl = $from.node(depth);
+      const dlPos = $from.before(depth);
+      const itemIndex = $from.index(depth);
+      // Blocks as lists of parts; where each item starts in its block.
+      const blocks: Fragment[][] = [];
+      let caretBlock = 0;
+      let caretOffset = 0;
+      dl.forEach((item, _, i) => {
+        const startsBlock = item.type.name === 'definitionTerm' || blocks.length === 0;
+        if (startsBlock) blocks.push([]);
+        const parts = blocks[blocks.length - 1]!;
+        if (!startsBlock && item.content.size > 0 && parts.some((f) => f.size > 0)) parts.push(Fragment.from(schema.text(' :: ')));
+        if (i === itemIndex) {
+          caretBlock = blocks.length - 1;
+          caretOffset = parts.reduce((size, f) => size + f.size, 0) + $from.parentOffset;
+        }
+        parts.push(item.content);
+      });
+      const nodes = blocks.map((parts) => {
+        const content = parts.reduce((all, f) => all.append(f), Fragment.empty);
+        return type.create(attrs, convertedContent(content, type, schema));
+      });
+      const parent = $from.node(depth - 1);
+      const index = $from.index(depth - 1);
+      if (!parent.canReplace(index, index + 1, Fragment.from(nodes))) return false;
+      tr.replaceWith(dlPos, dlPos + dl.nodeSize, nodes);
+      let caret = dlPos;
+      for (let k = 0; k < caretBlock; k++) caret += nodes[k]!.nodeSize;
+      caret += 1 + Math.min(caretOffset, nodes[caretBlock]!.content.size);
+      tr.setSelection(TextSelection.create(tr.doc, caret));
+      return true;
+    };
+    return changeJoinedBlocks(state, build, dispatch);
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
 // splitting helpers
 
 /** Attributes for the part after a split: never a continuation, and the id stays on the first part. */
@@ -440,15 +660,57 @@ export function wrapInThemeBlock(classes: readonly string[]): Command {
   });
 }
 
+/** The innermost theme block around the selection's start whose classes pass `test`. */
+function themeBlockWhere(state: EditorState, test: (classes: readonly string[]) => boolean): ThemeBlockHit | null {
+  const $from = state.selection.$from;
+  for (let d = $from.depth; d > 1; d--) {
+    const node = $from.node(d);
+    if (node.type.name === 'themeBlock' && test(classesOf(node))) return { pos: $from.before(d), node, depth: d };
+  }
+  return null;
+}
+
+/** Lifts the content of the theme block `find` finds out of it. */
+function unwrapFound(find: (state: EditorState) => ThemeBlockHit | null): Command {
+  return (state, dispatch) => {
+    const hit = find(state);
+    if (!hit) return false;
+    const $start = state.doc.resolve(hit.pos + 1);
+    const $end = state.doc.resolve(hit.pos + hit.node.nodeSize - 1);
+    const range = new NodeRange($start, $end, hit.depth);
+    const target = liftTarget(range);
+    if (target === null) return false;
+    dispatch?.(state.tr.lift(range, target).scrollIntoView());
+    return true;
+  };
+}
+
 /** Lifts the content of the innermost theme block around the selection out of it. */
-export const unwrapThemeBlock: Command = (state, dispatch) => {
-  const hit = themeBlockAt(state);
-  if (!hit) return false;
-  const $start = state.doc.resolve(hit.pos + 1);
-  const $end = state.doc.resolve(hit.pos + hit.node.nodeSize - 1);
-  const range = new NodeRange($start, $end, hit.depth);
-  const target = liftTarget(range);
-  if (target === null) return false;
-  dispatch?.(state.tr.lift(range, target).scrollIntoView());
-  return true;
-};
+export const unwrapThemeBlock: Command = unwrapFound(themeBlockAt);
+
+/**
+ * A theme box of the "Text style" menu (THEME_BOX_CLASSES): in a box with class `cls`, the box is
+ * removed (its content stays); in another theme box, that box's class changes to `cls` (its other
+ * classes, e.g. wide, stay); elsewhere the selected blocks are wrapped in a new box
+ * (wrapInThemeBlock). One transaction; the removal is recorded as a whole-block replacement whose
+ * undo survives pagination (withChainsJoined), the class change as an AttrStep.
+ */
+export function toggleThemeBox(cls: ThemeBoxClass): Command {
+  const boxes: readonly string[] = THEME_BOX_CLASSES;
+  return (state, dispatch) => {
+    if (themeBlockWhere(state, (classes) => classes.includes(cls))) {
+      return withChainsJoined(unwrapFound((s) => themeBlockWhere(s, (classes) => classes.includes(cls))))(state, dispatch);
+    }
+    const other = themeBlockWhere(state, (classes) => classes.some((c) => boxes.includes(c)));
+    if (other) {
+      if (dispatch) {
+        const classes = classesOf(other.node);
+        const at = classes.findIndex((c) => boxes.includes(c));
+        const next = cleanClassList([...classes.slice(0, at), cls, ...classes.slice(at + 1).filter((c) => !boxes.includes(c))]);
+        dispatch(state.tr.setNodeAttribute(other.pos, 'classes', next).scrollIntoView());
+      }
+      return true;
+    }
+    return wrapInThemeBlock([cls])(state, dispatch);
+  };
+}

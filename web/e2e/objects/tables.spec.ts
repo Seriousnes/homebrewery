@@ -1,6 +1,7 @@
 // P5.6 tables on /dev/objects: header rows styled like upstream's <thead> by the theme's own
 // rules (hb-header-row + the selector rewrite), the class table snippet imported and edited
-// without losing spans, and the TableMenu (insert, merge/split, widths, header rows, classes).
+// without losing spans, and the TableMenu (insert with the size picker, merge/split, widths,
+// header rows, classes). The table controls: table-controls.spec.ts.
 // E2E_PORT=5328 pnpm exec playwright test e2e/objects/tables.spec.ts
 import { expect, type Page } from '@playwright/test';
 import { test, caretAfter, clickInText, openObjects, settle, tableMenu, undo } from './helpers';
@@ -102,7 +103,10 @@ test('the full caster class table imports and edits without losing its spans', a
 test('the TableMenu inserts a table, merges and splits cells, sets widths and header rows', async ({ page }) => {
   await openObjects(page, { doc: 'blank' });
   await caretAfter(page, 'Hello there, adventurer.');
-  await tableMenu(page, 'Insert table');
+  // Outside a table the button opens the size picker; Enter takes its 3 × 3 default.
+  await page.getByTestId('table-menu').click();
+  await expect(page.getByRole('dialog', { name: 'Insert table' })).toBeVisible();
+  await page.keyboard.press('Enter');
   await expect(table(page).locator('tr')).toHaveCount(3);
   await expect(table(page).locator('tr.hb-header-row')).toHaveCount(1);
 

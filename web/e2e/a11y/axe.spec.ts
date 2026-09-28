@@ -166,7 +166,7 @@ for (const scheme of ['light', 'dark'] as ColorScheme[]) {
     test('editor: insert menu (results and none) and the icon picker', async () => {
       await caretIn(page, TEXTS.intro);
       await page.getByTestId('insert-menu').click();
-      await expect(page.getByTestId('insert-menu-popover')).toBeVisible();
+      await expect(page.getByTestId('insert-menu-dialog')).toBeVisible();
       const snippets = page.locator(`${PORTAL} [role=option]`);
       await expect(snippets.first()).toBeVisible();
       await audit(page, 'insert menu', { include: [PORTAL] });

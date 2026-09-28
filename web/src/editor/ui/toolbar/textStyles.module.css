@@ -1,0 +1,20 @@
+/* Theme previews in the "Text style" menu (ThemePreview): one sample per row, a little scaled
+   down, so the theme's big headings still fit a menu. */
+.preview,
+.boxPreview {
+  --hb-preview-zoom: 0.85;
+  min-width: 11em;
+  padding: 2px 0;
+}
+
+/* Theme boxes draw their border images outside their box (5ePHB note: 9px above and below,
+   Journal's descriptive box: 16px and 20px): room for them inside the row. */
+.boxPreview {
+  --hb-preview-padding: 12px 20px;
+}
+
+/* The editor ends every dd with a generated line break (canvas.css), which would add an empty
+   line under the one-line sample. */
+.preview :global(.page) dl > dd:last-child::after {
+  content: none;
+}

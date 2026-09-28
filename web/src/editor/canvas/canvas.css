@@ -271,6 +271,14 @@
   display: table-row !important;
 }
 
+/* A wide table (`wide` on the table itself, tables/commands.ts toggleTableClass): the themes'
+   `.page .wide { display: block }` is meant for blocks; on a table it leaves the rows in an
+   anonymous table only as wide as its content. It stays a table: block-level, so the theme's
+   column-span: all still applies, and its width: 100% spans both columns. (Also in exports.) */
+.hb-canvas .page table.wide {
+  display: table;
+}
+
 /* Images with a stored natural size (objects/imageView.ts): the width/height attributes keep the
    box's aspect ratio before the file loads, but their size hints would also fix both dimensions.
    At zero specificity every theme and author rule still wins; without one, the image gets its

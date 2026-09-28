@@ -14,7 +14,7 @@ export { Tooltip, type TooltipProps } from './Tooltip';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';
 export { Popover, type PopoverProps } from './Popover';
-export { Menu, MenuButton, type MenuButtonProps, type MenuProps, type MenuTriggerProps } from './Menu';
+export { ContextMenu, Menu, MenuButton, type ContextMenuProps, type MenuButtonProps, type MenuProps, type MenuTriggerProps } from './Menu';
 export type {
   MenuActionItem,
   MenuCheckboxItem,
@@ -24,6 +24,7 @@ export type {
   MenuLeaf,
   MenuRadioItem,
   MenuSeparator,
+  MenuSubmenuItem,
 } from './menuTypes';
 export { Toaster, type ToasterProps } from './Toaster';
 export {
@@ -60,7 +61,7 @@ export type { Placement } from './internal/position';
 export type { DismissReason } from './internal/useDismiss';
 // Helpers for components built outside the kit (the canvas lanes' own popovers and toolbars).
 export { computePosition, type PositionInput, type PositionResult } from './internal/position';
-export { useFloating, type FloatingOptions } from './internal/useFloating';
+export { useFloating, type FloatingOptions, type VirtualAnchor } from './internal/useFloating';
 export { useDismiss, type DismissOptions } from './internal/useDismiss';
 export { focusElement, focusFirst, getFocusables, getTabbables, trapTab } from './internal/focus';
 export { getPortalRoot, pushModalLayer, registerEscape } from './internal/layers';

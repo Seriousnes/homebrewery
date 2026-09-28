@@ -1,8 +1,21 @@
 import { type RefObject, useLayoutEffect } from 'react';
-import { computePosition, type Placement } from './position';
+import { computePosition, type Placement, type RectLike } from './position';
 
 /** An element, or a ref to one. */
 export type ElementOrRef = HTMLElement | null | RefObject<HTMLElement | null>;
+
+/** A position on screen to place against, instead of an element (e.g. a right-click's point). */
+export interface VirtualAnchor {
+  getBoundingClientRect(): RectLike;
+}
+
+/** An element, a ref to one, or a virtual anchor. */
+export type AnchorTarget = ElementOrRef | VirtualAnchor;
+
+function resolveAnchor(target: AnchorTarget | undefined): HTMLElement | VirtualAnchor | null {
+  if (target && !(target instanceof HTMLElement) && !('current' in target)) return target;
+  return resolveElement(target);
+}
 
 export function resolveElement(target: ElementOrRef | undefined): HTMLElement | null {
   if (!target) return null;
@@ -24,20 +37,20 @@ export interface FloatingOptions {
  */
 export function useFloating(
   open: boolean,
-  anchor: ElementOrRef,
+  anchor: AnchorTarget,
   floatingRef: RefObject<HTMLElement | null>,
   { placement = 'bottom-start', offset = 4, padding = 8, matchAnchorWidth = false }: FloatingOptions = {},
 ): void {
   useLayoutEffect(() => {
     const floating = floatingRef.current;
-    const anchorEl = resolveElement(anchor);
+    const anchorEl = resolveAnchor(anchor);
     if (!open || !floating || !anchorEl) return;
     const win = floating.ownerDocument.defaultView ?? window;
     let frame = 0;
 
     const update = () => {
       frame = 0;
-      if (!anchorEl.isConnected || !floating.isConnected) return;
+      if ((anchorEl instanceof HTMLElement && !anchorEl.isConnected) || !floating.isConnected) return;
       const rect = anchorEl.getBoundingClientRect();
       if (matchAnchorWidth) floating.style.minWidth = `${Math.round(rect.width)}px`;
       floating.style.maxHeight = '';
@@ -66,7 +79,7 @@ export function useFloating(
     win.addEventListener('resize', schedule);
     win.addEventListener('scroll', schedule, true);
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
-    observer?.observe(anchorEl);
+    if (anchorEl instanceof HTMLElement) observer?.observe(anchorEl);
     observer?.observe(floating);
     return () => {
       if (frame) win.cancelAnimationFrame(frame);

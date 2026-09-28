@@ -1,5 +1,5 @@
 // Accessibility of the objects lane's UI on /dev/objects (axe, serious and critical): the object
-// frame and toolbar, the block and table menus, the icon picker and the `:` suggestion list.
+// frame and toolbar, the block menu and the table size picker, the icon picker and the `:` suggestion list.
 // E2E_PORT=5328 pnpm exec playwright test e2e/objects/a11y.spec.ts
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
@@ -30,9 +30,10 @@ test('the selected object (frame, handles, toolbar) and the toolbar menus', asyn
   expect(await violations(page, ['[role="menu"]'])).toEqual([]);
   await page.keyboard.press('Escape');
 
+  // Outside a table: the insert-table size picker (the table controls: table-controls.spec.ts).
   await page.getByTestId('table-menu').click();
-  await expect(page.getByRole('menu')).toBeVisible();
-  expect(await violations(page, ['[role="menu"]'])).toEqual([]);
+  await expect(page.getByRole('dialog', { name: 'Insert table' })).toBeVisible();
+  expect(await violations(page, ['[role="dialog"]'])).toEqual([]);
 });
 
 test('the icon picker and the `:` suggestion list', async ({ page }) => {

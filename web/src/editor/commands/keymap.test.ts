@@ -163,6 +163,19 @@ describe('class picker, link dialog and other requests', () => {
     expect(listener.mock.calls.map((c) => c[0])).toEqual(['save', 'print', 'focusToolbar']);
   });
 
+  it('Mod-Alt-U asks for the source dialog: consumed only when handled, never in a read-only editor', () => {
+    const e = open(docWith(p('x')));
+    expect(press(e, 'Mod-Alt-u')).toBe(false);
+    const listener = vi.fn(() => true);
+    onKeymapRequest(e, listener);
+    expect(press(e, 'Mod-Alt-u')).toBe(true);
+    expect(listener.mock.calls).toEqual([['editSource']]);
+    expect(shortcutFor('editSource', false)).toEqual({ label: 'Ctrl+Alt+U', aria: 'Control+Alt+U' });
+    e.setEditable(false);
+    expect(press(e, 'Mod-Alt-u')).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
   it('a read-only editor ignores formatting keys (TipTap keys included) and opens no dialogs', () => {
     const e = open(docWith(p('alpha')), { editable: false });
     const listener = vi.fn(() => true);
