@@ -1,8 +1,9 @@
 // Repagination triggers (plan §4.7, P4.5) in the browser: each shows the pages the check starts
 // (and ends) at. /dev/sections is EditorCanvas, which owns the theme and user CSS triggers (the
-// fonts one: web/e2e/matrix/lateFont.spec.ts, in the app's editor); pagination owns the image,
-// section and parity ones. Both browsers. The page is shared by the tests of a worker (the
-// harness's `test`): a test that changes the brew CSS puts it back.
+// user CSS debounce, on a fake clock: timing.spec.ts; the fonts one: web/e2e/matrix/lateFont.spec.ts,
+// in the app's editor); pagination owns the image, section and parity ones. Both browsers. The page
+// is shared by the tests of a worker (the harness's `test`): a test that changes the brew CSS puts
+// it back.
 import type { Page } from '@playwright/test';
 import { doc, expect, h, imageParagraph, load, page as pg, paragraphs, settled, test, uncachedImage, useHarness, type HarnessEvent } from '../pagination/harness';
 
@@ -15,13 +16,16 @@ const repaginations = (list: HarnessEvent[]) => list.filter((e): e is Extract<Ha
 /** Polls the event log until `done` holds (the canvas triggers are debounced or asynchronous). */
 async function collectUntil(page: Page, done: (log: HarnessEvent[]) => boolean, timeoutMs = 10_000): Promise<HarnessEvent[]> {
   const log: HarnessEvent[] = [];
-  const t0 = Date.now();
-  while (Date.now() - t0 < timeoutMs) {
-    log.push(...(await events(page)));
-    if (done(log)) return log;
-    await page.waitForTimeout(50);
-  }
-  throw new Error(`trigger not seen within ${timeoutMs} ms: ${JSON.stringify(log.slice(-10))}`);
+  await expect
+    .poll(
+      async () => {
+        log.push(...(await events(page)));
+        return done(log);
+      },
+      { timeout: timeoutMs, message: 'the trigger is seen' },
+    )
+    .toBe(true);
+  return log;
 }
 
 /** Puts the brew CSS back to none, and waits for its re-check. */
@@ -36,28 +40,6 @@ test.beforeEach(async ({ page }) => {
   await useHarness(page, { sections: true });
   await load(page, doc(pg([h(1, 'Chapter'), ...paragraphs(20, 600)], { pid: 'section1' })));
   await events(page); // start with an empty log
-});
-
-test('user CSS changes (debounced 300 ms): one re-check from page 0, and the pages follow the new style', async ({ page }) => {
-  const before = await page.evaluate(() => window.__hbPagination.pages().length);
-  const t0 = Date.now();
-  await page.evaluate(() => window.__hbPagination.setUserCss('.page p { font-size: 11px; }'));
-  await page.waitForTimeout(100);
-  await page.evaluate(() => window.__hbPagination.setUserCss('.page p { font-size: 17px; line-height: 1.5; }'));
-  const log = await collectUntil(page, (l) => repaginations(l).some((r) => r.source === 'canvas' && r.reason === 'css'));
-  const elapsed = Date.now() - t0;
-  await settled(page);
-  await page.waitForTimeout(500); // nothing else is coming
-  const all = [...log, ...(await events(page))];
-  const css = repaginations(all).filter((r) => r.source === 'canvas' && r.reason === 'css');
-  expect(css).toHaveLength(1); // two edits, one repagination
-  expect(css[0]!.from).toBe(0);
-  expect(elapsed).toBeGreaterThanOrEqual(300);
-  expect(steps(all.slice(all.indexOf(css[0]!)))[0]!.page).toBe(0);
-  const after = await page.evaluate(() => ({ pages: window.__hbPagination.pages().length, overflowing: window.__hbPagination.overflowing() }));
-  expect(after.pages).toBeGreaterThan(before); // bigger text, more pages
-  expect(after.overflowing).toEqual([]);
-  await clearUserCss(page);
 });
 
 test('a theme change: re-check from page 0', async ({ page }) => {

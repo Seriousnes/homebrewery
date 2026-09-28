@@ -43,7 +43,9 @@ export function PaginationDevPage({ variant = 'pagination' }: PaginationDevPageP
     harness.setControls({
       // Synchronous, so the harness API (and the zoom specs) see the new zoom right away.
       setZoom: (z) => flushSync(() => setZoom(z)),
-      setUserCss: (css) => setUserCss(css),
+      // Synchronous too (its effects included): a spec on a paused fake clock (web/e2e/clock.ts)
+      // makes the change at a known time, which the canvas's debounces start from.
+      setUserCss: (css) => flushSync(() => setUserCss(css)),
       setTheme: (t) => setTheme(t),
     });
     return () => harness.setControls(null);

@@ -2,23 +2,52 @@
 // an in-memory brew server routed per context (fakeServer.ts), so it runs without the API.
 // autosave-api.spec.ts runs the main flows against a real API.
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { pauseClock } from '../clock';
 import { installFakeServer } from './fakeServer';
-import { conflictDialog, docOf, editorTexts, killTab, openSavePage, SAVE_TIMEOUT, waitForSavePage, seriousViolations, statusLabel, typeAt, waitForDraft } from './helpers';
+import {
+  AUTOSAVE_DELAY_MS,
+  conflictDialog,
+  docOf,
+  editorTexts,
+  killTab,
+  openSavePage,
+  SAVE_TIMEOUT,
+  waitForSavePage,
+  seriousViolations,
+  statusLabel,
+  typeAt,
+  waitForDraft,
+} from './helpers';
+
+/** /dev/save's autosave state, read in the page (a save that started shows at once: 'saving'). */
+const saveState = (page: Page) =>
+  page.evaluate(() => {
+    const { status, baseVersion, unsaved } = window.__hbSave!.state();
+    return { status, baseVersion, unsaved };
+  });
 
 test('autosaves 3 s after typing (not for pagination), and a reload shows the text', async ({ page, context }) => {
-  // Two loads of /dev/save (about 7 s each in Firefox under load) and 5 s of watching nothing get saved.
+  // Two loads of /dev/save (about 7 s each in Firefox under load).
   test.setTimeout(30_000);
+  // The autosave's delay on Playwright's fake clock (web/e2e/clock.ts).
+  await page.clock.install();
   const server = await installFakeServer(context);
   const brew = server.add({ doc: docOf('Autosave start') });
   const frame = await openSavePage(page, brew.editId);
-  await page.waitForTimeout(3500); // pagination has run: nothing to save
+  // Pagination runs (every frame and timer of the next 3.5 s): nothing to save.
+  await page.clock.runFor(AUTOSAVE_DELAY_MS + 500);
+  expect(await saveState(page)).toEqual({ status: 'saved', baseVersion: 1, unsaved: false });
   expect(server.saves()).toHaveLength(0);
   await expect(statusLabel(page)).toHaveText('Saved');
 
+  await pauseClock(page);
   await typeAt(page, ' typed');
   await expect(statusLabel(page)).toHaveText('Unsaved changes');
-  await page.waitForTimeout(1500);
-  expect(server.saves()).toHaveLength(0); // not before 3 s
+  await page.clock.runFor(AUTOSAVE_DELAY_MS - 1);
+  expect(await saveState(page)).toEqual({ status: 'dirty', baseVersion: 1, unsaved: true }); // not before 3 s
+  await page.clock.runFor(1);
+  expect(['saving', 'saved']).toContain((await saveState(page)).status); // at 3 s
+  await page.clock.resume();
   await expect(frame).toHaveAttribute('data-base-version', '2', SAVE_TIMEOUT);
   await expect(statusLabel(page)).toHaveText('Saved');
   const [put] = server.saves(brew.editId);
@@ -79,9 +108,11 @@ test('a killed tab recovers its draft', async ({ page, context }) => {
   expect(await editorTexts(next)).toEqual(['Draft start']);
 });
 
-async function twoTabsInConflict(page: Page, context: BrowserContext) {
+async function twoTabsInConflict(page: Page, context: BrowserContext, { clock = false } = {}) {
   // Two tabs: two loads of /dev/save (about 7 s each in Firefox under load), then the resolution.
   test.setTimeout(30_000);
+  // Playwright's fake clock (web/e2e/clock.ts), for both tabs: the context's.
+  if (clock) await page.clock.install();
   const server = await installFakeServer(context);
   const brew = server.add({ doc: docOf('Shared') });
   const frameA = await openSavePage(page, brew.editId);
@@ -106,7 +137,7 @@ async function twoTabsInConflict(page: Page, context: BrowserContext) {
 }
 
 test('409 via two tabs: the conflict dialog, then Overwrite with mine', async ({ page, context }) => {
-  const { server, brew, pageB, frameB, dialog } = await twoTabsInConflict(page, context);
+  const { server, brew, pageB, frameB, dialog } = await twoTabsInConflict(page, context, { clock: true });
   await expect(statusLabel(pageB)).toHaveText('Conflict');
   expect(await seriousViolations(pageB, '[role="alertdialog"]')).toEqual([]);
   await expect(dialog.getByRole('button', { name: 'Save mine as a copy' })).toBeFocused();
@@ -116,8 +147,11 @@ test('409 via two tabs: the conflict dialog, then Overwrite with mine', async ({
   await pageB.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(statusLabel(pageB)).toHaveText('Conflict');
-  await pageB.waitForTimeout(3500);
-  expect(server.saves()).toHaveLength(2); // autosave stopped
+  // Autosave stopped: every timer of the next autosave delay and more starts no save of B's
+  // unsaved text (a save that started shows in the state at once).
+  await pageB.clock.runFor(AUTOSAVE_DELAY_MS + 500);
+  expect(await saveState(pageB)).toEqual({ status: 'conflict', baseVersion: 1, unsaved: true });
+  expect(server.saves()).toHaveLength(2);
   await pageB.getByRole('button', { name: 'Resolve…' }).click();
   await expect(dialog).toBeVisible();
 

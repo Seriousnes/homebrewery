@@ -9,7 +9,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { editorTexts, openEditorPage, typeAt, waitForEditor } from '../flows/helpers';
 import { installFakeServer, type FakeBrew, type FakeServer } from './fakeServer';
-import { docOf, idbDrafts, openSavePage, PAGE_READY, SAVE_TIMEOUT } from './helpers';
+import { AUTOSAVE_DELAY_MS, docOf, idbDrafts, openSavePage, PAGE_READY, SAVE_TIMEOUT } from './helpers';
 
 const conflictDialog = (page: Page) => page.getByRole('alertdialog', { name: 'This brew was changed somewhere else' });
 const leaveDialog = (page: Page) => page.getByRole('alertdialog', { name: 'Leave without saving?' });
@@ -39,6 +39,8 @@ async function otherTabSaved(page: Page, context: BrowserContext) {
 }
 
 test('a save that conflicts after the editor is gone comes back as a conflict, not a plain restore (SAVE-1)', async ({ page, context }) => {
+  // Playwright's fake clock (web/e2e/clock.ts), for the autosave's delay at the end.
+  await page.clock.install();
   const { server, brew } = await otherTabSaved(page, context);
   // Typed, then left through an in-app link before the autosave delay: the unmount save gets 409
   // (or dies with the navigation) after the editor is gone.
@@ -65,7 +67,9 @@ test('a save that conflicts after the editor is gone comes back as a conflict, n
   // Restoring asks which version to keep; nothing is saved over theirs meanwhile.
   await expect(conflictDialog(page)).toBeVisible();
   expect(await editorTexts(page)).toEqual(['Base mine']);
-  await page.waitForTimeout(3500);
+  // Every timer of the autosave's delay and more: no save starts (it would show in the state at once).
+  await page.clock.runFor(AUTOSAVE_DELAY_MS + 500);
+  expect(await page.evaluate(() => window.__hbEditorApp!.save()!.status)).toBe('conflict');
   expect(storedText(server, brew)).toContain('Base theirs');
   expect(server.brews.get(brew.editId)!.version).toBe(2);
 });

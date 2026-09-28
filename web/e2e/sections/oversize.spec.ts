@@ -1,6 +1,6 @@
 // Oversize warnings and the layout status (P4.8) in the browser: warnings appear and clear as the
-// layout changes; each fix (allow splitting, make wide, shrink image) works on real theme CSS; the
-// "Laying out pages…" indicator shows for long passes only. /dev/sections, 5ePHB, both browsers.
+// layout changes; each fix (allow splitting, make wide, shrink image) works on real theme CSS (the
+// "Laying out pages…" indicator, on a fake clock: timing.spec.ts). /dev/sections, 5ePHB, both browsers.
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { block, doc, expect, filler, h, load, p, page as pg, settled, test, useHarness } from '../pagination/harness';
@@ -108,30 +108,4 @@ test('"Shrink image": an image taller than a column is made to fit', async ({ pa
   });
   expect(fit.image).toBeLessThan(fit.column);
   expect(fit.style).toMatch(/width: \d+px/);
-});
-
-test('"Laying out pages…" shows during a long pass only, and goes when it ends', async ({ page }) => {
-  await useHarness(page, { sections: true, busyDelay: 30 });
-  await page.evaluate(() => {
-    const status = document.querySelector('[data-testid="layout-status-text"]')!;
-    const seen: string[] = [];
-    (window as unknown as { __statusSeen: string[] }).__statusSeen = seen;
-    new MutationObserver(() => seen.push(status.textContent ?? '')).observe(status, { childList: true, subtree: true, characterData: true });
-  });
-  await page.evaluate(async () => {
-    window.__hbPagination.load('long30');
-    await window.__hbPagination.settled(10_000);
-  });
-  await expect(page.getByTestId('layout-status-text')).toHaveText('');
-  const seen = await page.evaluate(() => (window as unknown as { __statusSeen: string[] }).__statusSeen);
-  expect(seen.some((t) => t.includes('Laying out pages…'))).toBe(true);
-  // A small edit settles within the delay: nothing shows.
-  await page.evaluate(() => {
-    (window as unknown as { __statusSeen: string[] }).__statusSeen.length = 0;
-    const api = window.__hbPagination;
-    api.select(api.posOf('Travelers'));
-  });
-  await page.keyboard.type('x');
-  await settled(page);
-  expect(await page.evaluate(() => (window as unknown as { __statusSeen: string[] }).__statusSeen.some((t) => t.includes('Laying out')))).toBe(false);
 });
