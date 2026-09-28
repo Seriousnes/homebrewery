@@ -68,7 +68,9 @@ import { insertPageBreak } from './sections';
 // ---------------------------------------------------------------------------------------------
 // requests: what the keymap can't do by itself (dialogs, saving, printing, toolbar focus)
 
-export type KeymapRequest = 'save' | 'print' | 'span' | 'themeBlock' | 'link' | 'focusToolbar';
+// insertSnippet: open the snippet gallery; editSource: open the source editor on the selection;
+// insertTable: open the table insert picker. (Menus such as the context menu emit them.)
+export type KeymapRequest = 'save' | 'print' | 'span' | 'themeBlock' | 'link' | 'focusToolbar' | 'insertSnippet' | 'editSource' | 'insertTable';
 
 /** Return false to decline a request (the next listener, then the fallback, gets it). */
 export type KeymapListener = (request: KeymapRequest) => boolean | void;
