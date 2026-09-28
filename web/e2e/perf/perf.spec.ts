@@ -143,6 +143,9 @@ const SMALL_BREW = 0.1;
 /** A section of the same recipe as perf-50: about 5 pages. */
 const SMALL_SECTION = 0.1;
 
+/** A duration the probe measured: a number of milliseconds (never asserted against a limit). */
+const measured = (ms: unknown) => typeof ms === 'number' && Number.isFinite(ms) && ms >= 0;
+
 smokeTest.describe('performance smoke (P8.1)', () => {
   smokeTest('load and typing: the probe measures them', async ({ page }, testInfo) => {
     const load = await mount(page, rawBrew150(SMALL_BREW));
@@ -158,9 +161,10 @@ smokeTest.describe('performance smoke (P8.1)', () => {
     await page.evaluate(() => window.__hbPerf.quiet(window.__hbPerf.now(), 300));
     const typing = await page.evaluate(() => window.__hbPerf.stopTyping());
     expect(typing.keys.length).toBe('the quiet lantern keeps '.length);
+    // Every key measured (a duration can be 0 at the browser's timer resolution: only measured).
     for (const k of typing.keys) {
-      expect(k.work, `key "${k.key}"`).toBeGreaterThan(0);
-      expect(k.paint).toBeGreaterThan(0);
+      expect(measured(k.work), `key "${k.key}" work`).toBe(true);
+      expect(measured(k.paint), `key "${k.key}" paint`).toBe(true);
     }
     expect(typing.work.p95).toBeGreaterThanOrEqual(typing.work.p50);
     await record(testInfo, 'smoke-typing', { load, typing: { work: typing.work, paint: typing.paint } }, `${load.pages} pages settled in ${load.toSettled} ms; typing work p50 ${typing.work.p50} / p95 ${typing.work.p95} ms`);
@@ -173,7 +177,7 @@ smokeTest.describe('performance smoke (P8.1)', () => {
     const pasted = await page.evaluate(() => window.__hbPerf.insertText('the patient warden measures each crooked causeway before the storm, and the old ferry answers the bell '.repeat(3)));
     // Page 1 grew: every boundary of the section after it moved.
     expect(pasted.pagination.steps).toBeGreaterThanOrEqual(section.pages - 1);
-    expect(pasted.settle).toBeGreaterThan(0);
+    expect(measured(pasted.settle)).toBe(true);
     await record(testInfo, 'smoke-section', { pages: section.pages, pasted }, `${section.pages} pages: pasted paragraph settled in ${pasted.settle} ms (${pasted.pagination.steps} steps)`);
   });
 
