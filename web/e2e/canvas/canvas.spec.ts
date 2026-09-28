@@ -102,9 +102,20 @@ interface ThemeSnapshot {
 async function recordThemeSwitch(page: Page, font: string, textures: string[]): Promise<void> {
   await page.evaluate(
     ([family, urls]) => {
-      const w = window as unknown as { __themeSnapshots: ThemeSnapshot[]; __textWidth: () => number };
+      const w = window as unknown as { __themeSnapshots: ThemeSnapshot[]; __textWidth: () => number; __themeReloads: string[] };
+      // A theme link that loads again once applied: its sheet was dropped and re-created (what
+      // changing a link's media attribute does in Firefox), so for a moment neither theme applied.
+      w.__themeReloads = [];
+      document.head.addEventListener(
+        'load',
+        (e) => {
+          const l = e.target;
+          if (l instanceof HTMLLinkElement && l.hasAttribute('data-hb-theme-applied')) w.__themeReloads.push(l.getAttribute('data-hb-theme-href')!);
+        },
+        true,
+      );
       const decoded = new Set<string>();
-      const decode = HTMLImageElement.prototype.decode;
+      const decode = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'decode')!.value as (this: HTMLImageElement) => Promise<void>;
       HTMLImageElement.prototype.decode = function (this: HTMLImageElement) {
         const src = this.src;
         return decode.call(this).then(() => void decoded.add(src));
@@ -119,7 +130,7 @@ async function recordThemeSwitch(page: Page, font: string, textures: string[]): 
       };
       const snapshot = (): ThemeSnapshot => {
         const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[data-hb-theme-href]'))
-          .filter((l) => l.sheet && l.getAttribute('media') !== 'not all')
+          .filter((l) => l.sheet && l.hasAttribute('data-hb-theme-applied'))
           .map((l) => l.getAttribute('data-hb-theme-href')!.split('/')[3]!);
         const userTheme = document.adoptedStyleSheets.some((s) => Array.from(s.cssRules).some((r) => r.cssText.includes('HB User Theme')));
         const applied = links.includes('Journal') || userTheme;
@@ -136,13 +147,14 @@ async function recordThemeSwitch(page: Page, font: string, textures: string[]): 
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['media'],
+        attributeFilter: ['media', 'data-hb-theme-applied'],
       });
     },
     [font, textures] as const,
   );
 }
 
+const themeReloads = (page: Page) => page.evaluate(() => (window as unknown as { __themeReloads: string[] }).__themeReloads);
 const themeSnapshots = (page: Page) => page.evaluate(() => (window as unknown as { __themeSnapshots: ThemeSnapshot[] }).__themeSnapshots);
 /** The width recordThemeSwitch's snapshots read, now. */
 const textWidth = (page: Page) => page.evaluate(() => (window as unknown as { __textWidth: () => number }).__textWidth());
@@ -331,10 +343,10 @@ test.describe('P3.3 EditorCanvas', () => {
     await page.getByTestId('theme-select').selectOption('Journal');
     await held.arrived; // Journal's stylesheet is in (inert) and its fonts and textures are loading
     const waiting = await page.evaluate(() => ({
-      inert: Array.from(document.querySelectorAll('link[data-hb-theme-href*="/Journal/"]')).map((l) => l.getAttribute('media')),
+      applied: Array.from(document.querySelectorAll('link[data-hb-theme-href*="/Journal/"]')).map((l) => l.hasAttribute('data-hb-theme-applied')),
       font: getComputedStyle(document.querySelector('.page p')!).fontFamily,
     }));
-    expect(waiting.inert).toEqual(['not all']);
+    expect(waiting.applied).toEqual([false]); // loaded inert
     expect(waiting.font).toContain('BookInsanityRemake');
     expect(await statesOf(page)).toEqual(['Blank+5ePHB']); // unchanged so far
     await expect(page.locator('[data-canvas-status]')).toHaveAttribute('data-canvas-status', 'loading');
@@ -347,6 +359,7 @@ test.describe('P3.3 EditorCanvas', () => {
     expect(flip.font, 'Journal’s font is loaded when Journal applies').toBe(true);
     expect(flip.textWidth, 'the text is laid out in Journal’s font from the switch on').toBe(await textWidth(page));
     expect(flip.textures, 'Journal’s page textures are loaded when Journal applies').toEqual([true, true]);
+    expect(await themeReloads(page), 'no applied theme sheet was dropped and loaded again').toEqual([]);
   });
 
   test('a switch to a user theme (CSS text) waits for its fonts and textures too', async ({ page }) => {

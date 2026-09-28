@@ -221,8 +221,33 @@ export interface AppliedThemeStyles {
 
 const SLOT_ATTR = 'data-hb-theme-slot';
 const HREF_ATTR = 'data-hb-theme-href';
-/** On a link that is loading: fetched and parsed, but not applied until the switch. */
+/**
+ * Every theme link loads with this media: fetched and parsed, but not applied. The switch applies
+ * its sheet through the CSSOM (sheet.media) and marks the link with APPLIED_ATTR; the attribute
+ * stays. Changing a link's media attribute makes Firefox drop the sheet and load it again (the
+ * canvas would show neither theme meanwhile), and moving a link re-creates its sheet from the
+ * attribute, so a link that has loaded is never moved (it is replaced by a new one) and its media
+ * attribute is never changed.
+ */
 const INERT_MEDIA = 'not all';
+const APPLIED_ATTR = 'data-hb-theme-applied';
+const isApplied = (link: HTMLLinkElement) => link.hasAttribute(APPLIED_ATTR);
+
+/** Applies a loaded theme link's sheet, synchronously and without reloading it. */
+function applyLink(link: HTMLLinkElement): void {
+  if (link.sheet) link.sheet.media.mediaText = 'all';
+  link.setAttribute(APPLIED_ATTR, '');
+}
+
+function createThemeLink(doc: Document, href: string, slot: string): HTMLLinkElement {
+  const link = doc.createElement('link');
+  link.rel = 'stylesheet';
+  link.setAttribute('media', INERT_MEDIA);
+  link.href = href;
+  link.setAttribute(SLOT_ATTR, slot);
+  link.setAttribute(HREF_ATTR, href);
+  return link;
+}
 const adoptedBySlot = new WeakMap<Document, Map<string, CSSStyleSheet[]>>();
 /** The latest applyThemeStyles call per slot: only it switches the slot's styles. */
 const latestBySlot = new WeakMap<Document, Map<string, object>>();
@@ -458,9 +483,9 @@ export function disposeThemeSlot(slot: string, doc: Document = document): void {
  * stylesheet has loaded, failed or timed out; check `failed`.
  *
  * The switch is atomic: new links load inert (media "not all") while the slot's previous styles
- * stay applied, then, once every link has settled, the new links, the CSS text and the removal of
- * the previous links take effect together (one microtask, no paint between), so the canvas never
- * shows a half-applied theme. When a newer call for the same slot is made meanwhile, only that
+ * stay applied, then, once every link has settled, the new links (applied through the CSSOM, see
+ * INERT_MEDIA), the CSS text and the removal of the previous links take effect together (one
+ * task, no paint between), so the canvas never shows a half-applied theme. When a newer call for the same slot is made meanwhile, only that
  * one switches.
  */
 export async function applyThemeStyles(
@@ -479,27 +504,21 @@ export async function applyThemeStyles(
   for (const link of Array.from(head.querySelectorAll<HTMLLinkElement>(`link[${SLOT_ATTR}]`))) {
     if (link.getAttribute(SLOT_ATTR) === slot) existing.set(link.getAttribute(HREF_ATTR) ?? '', link);
   }
-  const showing = Array.from(existing.values()).some((link) => link.getAttribute('media') !== INERT_MEDIA);
+  const showing = Array.from(existing.values()).some(isApplied);
   const links: HTMLLinkElement[] = [];
   for (const style of chain.styles) {
     if (style.kind !== 'url') continue;
     let link = existing.get(style.href);
     if (link) existing.delete(style.href);
-    else {
-      link = doc.createElement('link');
-      link.rel = 'stylesheet';
-      link.setAttribute('media', INERT_MEDIA);
-      link.href = style.href;
-      link.setAttribute(SLOT_ATTR, slot);
-      link.setAttribute(HREF_ATTR, style.href);
-    }
+    else link = createThemeLink(doc, style.href, slot);
     links.push(link);
   }
   // Still applied until the switch below.
   const stale = new Set(existing.values());
 
-  // Keep the slot's links contiguous and ordered, moving only those out of place (moving a link
-  // re-creates its sheet). Stale links in between don't count: they go at the switch.
+  // Keep the slot's links contiguous and ordered. A link already in <head> that is out of place is
+  // replaced by a new one (loading inert, from the cache) instead of moved: moving it would
+  // re-create its sheet (see INERT_MEDIA). Stale links in between don't count: they go at the switch.
   const nextKept = (node: ChildNode): ChildNode | null => {
     let next = node.nextSibling;
     while (next && stale.has(next as HTMLLinkElement)) next = next.nextSibling;
@@ -507,8 +526,12 @@ export async function applyThemeStyles(
   };
   let cursor: ChildNode | null = links.length ? styleAnchor(head) : null;
   for (let i = links.length - 1; i >= 0; i--) {
-    const link = links[i]!;
-    if (link.parentNode !== head || nextKept(link) !== cursor) head.insertBefore(link, cursor);
+    let link = links[i]!;
+    if (link.parentNode === head && nextKept(link) !== cursor) {
+      stale.add(link);
+      link = links[i] = createThemeLink(doc, link.getAttribute(HREF_ATTR) ?? link.href, slot);
+    }
+    if (link.parentNode !== head) head.insertBefore(link, cursor);
     cursor = link;
   }
 
@@ -550,7 +573,7 @@ export async function applyThemeStyles(
   // in late. (A first load has nothing on screen to keep.)
   const incoming: IncomingSheet[] = [...incomingSheets];
   for (const link of links) {
-    if (link.getAttribute('media') === INERT_MEDIA && link.sheet) incoming.push({ owner: link, sheet: link.sheet, base: link.sheet.href ?? link.href });
+    if (!isApplied(link) && link.sheet) incoming.push({ owner: link, sheet: link.sheet, base: link.sheet.href ?? link.href });
   }
   const preloadMs = Math.min(timeoutMs, PRELOAD_TIMEOUT_MS);
   if ((showing || current.length > 0) && incoming.length && preloadMs > 0) {
@@ -565,9 +588,7 @@ export async function applyThemeStyles(
   // The switch, unless a newer call (or disposeThemeSlot) owns the slot now.
   if (slotMap(latestBySlot, doc).get(slot) === token) {
     addPreloadedFonts(incoming.map((s) => s.owner), doc);
-    for (const link of links) {
-      if (link.getAttribute('media') === INERT_MEDIA) link.removeAttribute('media');
-    }
+    for (const link of links) if (!isApplied(link)) applyLink(link);
     if ('adoptedStyleSheets' in doc) setAdoptedSheets(doc, slot, sheets);
     for (const link of stale) removeLink(link);
   }
