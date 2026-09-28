@@ -38,3 +38,4 @@ legacy/config/docker.*
 
 # Local compose overrides (HB_HTTP_PORT etc.)
 .env
+web/test-results-linux/

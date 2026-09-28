@@ -1,0 +1,5 @@
+# Build context of deploy/e2e-linux/Dockerfile: only what the image installs from.
+*
+!web/package.json
+!web/package-lock.json
+!deploy/e2e-linux/entrypoint.sh

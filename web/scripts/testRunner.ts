@@ -674,6 +674,12 @@ export class TestRunner {
     return { host: 'localhost', port, container: name };
   }
 
+  /** A container this runner started itself: removed with the runner, like startDatabase's. */
+  trackContainer(name: string): void {
+    this.containers.add(name);
+    this.watchContainerWithReaper(name);
+  }
+
   private watchContainerWithReaper(name: string): void {
     this.watchWithReaper(undefined);
     if (this.reaper?.connected) this.reaper.send({ container: name });

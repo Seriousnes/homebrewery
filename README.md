@@ -170,7 +170,8 @@ The full e2e suite runs in CI only.
 
 ```
 npm --prefix web run verify                           # what CI checks besides e2e (about 2 minutes)
-npm --prefix web run e2e -- e2e/matrix/typing.spec.ts   # the specs your change can reach
+npm --prefix web run e2e -- e2e/matrix/typing.spec.ts   # the specs your change can reach, while you work
+node e2e/run-linux.mjs e2e/matrix/typing.spec.ts      # the same on CI's Linux machine, before you push (from web/)
 npm --prefix web run e2e:smoke                        # the smoke set
 ```
 
@@ -182,6 +183,15 @@ runs `dotnet test` whatever you changed, because API tests read web files (fonts
 "The specs your change can reach" is wider than its folder: a change to shared styles or theme tokens also runs
 the axe (color-contrast) checks of every page (`e2e/a11y`, `e2e/admin`, `e2e/lists`, `e2e/shell`); a change to
 navigation or sign-in also runs `e2e/shell` and `e2e/import-ui`.
+
+`e2e/run-linux.mjs` runs specs where CI does: in the CI e2e job's Playwright image (Linux, its fonts and
+browsers, the .NET SDK, `npm ci`), with `CI=true` (2 workers, retries), 4 CPUs and 16 GB like CI's runner, a
+`postgres:18` next to it, and a main checkout with LF line endings made from your working tree (uncommitted
+changes included). Pixel diffs, font metrics, line endings and timing behave as in CI, not as on Windows. Its
+arguments go to `run-suite.mjs`: a spec or folder (plus `--project=chromium` for one browser), or a CI shard
+(`--project=chromium --shard=2/7`). `node e2e/run-linux.mjs verify` runs the web and unit lanes of `verify` there.
+Only Docker is needed; the first run builds the image (a few minutes), later runs start in about 40 s. Traces of
+failed tests land in `web/test-results-linux/`.
 
 Before the first e2e run, install the browsers from `web/`: `npx playwright install chromium firefox`.
 `npm run e2e` with a file or folder starts its own Vite (under the no-progress watchdog); the specs that need an API
