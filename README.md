@@ -77,8 +77,15 @@ Each stack runs:
 | `api` | The ASP.NET Core API under `dotnet watch` (`mcr.microsoft.com/dotnet/sdk:10.0` plus headless Chromium for PDF export: the Dockerfile's `dev-api` stage) | Applies pending EF Core migrations at startup (`Database__MigrateOnStartup=true`). After a Microsoft.Playwright upgrade, `./stack build api` installs the new Chromium |
 | `web` | The Vite dev server (`node:24`) | The one origin, on the worktree's port: its proxy sends `/api`, `/share`, `/openapi` and `/healthz` to `api`. Runs `pnpm install` on the first start and whenever `web/pnpm-lock.yaml` changes |
 
-The repository is bind-mounted into `api` and `web`. When you edit files on the host, `dotnet watch`
-hot-reloads the API (or restarts it) and Vite hot-updates the page. Platform-specific outputs
+The repository is bind-mounted into `api`. `web` works on a copy of `web/`, `themes/` and `shared/` instead (in
+its image, the Dockerfile's `dev-web` stage): a file sync (`docker compose watch`, the `develop.watch` rules in
+[docker-compose.yml](./docker-compose.yml)) brings the copy up to date when it starts, then watches those folders on
+the host and copies each changed file into it, where Vite's own watcher sees it. That replaces polling the bind mount, which kept the dev server's file reads
+waiting seconds on Windows. `./stack up -d` (and `start`, `restart`) starts the sync in the background and `./stack
+stop` / `down` stop it; a foreground `./stack up` syncs while it runs. `./stack info` shows whether it runs and
+where its log is. A changed `web/pnpm-lock.yaml` restarts `web`, which installs the new packages.
+When you edit files on the host, `dotnet watch` hot-reloads the API (or restarts it) and Vite hot-updates the
+page. Platform-specific outputs
 (`src/*/bin`, `src/*/obj`, `web/node_modules`) live in named volumes, so the Linux builds in the
 containers never mix with builds on the host (a new branch's first start restores and builds them; the NuGet
 cache and the `api` image are shared). The first start takes a few minutes (the `api` image with Chromium,
@@ -93,7 +100,8 @@ NuGet restore, `pnpm install`, first build). `./stack up -d --wait` returns once
 - `./stack info` shows the branch, the worktree's slot, the stack's URLs and this worktree's test ports.
 
 Plain `docker compose up` still runs [docker-compose.yml](./docker-compose.yml) alone: one stack with a
-database of its own (its own `<project>_pgdata` volume), as the operations tests use it.
+database of its own (its own `<project>_pgdata` volume), as the operations tests use it. Add `--watch` for the
+file sync; without it, `web` serves the sources as they were when it started.
 
 Create migrations on the host (needs the .NET SDK; `dotnet tool restore` installs the pinned `dotnet-ef`),
 then run `./stack restart api` to apply them:

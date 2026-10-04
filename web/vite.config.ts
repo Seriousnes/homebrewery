@@ -16,12 +16,10 @@ const apiTarget = process.env.HB_API_URL ?? 'http://localhost:5080';
 // write check sees Origin and Host agree and cookies are set for the Vite origin.
 const apiProxy = { target: apiTarget, changeOrigin: false };
 
-// Container development (`docker compose up`, see docker-compose.yml): HB_WATCH_POLLING=1, because the
-// repository is bind-mounted from the host and file events from a Windows or macOS host don't reach the
-// container, so the watcher polls instead. Unset on the host, where Vite's defaults apply.
+// Container development (./stack up, see docker-compose.yml): Vite works on a copy of the sources inside the
+// container, which `docker compose watch` keeps in sync from the host, so Vite's native watcher works there too.
 // The HMR client needs no port setting: it opens its websocket on the page's own host and port, whether the
 // browser came through the published port or the router (<branch>.homebrewery.dev.localhost, deploy/stack/shared.yml).
-const watchPolling = /^(?:1|true)$/i.test(process.env.HB_WATCH_POLLING ?? '');
 
 export default defineConfig({
   plugins: [
@@ -60,8 +58,6 @@ export default defineConfig({
     },
     port: 5173,
     strictPort: true,
-    // Binary files (theme fonts and images) change rarely, so they are polled less often.
-    watch: watchPolling ? { usePolling: true, interval: 300, binaryInterval: 1000 } : {},
     proxy: {
       '^/api(?:/|$)': apiProxy,
       '^/share(?:/|$)': apiProxy,

@@ -22,8 +22,13 @@
 // this worktree's stack of the branch checked out before, which holds the same port, and stop the containers of the
 // other mode (app and backup of --prod in dev mode, api and web in --prod mode).
 //
-// Plain `docker compose up` still works: it runs docker-compose.yml alone, a stack with a database of its own.
-import { spawnSync } from 'node:child_process';
+// The web container works on a copy of the sources; a file sync (`docker compose watch`, started detached after
+// `up -d`, `start` and `restart`, stopped with web) copies edits into it (docker-compose.yml web). A foreground `up`
+// runs with --watch instead.
+//
+// Plain `docker compose up` still works: it runs docker-compose.yml alone, a stack with a database of its own
+// (add --watch for the file sync).
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -227,8 +232,73 @@ function stopOtherBranches(root, project) {
   );
   for (const other of projects) {
     say(`stopping ${other}, this worktree's stack of the branch checked out before (docker compose -p ${other} down removes it)…`);
+    stopWatcher(other);
     stopContainers(other);
   }
+}
+
+// The file sync (docker-compose.yml web: develop.watch): `docker compose watch` on the host copies each changed file
+// into web's container. A detached process per project; its pid and log are in the temp folder.
+const watchFile = (name, ext) => path.join(os.tmpdir(), `homebrewery-watch-${name}.${ext}`);
+
+/** The pid of `name`'s running file sync, or 0. Checks the process is still docker (pids get reused). */
+function watcherPid(name) {
+  let pid = 0;
+  try {
+    pid = Number(fs.readFileSync(watchFile(name, 'pid'), 'utf8'));
+  } catch {
+    return 0;
+  }
+  if (!Number.isInteger(pid) || pid <= 0) return 0;
+  const check =
+    process.platform === 'win32'
+      ? spawnSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { encoding: 'utf8', windowsHide: true })
+      : spawnSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' });
+  return /docker/i.test(check.stdout ?? '') ? pid : 0;
+}
+
+/** Stops `name`'s file sync, if it runs. */
+function stopWatcher(name) {
+  const pid = watcherPid(name);
+  if (pid) {
+    // The docker CLI runs compose as a child process: stop the whole tree.
+    if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    else {
+      try {
+        process.kill(-pid, 'SIGTERM'); // detached: its own process group
+      } catch {
+        // already gone
+      }
+    }
+  }
+  fs.rmSync(watchFile(name, 'pid'), { force: true });
+}
+
+/** Starts `name`'s file sync unless it runs (web must be running: `watch --no-up`). */
+function startWatcher(name, files, env) {
+  if (watcherPid(name)) return;
+  const running = docker(['ps', '-q', '--filter', `label=com.docker.compose.project=${name}`, '--filter', 'label=com.docker.compose.service=web']).out;
+  if (!running) return;
+  const log = watchFile(name, 'log');
+  const out = fs.openSync(log, 'w');
+  const child = spawn('docker', ['compose', '-p', name, ...files, 'watch', '--no-up', '--quiet', 'web'], {
+    cwd: repo,
+    env: { ...process.env, ...env },
+    detached: true,
+    stdio: ['ignore', out, out],
+    windowsHide: true,
+  });
+  fs.closeSync(out);
+  if (!child.pid) fail(`the file sync (docker compose watch) could not start; see ${log}`);
+  fs.writeFileSync(watchFile(name, 'pid'), String(child.pid));
+  child.unref();
+  // A sync that can't start (an old Compose, a bad develop.watch) exits at once.
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+  if (!watcherPid(name)) {
+    say(`the file sync (docker compose watch) stopped right away, so edits won't reach the dev server:\n${fs.readFileSync(log, 'utf8').trim()}`);
+    return;
+  }
+  say(`file sync running (docker compose watch, pid ${child.pid}; log ${log})`);
 }
 
 const argv = process.argv.slice(2);
@@ -253,6 +323,8 @@ if (argv[0] === 'info') {
   console.log(`worktree    ${info.root} (${info.main ? 'main checkout' : 'linked worktree'}, slot ${info.slot} of ${MAX_SLOT})`);
   console.log(`stack       ${project} → ${routerUrl(host)} or ${portUrl}`);
   console.log(`database    ${SHARED_PROJECT} (localhost:${process.env.HB_DB_PORT ?? 5432}, volume ${SHARED_VOLUME})`);
+  const syncPid = watcherPid(project);
+  console.log(`file sync   ${syncPid ? `running (pid ${syncPid}; log ${watchFile(project, 'log')})` : 'not running (./stack up -d starts it)'}`);
   for (const [label, ...bases] of testPorts) console.log(`test ports  ${label}: ${bases.map((b) => slotPort(b, info.slot)).join(' / ')}`);
   process.exit(0);
 }
@@ -290,9 +362,23 @@ if (command && STARTS.has(command)) {
 }
 
 const files = ['-f', 'docker-compose.yml', '-f', 'deploy/stack/dev.yml', ...(prod ? ['-f', 'compose.prod.yml', '-f', 'deploy/stack/prod.yml'] : [])];
-const result = docker(['compose', '-p', project, ...files, ...args], {
-  inherit: true,
-  allowFail: true,
-  env: { HB_HTTP_PORT: port, HB_WORKTREE: info.root, HB_HOST: host },
-});
+const env = { HB_HTTP_PORT: port, HB_WORKTREE: info.root, HB_HOST: host };
+
+// The file sync follows web: it stops with it, and starts once web runs in the background. A foreground
+// `up` watches by itself (--watch) and stops watching with it.
+const at = args.indexOf(command);
+const services = at < 0 ? [] : args.slice(at + 1).filter((a) => !a.startsWith('-'));
+const touchesWeb = services.length === 0 || !services.every((s) => ['api', 'db'].includes(s));
+const detached = args.some((a) => a === '-d' || a === '--detach' || a.startsWith('--wait'));
+let composeArgs = args;
+if (prod || (touchesWeb && ['stop', 'down', 'kill', 'rm', 'pause'].includes(command))) stopWatcher(project);
+if (!prod && command === 'up' && touchesWeb) {
+  stopWatcher(project); // a recreated web container gets a fresh sync
+  if (!detached) composeArgs = [...args.slice(0, at + 1), '--watch', ...args.slice(at + 1)];
+}
+
+const result = docker(['compose', '-p', project, ...files, ...composeArgs], { inherit: true, allowFail: true, env });
+if (result.status === 0 && !prod && touchesWeb && ['up', 'start', 'restart', 'unpause'].includes(command) && (command !== 'up' || detached)) {
+  startWatcher(project, files, env);
+}
 process.exit(result.status);

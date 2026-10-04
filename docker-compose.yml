@@ -108,8 +108,17 @@ services:
   # index.html from. node_modules is a named volume holding Linux binaries; `pnpm install` runs only when
   # pnpm-lock.yaml (or the Node version) differs from the last install into that volume. pnpm comes
   # through corepack, at web/package.json's packageManager version.
+  #
+  # Vite works on a copy of web/, themes/ and shared/ in the container, not on a bind mount: a Windows or macOS
+  # host's file events don't reach a bind-mounted folder, and polling it starves the dev server (every stat costs
+  # ~1.6 ms there, so watching ~1,700 files took the whole libuv pool and each request waited seconds). The image
+  # (the Dockerfile's dev-web stage) holds the copy; `docker compose watch` (develop.watch below, started by
+  # ./stack) brings it up to date when it starts and then copies each file the host's own watcher sees change,
+  # where Vite's native watcher picks it up. Without ./stack: docker compose up --watch.
   web:
-    image: node:24
+    build:
+      context: .
+      target: dev-web
     working_dir: /repo/web
     command:
       - sh
@@ -129,7 +138,6 @@ services:
     restart: on-failure
     environment:
       HB_API_URL: http://api:8080   # the target of Vite's proxy
-      HB_WATCH_POLLING: "1"
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       # The package store is a shared volume. Otherwise pnpm keeps it next to the project (the bind-mounted
       # repository), on the host.
@@ -138,9 +146,29 @@ services:
       # Loopback only: the dev server has no authentication and serves source files.
       - 127.0.0.1:${HB_HTTP_PORT:-8080}:8080
     volumes:
-      - .:/repo                  # Vite reads ../themes (and later ../shared) next to web/
       - web-node-modules:/repo/web/node_modules
       - pnpm-store:/pnpm-store
+    develop:
+      watch:
+        # A new lockfile: restart, so the command runs pnpm install. (No initial_sync here: it would restart web
+        # whenever the sync starts. The ./web rule's initial sync brings the lockfile, and a changed one waits for
+        # the next restart.)
+        - action: sync+restart
+          path: ./web/pnpm-lock.yaml
+          target: /repo/web/pnpm-lock.yaml
+        - action: sync
+          path: ./web
+          target: /repo/web
+          ignore: [node_modules/, test-results/, playwright-report/, blob-report/, .vite/]
+          initial_sync: true
+        - action: sync
+          path: ./themes
+          target: /repo/themes
+          initial_sync: true
+        - action: sync
+          path: ./shared
+          target: /repo/shared
+          initial_sync: true
     labels:
       # ./stack finds this worktree's stacks by it (the one of the branch checked out before holds the same port).
       hb.worktree: ${HB_WORKTREE:-}

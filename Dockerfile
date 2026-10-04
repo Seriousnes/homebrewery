@@ -70,6 +70,15 @@ RUN --mount=type=bind,from=playwright,source=/playwright,target=/tmp/playwright 
     /tmp/playwright/node/node /tmp/playwright/package/cli.js install --with-deps --only-shell chromium \
     && rm -rf /var/lib/apt/lists/*
 
+# ---- dev-web: the image of `docker compose up`'s web service (the Vite dev server) -------------
+# Not part of the production image. It holds a copy of the sources Vite reads; `docker compose watch`
+# (docker-compose.yml web: develop.watch, initial_sync) brings it up to date and keeps it so.
+# node_modules is a volume (the service's command installs into it).
+FROM node:24 AS dev-web
+COPY themes /repo/themes
+COPY shared* /repo/shared/
+COPY web /repo/web
+
 # ---- 5. runtime ---------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
