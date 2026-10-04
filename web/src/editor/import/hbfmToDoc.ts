@@ -8,7 +8,7 @@
 //    no expr-eval: brew text is untrusted): variables defined on later pages resolve on the
 //    second pass, as upstream's forced re-render did. `variables: 'keep'` leaves variable
 //    syntax as written instead. No trailing `\column` hack (plan §4.2).
-// 4. Lift <style> tags into the brew CSS, drop comments, sanitize (sanitize.ts), wrap each page
+// 4. Convert legacy-renderer stat blocks (legacyStatBlocks.ts). Lift <style> tags into the brew CSS, drop comments, sanitize (sanitize.ts), wrap each page
 //    in div.page[data-kind=manual] › div.columnWrapper with the \page line's classes and styles.
 // 5. Mount the pages in the probe (canvas/probe.ts: the brew's theme and CSS), wait for fonts
 //    and images; read the images' natural sizes (imageSizes.ts).
@@ -23,6 +23,7 @@ import { splitTextStyleAndMetadata, type BrewMetadata } from './brewText';
 import { createHbfmRenderer, type VariablesMode } from './hbfm/renderer';
 import { applyNaturalSizes, naturalImageSizes } from './imageSizes';
 import { ImportReport, type ImportReportData } from './importReport';
+import { convertLegacyStatBlocks } from './legacyStatBlocks';
 import { analyzePage, applyLift } from './lift';
 import { buildPageElement, pageLine, pageShellFromTags, splitPages, stripPageLine } from './pages';
 import { sanitizeImportHtmlDetailed } from './sanitize';
@@ -86,8 +87,11 @@ interface RenderedPage {
   attributes: Record<string, string>;
 }
 
-/** Comments out, <style> contents collected; the rest re-serialized (inert template parse). */
-function extractStylesAndComments(html: string, doc: Document): { html: string; styles: string[]; comments: number } {
+/**
+ * Comments out, <style> contents collected, legacy stat blocks converted (legacyStatBlocks.ts);
+ * the rest re-serialized (inert template parse).
+ */
+function extractStylesAndComments(html: string, doc: Document): { html: string; styles: string[]; comments: number; statBlocks: number } {
   const template = doc.createElement('template');
   template.innerHTML = html;
   const walker = doc.createTreeWalker(template.content, 128 /* NodeFilter.SHOW_COMMENT */);
@@ -99,7 +103,8 @@ function extractStylesAndComments(html: string, doc: Document): { html: string; 
     if ((style.textContent ?? '').trim()) styles.push(style.textContent ?? '');
     style.remove();
   }
-  return { html: template.innerHTML, styles, comments: comments.length };
+  const statBlocks = convertLegacyStatBlocks(template.content, doc);
+  return { html: template.innerHTML, styles, comments: comments.length, statBlocks };
 }
 
 function countTransparent(root: Element, report: ImportReport): void {
@@ -136,10 +141,12 @@ export async function hbfmToDoc(raw: string, options: HbfmToDocOptions = {}): Pr
   bodies.forEach((body, i) => renderer.render(body, i));
   const inert = document.implementation.createHTMLDocument('');
   const styleTags: string[] = [];
+  let legacyStatBlocks = 0;
   const rendered: RenderedPage[] = bodies.map((body, i) => {
     const line = pageLine(pages[i] ?? '');
     const shell = pageShellFromTags(line ? renderer.pageLineTags(line) : null);
     const extracted = extractStylesAndComments(renderer.render(body, i), inert);
+    legacyStatBlocks += extracted.statBlocks;
     styleTags.push(...extracted.styles);
     report.data.commentsDropped += extracted.comments;
     const clean = sanitizeImportHtmlDetailed(extracted.html);
@@ -150,6 +157,10 @@ export async function hbfmToDoc(raw: string, options: HbfmToDocOptions = {}): Pr
     return { html: clean.html, ...shell };
   });
   report.data.styleTagsLifted = styleTags.length;
+  if (legacyStatBlocks > 0) {
+    const what = legacyStatBlocks === 1 ? 'A stat block' : `${legacyStatBlocks} stat blocks`;
+    report.warn(`${what} in the legacy renderer’s style (a rule before a quote) became ${legacyStatBlocks === 1 ? 'a monster frame' : 'monster frames'}.`);
+  }
   report.data.variables.definitions = renderer.variables.definitions.map((d) => ({ ...d, page: d.page + 1 }));
   for (const [page, calls] of renderer.variables.unresolved) for (const call of calls) report.data.variables.unresolved.push({ page: page + 1, call });
 

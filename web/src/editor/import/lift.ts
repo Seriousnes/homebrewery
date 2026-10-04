@@ -80,6 +80,11 @@ function isEmptySpan(el: Element): boolean {
   return el.children.length === 0 && (el.textContent ?? '').trim() === '';
 }
 
+/** An empty element with classes pageNumber and auto: the page's automatic page number. */
+function isAutoPageNumber(el: Element): boolean {
+  return el.classList.contains('pageNumber') && el.classList.contains('auto') && isEmptySpan(el);
+}
+
 /** The element's inline style, normalized like the schema stores it (cssText). */
 function normalizedStyle(el: HTMLElement, image: boolean): string {
   if (!el.hasAttribute('style')) return '';
@@ -215,7 +220,16 @@ export function analyzePage(pageEl: HTMLElement, win: Window, pageIndex: number)
     } else topLevel.push(child);
   }
   for (const el of topLevel) {
-    if (el.tagName !== 'SPAN' || !el.classList.contains('inline-block') || taken.has(el)) continue;
+    if (taken.has(el)) continue;
+    // Older brews write the page number as raw HTML, `<div class='pageNumber auto'></div>`: the
+    // same page number. As a text object it would keep an otherwise empty page alive (a page that
+    // carries objects is never deleted by a pull, plan §4.9).
+    if (!result.pageNumber && el.tagName === 'DIV' && isAutoPageNumber(el) && el.classList.length === 2 && el.attributes.length === 1) {
+      result.pageNumber = el;
+      taken.add(el);
+      continue;
+    }
+    if (el.tagName !== 'SPAN' || !el.classList.contains('inline-block')) continue;
     if (!result.footer && el.classList.contains('footnote') && !isEmptySpan(el)) {
       const lost: string[] = [];
       const others = authorClasses(el).filter((c) => c !== 'footnote');
@@ -224,7 +238,7 @@ export function analyzePage(pageEl: HTMLElement, win: Window, pageIndex: number)
       if (el.querySelector('*:not(br)')) lost.push('footer: formatting dropped (text kept)');
       result.footer = { el, text: objectText(el), lost };
       taken.add(el);
-    } else if (!result.pageNumber && el.classList.contains('pageNumber') && el.classList.contains('auto') && isEmptySpan(el)) {
+    } else if (!result.pageNumber && isAutoPageNumber(el)) {
       result.pageNumber = el;
       taken.add(el);
     }

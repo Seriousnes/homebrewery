@@ -61,6 +61,16 @@ describe('hbfmToDoc', () => {
     expect(report.lifted).toEqual({ markers: 1, footers: 1, pageNumbers: 1, objects: 0 });
   });
 
+  it("lifts an older brew's <div class='pageNumber auto'> into the page number, not a page object", async () => {
+    const { doc, report } = await hbfmToDoc("# One\n\n<div class='pageNumber auto'></div>\n\\page\n<div class='pageNumber auto'></div>\n\nTwo", options);
+    expect(pages(doc).map((p): unknown[] => [p.attrs?.pageNumber, p.attrs?.objects])).toEqual([
+      [true, []],
+      [true, []],
+    ]);
+    expect(types(pages(doc)[1])).toEqual(['paragraph']);
+    expect(report.lifted).toEqual({ markers: 0, footers: 0, pageNumbers: 2, objects: 0 });
+  });
+
   it('lifts absolutely positioned images and text into page objects', async () => {
     const md = [
       'Before',
