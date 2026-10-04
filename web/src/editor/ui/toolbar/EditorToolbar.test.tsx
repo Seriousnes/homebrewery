@@ -144,6 +144,24 @@ describe('EditorToolbar', () => {
     expect(e.state.doc.child(1).child(0).type.name).toBe('orderedList');
   });
 
+  it('the Columns menu switches the section, or every page, and shows the setting', async () => {
+    const { e, user, toolbar } = mount(docOf(page([p('alpha')], { pid: 'a' }), page([p('beta')], { pid: 'b' })));
+    expect(within(toolbar).getByRole('group', { name: 'Layout' })).toBeInTheDocument();
+    act$(() => selectText(e, 'alpha', 1));
+    await user.click(button('Columns: theme default'));
+    const menu = screen.getByRole('menu', { name: 'Columns' });
+    expect(within(menu).getByRole('group', { name: 'This section (page 1)' })).toBeInTheDocument();
+    expect(within(menu).getByRole('menuitemradio', { name: 'Theme default' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(within(menu).getByRole('menuitemradio', { name: '1 column' }));
+    expect(e.state.doc.content.content.map((pg) => pg.attrs.columns as unknown)).toEqual([1, null]);
+    expect(e.view.dom).toHaveFocus();
+    expect(button('Columns: 1 column')).toHaveTextContent('1 column');
+    await user.click(button('Columns: 1 column'));
+    await user.click(within(screen.getByRole('menu', { name: 'Columns' })).getByRole('menuitem', { name: '1 column on every page' }));
+    expect(e.state.doc.content.content.map((pg) => pg.attrs.columns as unknown)).toEqual([1, 1]);
+    expect(undoDepth(e.state)).toBe(2);
+  });
+
   it('zoom and page layout come from the UI store', async () => {
     const { user } = mount(docWith(p('alpha')));
     expect(button('Zoom: 100%')).toBeInTheDocument();
@@ -233,6 +251,7 @@ describe('EditorToolbar', () => {
     expect(button('Bold')).toBeDisabled();
     expect(button('Page break')).toBeDisabled();
     expect(button(/Block type/)).toBeDisabled();
+    expect(button(/^Columns/)).toBeDisabled();
     expect(button('Zoom in')).toBeEnabled();
   });
 });

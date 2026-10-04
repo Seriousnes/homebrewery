@@ -123,6 +123,15 @@ test('section settings: 1 column on every page of the section, repaginated; one 
   expect(undone.length).toBe(before.length);
   expect(undone.map((a) => a.columns)).toEqual(before.map((a) => a.columns));
   expect(await overflowing(page)).toEqual([]);
+
+  // The theme default names the count the canvas shows while the section follows the theme (as
+  // the Columns menus do); a section with its own setting can't show the theme's count.
+  const themeOption = page.getByRole('combobox', { name: 'Columns' }).locator('option[value="theme"]');
+  expect(before[0]!.columns).toBe(2);
+  await expect(themeOption).toHaveText('Theme default');
+  await page.getByRole('combobox', { name: 'Columns' }).selectOption('theme');
+  await settled(page);
+  await expect(themeOption).toHaveText('Theme default (2 columns)'); // 5ePHB
 });
 
 test('section style reflows the section: more pages, and fewer again after undo', async ({ page, browserName }) => {
@@ -240,7 +249,7 @@ test('keyboard: tabs, breadcrumbs, combobox and Escape without a mouse', async (
 });
 
 test.describe('axe', () => {
-  test('inspector: element and page tabs, open suggestions, light and dark', async ({ page }) => {
+  test('inspector: element tab, open suggestions, an inline error', async ({ page }) => {
     await openInspector(page, { style: false, scheme: 'light' });
     await clickIn(page, IDS.note);
     expect(await chromeViolations(page)).toEqual([]);
@@ -252,8 +261,18 @@ test.describe('axe', () => {
     await page.getByRole('textbox', { name: 'Style' }).fill('bad');
     await page.getByRole('textbox', { name: 'Style' }).press('Tab');
     expect(await chromeViolations(page)).toEqual([]);
+  });
+
+  test('inspector: page tab with an object selected, then both tabs in dark', async ({ page }) => {
+    await openInspector(page, { style: false, scheme: 'light' });
+    // The intro's page has the objects (see "objects: selecting one …").
+    await clickIn(page, IDS.intro);
+    await page.getByRole('textbox', { name: 'Style' }).fill('bad');
+    await page.getByRole('textbox', { name: 'Style' }).press('Tab');
     await page.getByRole('tab', { name: 'Page' }).click();
-    await page.getByTestId('inspector-objects').getByRole('button').first().click().catch(() => {});
+    const object = page.getByTestId('inspector-objects').getByRole('button', { name: /Art: inn sketch/ });
+    await object.click();
+    await expect(object).toHaveAttribute('aria-pressed', 'true');
     expect(await chromeViolations(page)).toEqual([]);
 
     await page.getByTestId('scheme-select').selectOption('dark');

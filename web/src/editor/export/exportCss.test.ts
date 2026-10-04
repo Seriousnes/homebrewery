@@ -35,7 +35,14 @@ describe('editorCss', () => {
 
   it('has canvas.css (the page structure, the upstream base, dl and image rules) and the ProseMirror rules', () => {
     const css = editorCss(BASE);
-    for (const rule of ['.hb-canvas .page > .columnWrapper', ':where(.hb-canvas img[data-hb-natural])', '.hb-canvas .page dl.hb-dl-multiline > dt::after', '.hb-canvas .page li.hb-continued::marker']) {
+    for (const rule of [
+      '.hb-canvas .page > .columnWrapper',
+      '.hb-canvas .page:where(.hb-cols-1)',
+      '.hb-canvas .page:where(.hb-cols-2)',
+      ':where(.hb-canvas img[data-hb-natural])',
+      '.hb-canvas .page dl.hb-dl-multiline > dt::after',
+      '.hb-canvas .page li.hb-continued::marker',
+    ]) {
       expect(canvasCss).toContain(rule);
       expect(css).toContain(rule);
     }

@@ -5,6 +5,7 @@ import { type Spread, uiStore, useUiStore, ZOOM_LEVELS } from '@/app/uiStore';
 import { IconButton, type IconName, type MenuEntry, MenuButton, Toolbar, ToolbarGroup, ToolbarSeparator } from '@/ui';
 import { type AlignValue, TEXT_STYLE_LABELS } from '../../commands/blocks';
 import { editorActions, emitKeymapRequest, onKeymapRequest, shortcutFor, type ShortcutId } from '../../commands/keymap';
+import { columnsButtonLabel, columnsEntries } from '../columns/columnsMenu';
 import { textStyleEntries } from './textStyles';
 import { EditorDialogs } from './EditorDialogs';
 import styles from './EditorToolbar.module.css';
@@ -49,10 +50,11 @@ const percent = (zoom: number) => `${Math.round(zoom * 100)}%`;
 
 /**
  * The editor toolbar (plan §6.2): block type, marks, span classes and theme blocks, alignment,
- * lists, the Insert menu slot, page and column breaks, undo and redo, zoom and spread (UI store),
- * and the save status slot. One tab stop with roving focus (UI kit Toolbar); Alt+F10 in the
- * editor focuses it, Escape goes back to the editor. Buttons never take the focus from the
- * editor on click, so the selection stays visible. Commands are one undo step each.
+ * lists, the columns of the section (or every page), the Insert menu slot, page and column breaks,
+ * undo and redo, zoom and spread (UI store), and the save status slot. One tab stop with roving
+ * focus (UI kit Toolbar); Alt+F10 in the editor focuses it, Escape goes back to the editor.
+ * Buttons never take the focus from the editor on click, so the selection stays visible.
+ * Commands are one undo step each.
  */
 export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', dialogs = true, className, 'data-testid': testId }: EditorToolbarProps) {
   const state = useToolbarState(editor);
@@ -60,6 +62,7 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
   const spread = useUiStore((s) => s.spread);
   const rootRef = useRef<HTMLDivElement>(null);
   const [blockMenuOpen, setBlockMenuOpen] = useState(false);
+  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
 
   // Alt+F10 in the editor: focus the toolbar's current item.
   useEffect(
@@ -100,6 +103,9 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
   // Built while the menu is open only: the previews and the theme boxes on offer follow the
   // stylesheets applied when it opens (and the state, which re-renders the toolbar).
   const blockItems: MenuEntry[] = blockMenuOpen ? textStyleEntries(editor, editor.state, { afterSelect: focusEditor }) : [];
+  // Built while open only: the section's pages and the theme's column count are read then.
+  const columnsItems: MenuEntry[] = columnsMenuOpen ? columnsEntries(editor, { afterSelect: focusEditor }) : [];
+  const columnsLabel = columnsButtonLabel(state.columns);
 
   const classItems: MenuEntry[] = [
     {
@@ -235,6 +241,21 @@ export function EditorToolbar({ editor, insertMenu, status, label = 'Editing', d
             disabled={disabled}
             onClick={() => editorActions.orderedList(editor)}
             data-testid="list-ordered"
+          />
+        </ToolbarGroup>
+        <ToolbarSeparator />
+        <ToolbarGroup label="Layout">
+          <MenuButton
+            label={columnsLabel.text}
+            aria-label={columnsLabel.name}
+            icon="columns"
+            menuLabel="Columns"
+            items={columnsItems}
+            open={columnsMenuOpen}
+            onOpenChange={setColumnsMenuOpen}
+            variant="ghost"
+            disabled={disabled}
+            data-testid="columns-menu"
           />
         </ToolbarGroup>
         <ToolbarSeparator />

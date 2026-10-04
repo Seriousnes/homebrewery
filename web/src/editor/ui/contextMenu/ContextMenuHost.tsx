@@ -10,6 +10,7 @@
 import type { Editor } from '@tiptap/core';
 import { useEffect, useState } from 'react';
 import { ContextMenu, type MenuEntry } from '@/ui';
+import { columnsEntries } from '../columns/columnsMenu';
 import { tableMenuContext } from '../tableMenu/tableMenuContext';
 import { tableMenuEntries } from '../tableMenu/tableMenuEntries';
 import { textStyleEntries } from '../toolbar/textStyles';
@@ -41,6 +42,7 @@ export function ContextMenuHost({ editor, 'data-testid': testId = 'editor-contex
         clipboard: (action) => runClipboard(editor, action),
         properties: () => showProperties(editor),
         textStyles: textStyleEntries(editor),
+        columns: columnsEntries(editor),
         ...(ctx.inTable ? { table: tableMenuEntries(editor, tableMenuContext(editor.state)) } : {}),
       };
       const items = contextMenuEntries(editor, ctx, deps);

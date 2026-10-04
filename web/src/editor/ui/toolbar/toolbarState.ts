@@ -3,6 +3,8 @@
 import type { Editor } from '@tiptap/core';
 import { redoDepth, undoDepth } from '@tiptap/pm/history';
 import { alignOf, blockKindOf, inBlockquote, listKindOf, type ListKind, type TextStyleKind, type ThemeBoxClass, themeBoxesAt } from '../../commands/blocks';
+import type { ColumnsSetting } from '../../commands/attrs';
+import { columnsAt } from '../../commands/columns';
 import { inRichText } from '../../commands/marks';
 
 export const TOOLBAR_MARKS = ['bold', 'italic', 'underline', 'strike', 'superscript', 'subscript', 'code', 'link', 'span'] as const;
@@ -24,6 +26,8 @@ export interface ToolbarState {
   list: ListKind | null;
   canUndo: boolean;
   canRedo: boolean;
+  /** The column setting of the section at the cursor (null: the theme's default). */
+  columns: ColumnsSetting;
 }
 
 export function toolbarStateOf(editor: Editor): ToolbarState {
@@ -43,5 +47,6 @@ export function toolbarStateOf(editor: Editor): ToolbarState {
     list: listKindOf(state),
     canUndo: editable && undoDepth(state) > 0,
     canRedo: editable && redoDepth(state) > 0,
+    columns: columnsAt(state).section,
   };
 }

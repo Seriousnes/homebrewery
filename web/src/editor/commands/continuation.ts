@@ -24,6 +24,9 @@
 //   joinForward.
 // Backspace at the start of a MANUAL page (Delete at the end of the page before it)
 //   → the page becomes an auto page (removeSectionBreak): pagination pulls content back.
+// Backspace in an EMPTY page (its flow one empty paragraph; Delete at the end of the page before
+//   it) → the page goes, with its objects and markers (sections.ts deleteEmptyPage). Ahead of the
+//   two rules above: a blank page kept only for its objects would otherwise come straight back.
 // Selecting across pages and deleting: default ProseMirror behaviour, then pagination settles.
 // Deleting a split block's head (the node): the pagination plugin makes the fragment after it a
 //   block of its own (fragments.ts clearOrphanedContinuations).
@@ -37,7 +40,7 @@ import { StepMap } from '@tiptap/pm/transform';
 import type { EditorView } from '@tiptap/pm/view';
 import { JoinPagesStep, carriesPageData, fragmentChain, isAutoPage, pageAt, rejoinContinuations, restorePageAt } from '../pagination';
 import { withChainsJoined } from './blockType';
-import { atPageFlowEnd, atPageFlowStart, removeSectionBreak } from './sections';
+import { atPageFlowEnd, atPageFlowStart, deleteEmptyPage, isEmptyPage, removeSectionBreak } from './sections';
 
 // Characters ---------------------------------------------------------------------------------
 
@@ -380,6 +383,24 @@ export const backspaceAtPageStart: Command = (state, dispatch) => {
   return selectAcross(state, dispatch, pageAt(state.doc, index - 1)!, -1);
 };
 
+/** Backspace at the start of an empty page (not the first): the page goes (deleteEmptyPage). */
+export const backspaceInEmptyPage: Command = (state, dispatch) => {
+  const sel = state.selection;
+  if (!(sel instanceof TextSelection) || !sel.empty || !atPageFlowStart(sel.$head)) return false;
+  const index = sel.$head.index(0);
+  if (index === 0 || !isEmptyPage(state.doc.child(index))) return false;
+  return deleteEmptyPage(index)(state, dispatch);
+};
+
+/** Delete at the end of a page's flow before an empty page: that page goes (deleteEmptyPage). */
+export const deleteBeforeEmptyPage: Command = (state, dispatch) => {
+  const sel = state.selection;
+  if (!(sel instanceof TextSelection) || !sel.empty || !atPageFlowEnd(sel.$head)) return false;
+  const index = sel.$head.index(0) + 1;
+  if (index >= state.doc.childCount || !isEmptyPage(state.doc.child(index))) return false;
+  return deleteEmptyPage(index)(state, dispatch);
+};
+
 /** Selects the last (dir -1) or first (dir 1) block of `page`, when it is selectable. */
 function selectAcross(state: EditorState, dispatch: ((tr: Transaction) => void) | undefined, page: NonNullable<ReturnType<typeof pageAt>>, dir: -1 | 1): boolean {
   const block = dir === -1 ? page.node.lastChild : page.node.firstChild;
@@ -500,9 +521,19 @@ export const SeamEditing = Extension.create({
   addKeyboardShortcuts() {
     const run = (command: Command) => () => command(this.editor.state, this.editor.view.dispatch, this.editor.view);
     const backspace = run(
-      (state, dispatch, view) => backspaceAtSeam(state, dispatch, view) || backspaceAtPageStart(state, dispatch, view) || joinBackwardAtHead(state, dispatch, view),
+      (state, dispatch, view) =>
+        backspaceAtSeam(state, dispatch, view) ||
+        backspaceInEmptyPage(state, dispatch, view) ||
+        backspaceAtPageStart(state, dispatch, view) ||
+        joinBackwardAtHead(state, dispatch, view),
     );
-    const del = run((state, dispatch, view) => deleteAtSeam(state, dispatch, view) || deleteAtPageEnd(state, dispatch, view) || joinForwardBeforeHead(state, dispatch, view));
+    const del = run(
+      (state, dispatch, view) =>
+        deleteAtSeam(state, dispatch, view) ||
+        deleteBeforeEmptyPage(state, dispatch, view) ||
+        deleteAtPageEnd(state, dispatch, view) ||
+        joinForwardBeforeHead(state, dispatch, view),
+    );
     const wordBack = run(deleteWordAtSeam(-1));
     const wordForward = run(deleteWordAtSeam(1));
     return {

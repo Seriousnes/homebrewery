@@ -164,6 +164,15 @@ describe('contextMenuContext and the entries per selection kind', () => {
     const { items } = menu(e, { textStyles: [{ id: 'ts-title', label: 'Title', onSelect: () => {} }] });
     expect(item(items, 'ts-title').label).toBe('Title');
   });
+
+  it('the Columns submenu takes the entries it is given (disabled without them)', () => {
+    const e = open();
+    selectText(e, 'Plain', 1);
+    expect(disabled(menu(e).items, 'columns')).toBe(true);
+    const { items } = menu(e, { columns: [{ id: 'columns-section-1', type: 'radio', checked: false, label: '1 column', onSelect: () => {} }] });
+    expect(disabled(items, 'columns')).toBe(false);
+    expect(item(items, 'columns-section-1').label).toBe('1 column');
+  });
 });
 
 describe('actions', () => {
@@ -196,6 +205,22 @@ describe('actions', () => {
     expect(blocks).toBe(0);
     e.commands.undo();
     expect(e.state.doc.eq(before)).toBe(true);
+  });
+
+  it('Delete blank page: enabled on a blank page only, removes it (objects too) in one undo step', () => {
+    const objects = [{ id: 'o2-1', kind: 'text', text: '', style: '', classes: ['pageNumber', 'auto'] }];
+    editor = createTestEditor(DOC(PAGE({ pid: 'page0000' }, P('Text')), AUTO({ pid: 'blank001', objects }, P(''))).toJSON() as JSONContent);
+    const e = editor;
+    selectText(e, 'Text', 1);
+    expect(disabled(menu(e).items, 'page-delete')).toBe(true);
+    e.commands.setTextSelection(e.state.doc.child(0).nodeSize + 2);
+    const before = e.state.doc;
+    expect(menu(e).ctx.canDeletePage).toBe(true);
+    run(menu(e).items, 'page-delete');
+    expect(e.state.doc.childCount).toBe(1);
+    expect(e.state.doc.textContent).toBe('Text');
+    e.commands.undo();
+    expect(e.state.doc.toJSON()).toEqual(before.toJSON());
   });
 
   it('Unwrap theme block keeps the text', () => {

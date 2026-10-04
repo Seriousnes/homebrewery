@@ -423,6 +423,11 @@
   border-color: var(--hbui-color-border-strong);
 }
 
+/* Muted text is below 4.5:1 on the dark scheme's active surface. */
+.objectItemSelected .crumbClasses {
+  color: inherit;
+}
+
 .objectLabel {
   flex: 0 1 auto;
   min-width: 0;

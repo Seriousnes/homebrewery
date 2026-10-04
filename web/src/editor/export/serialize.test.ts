@@ -145,6 +145,12 @@ describe('serializeBrew details', () => {
     expect(Array.from(pages.children).map((c) => c.id)).toEqual(['p1', 'p2']);
   });
 
+  it('writes the section column setting as the page column class (the Columns menu)', () => {
+    const doc = mount(docOf(page([p('a')], { columns: 1 }), page([p('b')], { columns: 2 }), page([p('c')]))).state.doc;
+    const { pages } = serializeBrew(doc);
+    expect(Array.from(pages.children).map((c) => c.className)).toEqual(['page hb-cols-1', 'page hb-cols-2', 'page']);
+  });
+
   it('moves leading header rows into <thead>, unless a header cell spans into the body', () => {
     const cell = (type: string, value: string, attrs?: Record<string, unknown>) => node(type, attrs, [p(value)]);
     const table = (rows: JSONContent[]) => node('table', undefined, rows);

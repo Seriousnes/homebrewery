@@ -1,7 +1,7 @@
 // Section commands (P4.6) in the browser: Mod-Enter, the section columns setting (only that
 // section reflows), Backspace at a section start, undo. /dev/sections, 5ePHB, both browsers.
 import type { Page } from '@playwright/test';
-import { doc, expect, h, load, page as pg, paragraphs, settled, test, useHarness, type PageReport } from '../pagination/harness';
+import { doc, expect, h, load, p, page as pg, paragraphs, settled, test, useHarness, type PageReport } from '../pagination/harness';
 
 test.use({ harnessVariant: 'sections' });
 
@@ -126,4 +126,22 @@ test('Backspace at the start of a section removes the break (content pulls back)
   ]);
   const footer = await page.evaluate(() => document.querySelectorAll('.ProseMirror > .page')[1]!.querySelector('.footnote')?.textContent ?? null);
   expect(footer).toBe('Part Two');
+});
+
+test('Backspace in a blank page kept only for its page number object deletes it; undo brings it back', async ({ page }) => {
+  // As an imported brew had it: a page number object (from <div class='pageNumber auto'>) on a blank
+  // auto page at the end; pagination never deletes a page that carries objects.
+  const objects = [{ id: 'o2-1', kind: 'text', text: '', style: '', classes: ['pageNumber', 'auto'] }];
+  await load(page, doc(pg([h(1, 'One'), ...paragraphs(1, 200)], { pid: 'sectionA' }), pg([p('')], { pid: 'blankpg1', kind: 'auto', objects })));
+  expect((await pages(page)).map((r) => r.pid)).toEqual(['sectionA', 'blankpg1']);
+  await page.evaluate(() => window.__hbPagination.select(window.__hbPagination.blockPos(1, 0) + 1));
+  await page.keyboard.press('Backspace');
+  await settled(page);
+  expect((await pages(page)).map((r) => r.pid)).toEqual(['sectionA']);
+  await page.keyboard.press('Control+z');
+  await settled(page);
+  expect((await pages(page)).map((r) => [r.pid, r.kind])).toEqual([
+    ['sectionA', 'manual'],
+    ['blankpg1', 'auto'],
+  ]);
 });

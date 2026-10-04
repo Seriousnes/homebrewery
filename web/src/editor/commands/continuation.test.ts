@@ -378,6 +378,72 @@ describe('Backspace / Delete at a page boundary without a continuation', () => {
   });
 });
 
+describe('Backspace / Delete in an empty page', () => {
+  /** An imported page number (an empty text object) on a blank auto page left at the end of a section. */
+  const pageNumber = [{ id: 'o5-1', kind: 'text', text: '', style: '', classes: ['pageNumber', 'auto'] }];
+
+  /** A section with content, then the blank auto page kept only for its object (as brew hd3KnxwrWuHV had it). */
+  function trailingBlankPage(): MountedEditor {
+    m = mountPaginated(DOC(PAGE({ columns: 1, pid: 'page0000' }, P('last words')), AUTO({ columns: 1, pid: 'blank001', objects: pageNumber }, P(''))), { lines: { columns: 1 } });
+    m.settle();
+    // Pagination keeps it: a page that carries objects is never deleted by a pull.
+    expect(m.editor.state.doc.childCount).toBe(2);
+    return m;
+  }
+
+  it('Backspace at its start deletes the page (and its objects); the caret ends the page before; one undo step brings it back', () => {
+    const e = trailingBlankPage();
+    const before = e.editor.state.doc;
+    e.select(pageAt(before, 1)!.contentStart + 1);
+    e.press('Backspace');
+    e.settle();
+    const doc = e.editor.state.doc;
+    expect(doc.childCount).toBe(1);
+    expect(pageTexts(doc)).toEqual([['last words']]);
+    expect(doc.child(0).attrs.objects).toEqual([]);
+    expect(e.editor.state.selection.$head.parent.textContent).toBe('last words');
+    expect(e.editor.state.selection.$head.parentOffset).toBe('last words'.length);
+    expect(e.editor.commands.undo()).toBe(true);
+    e.settle();
+    expect(e.editor.state.doc.toJSON()).toEqual(before.toJSON());
+    expect(e.editor.commands.redo()).toBe(true);
+    e.settle();
+    expect(e.editor.state.doc.childCount).toBe(1);
+  });
+
+  it('Delete at the end of the page before it deletes it too; the caret stays', () => {
+    const e = trailingBlankPage();
+    const end = pageAt(e.editor.state.doc, 0)!.contentEnd - 1;
+    e.select(end);
+    e.press('Delete');
+    e.settle();
+    expect(e.editor.state.doc.childCount).toBe(1);
+    expect(pageTexts(e.editor.state.doc)).toEqual([['last words']]);
+    expect(head(e)).toBe(end);
+  });
+
+  it('a blank manual page (Mod-Enter at the end) goes with one Backspace, without leaving an empty line behind', () => {
+    m = mountPaginated(DOC(PAGE({ columns: 1, pid: 'page0000' }, P('text'))), { lines: { columns: 1 } });
+    m.settle();
+    m.select(posOf(m.editor.state.doc, 'text') + 4);
+    m.press('Mod-Enter');
+    m.settle();
+    expect(pageTexts(m.editor.state.doc)).toEqual([['text'], ['']]);
+    m.press('Backspace');
+    m.settle();
+    expect(pageTexts(m.editor.state.doc)).toEqual([['text']]);
+  });
+
+  it('pages with content keep the old rules (Backspace at a manual page start removes the section break)', () => {
+    m = mountPaginated(DOC(PAGE({ columns: 1 }, P('one')), PAGE({ columns: 1, pid: 'page0001' }, P('two'))), { lines: { columns: 1 } });
+    m.settle();
+    m.select(posOf(m.editor.state.doc, 'two'));
+    m.press('Backspace');
+    m.settle();
+    expect(pageTexts(m.editor.state.doc)).toEqual([['one', 'two']]);
+  });
+});
+
 describe('selection across pages', () => {
   it('Backspace deletes it the default way; pagination settles and the text is right', () => {
     m = mountPaginated(DOC(PAGE({ columns: 1, pid: 'aaaaaaaa' }, ...Array.from({ length: 8 }, (_, i) => P(words(`p${i}x`, 45))))), { lines: { columns: 1 } });

@@ -25,6 +25,7 @@ import { AttributesField } from './AttributesField';
 import { ClassField } from './ClassField';
 import { CommitField } from './CommitField';
 import type { ClassPickerMode } from '../classPicker/themeClasses';
+import { COLUMN_LABELS, themeDefaultLabel } from '../columns/columnsMenu';
 import type { ClassSuggester } from './classNames';
 import styles from './Inspector.module.css';
 import { resolvePage, type ObjectInfo, type PageInfo } from './model';
@@ -45,10 +46,11 @@ const COVER_LABELS: Record<CoverMarker, string> = {
   partCover: 'Part cover',
   backCover: 'Back cover',
 };
-const COLUMN_OPTIONS = [
-  { value: 'theme', label: 'Theme default' },
-  { value: '1', label: '1 column' },
-  { value: '2', label: '2 columns' },
+/** The Columns options; the theme default names the count the canvas shows (themeDefaultLabel). */
+const columnOptions = (themeLabel: string) => [
+  { value: 'theme', label: themeLabel },
+  { value: '1', label: COLUMN_LABELS['1'] },
+  { value: '2', label: COLUMN_LABELS['2'] },
 ];
 
 const STALE: EditResult = { ok: false, error: 'The page changed before the edit was applied; nothing was changed.' };
@@ -115,7 +117,7 @@ function PageFields({ editor, page, suggestions, onSelectObject, readOnly = fals
         <fieldset className={fields} disabled={readOnly}>
           <Select
             label="Columns"
-            options={COLUMN_OPTIONS}
+            options={columnOptions(themeDefaultLabel(editor, settings.columns, page.index))}
             value={settings.columns === null ? 'theme' : String(settings.columns)}
             onChange={(event) => {
               const value = event.target.value;

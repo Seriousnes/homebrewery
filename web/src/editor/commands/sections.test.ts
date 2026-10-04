@@ -1,10 +1,12 @@
 // Section commands (P4.6) on the line-model layout: Mod-Enter, Backspace at a section start,
 // section settings and their sync to auto pages, pid assignment, undo.
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { EditorState, TextSelection, type Transaction } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it } from 'vitest';
 import { pageAt, sectionEndIndex, sectionStartIndex } from '../pagination';
 import { mountPaginated, type MountedEditor } from '../pagination/testEditor';
-import { DOC, H, LI, OL, P, PAGE, canonical, li, pageTexts, posOf, seamProblems, type LineLayoutOptions } from '../pagination/testing';
+import { AUTO, DOC, H, LI, OL, P, PAGE, canonical, li, pageTexts, posOf, seamProblems, type LineLayoutOptions } from '../pagination/testing';
+import { deleteEmptyPage } from './sections';
 
 function words(tag: string, n: number): string {
   let s = '';
@@ -227,5 +229,33 @@ describe('setSectionAttrs and the section sync', () => {
     e.editor.commands.setSectionAttrs({ pageNumber: true });
     expect(canonical(e.editor.state.doc).child(0).attrs.pageNumber).toBe(true);
     expect(canonical(e.editor.state.doc).child(0).content.eq(before.child(0).content)).toBe(true);
+  });
+});
+
+describe('deleteEmptyPage', () => {
+  /** Runs the command on `doc` (cursor at `at`); the new document, or null when it doesn't apply. */
+  function run(doc: PMNode, at: number, index?: number): PMNode | null {
+    const state = EditorState.create({ doc, selection: TextSelection.create(doc, at) });
+    let tr: Transaction | null = null;
+    if (!deleteEmptyPage(index)(state, (t) => (tr = t))) return null;
+    return (tr as Transaction | null)?.doc ?? null;
+  }
+
+  it('applies only to a blank page that is not the only page', () => {
+    expect(run(DOC(PAGE(null, P(''))), 1)).toBeNull();
+    expect(run(DOC(PAGE(null, P('a')), PAGE(null, P('b'))), 6)).toBeNull();
+    expect(run(DOC(PAGE(null, P('a')), PAGE(null, P(''), P(''))), 6)).toBeNull();
+  });
+
+  it('the first page: the next page starts the document (manual)', () => {
+    const doc = run(DOC(PAGE({ pid: 'blank000' }, P('')), AUTO({ pid: 'next0000' }, P('x'))), 2)!;
+    expect(doc.childCount).toBe(1);
+    expect(doc.child(0).attrs).toMatchObject({ pid: 'next0000', kind: 'manual' });
+  });
+
+  it('a blank section start followed by auto pages: the next page starts the section instead', () => {
+    const doc = run(DOC(PAGE({ columns: 1 }, P('a')), PAGE({ columns: 2, pid: 'blank000' }, P('')), AUTO({ columns: 2, pid: 'next0000' }, P('b'))), 0, 1)!;
+    expect(pageTexts(doc)).toEqual([['a'], ['b']]);
+    expect(doc.child(1).attrs).toMatchObject({ pid: 'next0000', kind: 'manual', columns: 2 });
   });
 });

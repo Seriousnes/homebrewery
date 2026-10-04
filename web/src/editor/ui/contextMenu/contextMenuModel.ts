@@ -5,7 +5,9 @@
 //   Cut · Copy · Paste · Paste as plain text
 //   Format ▸ (marks) · Link… · Span with classes… · Text style ▸ · Table ▸
 //   Insert ▸ (snippet…, table…, page break, column break, definition list, spacer, rule)
+//   Columns ▸ (this section: 1, 2, theme default; every page: the same)
 //   <block> group: Wrap in theme block… · Unwrap theme block · Properties… · Delete <block>
+//   Delete blank page (the cursor's page, when its flow is empty)
 //   Edit source…
 import { isMarkActive, type Editor } from '@tiptap/core';
 import { type Node as PMNode } from '@tiptap/pm/model';
@@ -15,7 +17,7 @@ import type { MenuEntry, MenuLeaf } from '@/ui';
 import { blockKindOf, themeBlockAt, unwrapThemeBlock } from '../../commands/blocks';
 import { editorActions, emitKeymapRequest, runCommand, shortcutFor, shortcutLabel, type ShortcutId } from '../../commands/keymap';
 import { inRichText, linkTarget, spanTarget } from '../../commands/marks';
-import { insertPageBreak } from '../../commands/sections';
+import { deleteEmptyPage, insertPageBreak } from '../../commands/sections';
 import { fragmentChain } from '../../pagination/fragments';
 import { BLOCK_LABELS, insertColumnBreak, insertDefinitionList, insertHorizontalRule, insertSpacer, type BlockTypeName } from '../blockMenu/blockCommands';
 import { typeLabel } from '../inspector/model';
@@ -58,6 +60,8 @@ export interface ContextMenuContext {
   themeBlock: string[] | null;
   canUnwrap: boolean;
   block: BlockTarget | null;
+  /** The cursor's page is blank (its flow one empty paragraph) and not the only page. */
+  canDeletePage: boolean;
 }
 
 /**
@@ -133,6 +137,7 @@ export function contextMenuContext(state: EditorState): ContextMenuContext {
     themeBlock: theme ? [...(theme.node.attrs.classes as string[])] : null,
     canUnwrap: unwrapThemeBlock(state),
     block: target ? { pos: target.pos, type: target.node.type.name, label: typeLabel(target.node.type.name, target.node.attrs) } : null,
+    canDeletePage: deleteEmptyPage()(state),
   };
 }
 
@@ -143,6 +148,8 @@ export interface ContextMenuDeps {
   properties: () => void;
   /** The Text style submenu's entries (text-styles' textStyleEntries). */
   textStyles: readonly MenuEntry[];
+  /** The Columns submenu's entries (columnsEntries). */
+  columns?: readonly MenuEntry[];
   /** The Table submenu's entries (tables' tableMenuEntries), shown inside a table. */
   table?: readonly MenuEntry[];
 }
@@ -228,7 +235,9 @@ export function contextMenuEntries(editor: Editor, ctx: ContextMenuContext, deps
     { type: 'submenu', id: 'table', label: 'Table', icon: 'table', disabled: !ctx.inTable || !deps.table?.length, items: deps.table ?? [] },
     { type: 'separator', id: 'sep-format' },
     { type: 'submenu', id: 'insert', label: 'Insert', icon: 'insert', items: insert },
+    { type: 'submenu', id: 'columns', label: 'Columns', icon: 'columns', disabled: !deps.columns?.length, items: deps.columns ?? [] },
     { type: 'group', id: 'block', label: block?.label ?? 'Block', items: blockItems },
+    { id: 'page-delete', label: 'Delete blank page', icon: 'trash', disabled: !ctx.canDeletePage, onSelect: () => runCommand(editor, deleteEmptyPage()) },
     { type: 'separator', id: 'sep-block' },
     { id: 'edit-source', label: 'Edit source…', icon: 'code', shortcut: hint('editSource'), onSelect: () => emitKeymapRequest(editor, 'editSource') },
   ];

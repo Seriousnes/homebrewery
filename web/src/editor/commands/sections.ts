@@ -13,6 +13,9 @@
 //   removeSectionBreak   Backspace at the start of a manual page (commands/continuation.ts): the
 //                        page becomes an auto page of the section before it, and pagination pulls
 //                        its content back.
+//   deleteEmptyPage      Backspace at the start of an empty page, Delete at the end of the page
+//                        before it (commands/continuation.ts), the context menu: a blank page goes,
+//                        with its page objects and markers.
 //   setSectionAttrs      the inspector: settings of the section at the cursor (or of a page).
 //
 // Every command is one transaction in the history (one undo step). Commands that change which
@@ -24,7 +27,7 @@ import { Extension } from '@tiptap/core';
 import type { Attrs, Node as PMNode, ResolvedPos } from '@tiptap/pm/model';
 import { Selection, type Command, type EditorState, type Transaction } from '@tiptap/pm/state';
 import { canSplit } from '@tiptap/pm/transform';
-import { PageBreakStep, autoPageAttrs, isAutoPage, normalizeCut, pageAt, pageIndexAt, sameSectionValue, secondPartAttrs, sectionStartIndex } from '../pagination';
+import { JoinPagesStep, PageBreakStep, autoPageAttrs, isAutoPage, normalizeCut, pageAt, pageIndexAt, sameSectionValue, secondPartAttrs, sectionStartIndex } from '../pagination';
 import { SECTION_ATTRS, type PageAttrs } from '../schema/nodes/page';
 
 /** Section settings (the page attributes SECTION_ATTRS names). */
@@ -227,9 +230,55 @@ export function removeSectionBreak(pageIndex?: number): Command {
   };
 }
 
+/** Whether `page`'s flow is empty: one empty paragraph that doesn't continue a block before it. */
+export function isEmptyPage(page: PMNode): boolean {
+  const only = page.firstChild;
+  return page.childCount === 1 && only !== null && only.type.name === 'paragraph' && only.content.size === 0 && only.attrs.continuation !== true;
+}
+
+/**
+ * Deletes page `pageIndex` (default: the cursor's page) when its flow is empty (isEmptyPage), with
+ * its page objects and markers: a blank page, e.g. one kept alive only for its objects (a page that
+ * carries objects is never deleted by a pull, plan §4.9), has no other way out. Fails for a page
+ * with content and for the only page. When the page started a section that goes on (auto pages
+ * after it), the next page starts that section instead. A caret on the page goes to the end of the
+ * page before it. One undo step.
+ *
+ * History-safe like the other page commands: a JoinPagesStep into the page before, then the empty
+ * paragraph is deleted, so undo re-inserts the paragraph and a PageBreakStep makes the page again
+ * wherever pagination has moved the boundaries by then.
+ */
+export function deleteEmptyPage(pageIndex?: number): Command {
+  return (state, dispatch) => {
+    const index = pageIndex ?? selectionPageIndex(state);
+    const page = pageAt(state.doc, index);
+    if (!page || state.doc.childCount < 2 || !isEmptyPage(page.node)) return false;
+    if (!dispatch) return true;
+    const tr = state.tr;
+    const next = pageAt(state.doc, index + 1);
+    const inside = state.selection.from >= page.pos && state.selection.to <= page.pos + page.node.nodeSize;
+    if (index === 0) {
+      // No page before to join into: the page goes, and the next one starts the document.
+      tr.delete(page.pos, page.pos + page.node.nodeSize);
+      if (isAutoPage(tr.doc.child(0))) tr.setNodeAttribute(0, 'kind', 'manual');
+      if (inside) tr.setSelection(Selection.near(tr.doc.resolve(1)));
+    } else {
+      if (tr.maybeStep(new JoinPagesStep(page.pos, 1)).failed) return false;
+      // The page's empty paragraph now ends the page before it.
+      tr.delete(page.pos - 1, page.pos + 1);
+      if (!isAutoPage(page.node) && next && isAutoPage(next.node)) makeSectionStart(tr, index);
+      if (inside) tr.setSelection(Selection.near(tr.doc.resolve(page.pos - 1), -1));
+    }
+    dispatch(tr.scrollIntoView());
+    return true;
+  };
+}
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     hbSections: {
+      /** Deletes the cursor's page (or page `pageIndex`) when its flow is empty. */
+      deleteEmptyPage: (pageIndex?: number) => ReturnType;
       /** A manual page break at the cursor (Mod-Enter): the new page starts a section. */
       insertPageBreak: () => ReturnType;
       /** Settings of the section at the cursor, or of page `pageIndex`'s section. */
@@ -262,6 +311,10 @@ export const Sections = Extension.create({
         (pageIndex) =>
         ({ state, dispatch }) =>
           removeSectionBreak(pageIndex)(state, dispatch),
+      deleteEmptyPage:
+        (pageIndex) =>
+        ({ state, dispatch }) =>
+          deleteEmptyPage(pageIndex)(state, dispatch),
     };
   },
 
